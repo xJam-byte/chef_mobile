@@ -1,19 +1,12 @@
-/**
- * Main Tab Navigator
- */
-
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { MainTabParamList } from "./types";
 import { useColors } from "../lib/theme";
 
-// Импортируем экраны
 import FeedScreen from "../screens/main/FeedScreen";
-import HomeScreen from "../screens/main/HomeScreen";
-import ChefsScreen from "../screens/main/ChefsScreen";
+import SearchScreen from "../screens/main/SearchScreen";
 import CartScreen from "../screens/main/CartScreen";
-import OrdersScreen from "../screens/main/OrdersScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -46,37 +39,33 @@ export const MainTabs = () => {
         },
       }}
     >
+      {/* Feed - Video feed */}
       <Tab.Screen
         name="Feed"
         component={FeedScreen}
         options={{
           title: "Лента",
-          headerShown: false, // Скрываем хедер для полноэкранного видео
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="play-circle-outline" color={color} size={size} />
           ),
         }}
       />
+
+      {/* Search - Map + Smart Search + Menu */}
       <Tab.Screen
-        name="Catalog"
-        component={HomeScreen}
+        name="Search"
+        component={SearchScreen}
         options={{
-          title: "Меню",
+          title: "Поиск",
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant-outline" color={color} size={size} />
+            <Ionicons name="search-outline" color={color} size={size} />
           ),
         }}
       />
-      <Tab.Screen
-        name="Chefs"
-        component={ChefsScreen}
-        options={{
-          title: "Повара",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" color={color} size={size} />
-          ),
-        }}
-      />
+
+      {/* Cart */}
       <Tab.Screen
         name="Cart"
         component={CartScreen}
@@ -87,16 +76,8 @@ export const MainTabs = () => {
           ),
         }}
       />
-      <Tab.Screen
-        name="Orders"
-        component={OrdersScreen}
-        options={{
-          title: "Заказы",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" color={color} size={size} />
-          ),
-        }}
-      />
+
+      {/* Profile */}
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

@@ -41,7 +41,12 @@ export const getDishesByChef = async (
  * [NEW] Get single dish by ID
  */
 export const getDishById = async (dishId: number): Promise<Dish> => {
-  const response = await apiClient.get<Dish>(`/dishes/${dishId}`);
+  const response = await apiClient.get<Dish>(`/dishes/getById/${dishId}`);
+  return response.data;
+};
+
+export const getDishesByChefId = async (chefId: number): Promise<Dish> => {
+  const response = await apiClient.get<Dish>(`/dishes/getByChef/${chefId}`);
   return response.data;
 };
 

@@ -1,8 +1,7 @@
 /**
  * Hooks barrel export
  */
-
-export { useLogin, useRegister, useLogout } from "./useAuth";
+ 
 export {
   useProfile,
   useUpdateContacts,
@@ -15,3 +14,9 @@ export { useDishes, useChefDishes, useCreateDish, useDish } from "./useDishes";
 export { useOrders, useCreateOrder } from "./useOrders";
 export { useChefReviews, useCreateReview } from "./useReviews";
 export { useCart } from "./useCart";
+export {
+  useLogin,
+  useRegister,
+  useLogout,
+  useAuthStatus,
+} from "./useAuth";

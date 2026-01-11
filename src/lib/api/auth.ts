@@ -1,49 +1,20 @@
-/**
- * Authentication API functions
- */
-
+// src/lib/api/auth.ts
 import { apiClient } from "./client";
-import {
-  setAccessToken,
-  setUserProfile,
-  clearAllStorage,
-} from "../utils/storage";
 import type { LoginDto, RegisterDto, User } from "../types";
 
-type AuthResponse = {
-  token: string;
-  user: User;
+export type AuthResponse = { token: string; user: User };
+
+export const login = async (data: LoginDto): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/login", data);
+  return res.data;
 };
 
-/**
- * Login user
- */
-export const login = async (dto: LoginDto): Promise<AuthResponse> => {
-  const res = await apiClient.post<AuthResponse>("/auth/login", dto);
-  const { token, user } = res.data;
-
-  await setAccessToken(token);
-  await setUserProfile(user);
-
-  return { token, user };
+export const registration = async (data: RegisterDto): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/registration", data);
+  return res.data;
 };
 
-/**
- * Register user
- */
-export const register = async (dto: RegisterDto): Promise<AuthResponse> => {
-  const res = await apiClient.post<AuthResponse>("/auth/register", dto);
-  const { token, user } = res.data;
-
-  await setAccessToken(token);
-  await setUserProfile(user);
-
-  return { token, user };
-};
-
-/**
- * Logout (clear local tokens)
- */
-export const logout = async (): Promise<void> => {
-  await clearAllStorage();
+export const me = async (): Promise<User> => {
+  const res = await apiClient.get<User>("/auth/me");
+  return res.data;
 };

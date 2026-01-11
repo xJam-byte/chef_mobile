@@ -54,7 +54,6 @@ const CartScreen = () => {
         icon: "success",
       });
     } catch (error: any) {
-      console.error("Order error:", error);
       Alert.alert("Ошибка", "Не удалось оформить заказ");
     }
   };

@@ -17,9 +17,8 @@ export const getAllChefs = async (
   params: PaginationParams = {}
 ): Promise<ChefsResponse> => {
   const { page = 1, limit = 10 } = params;
-  // Исправлено: /chef/getAll -> /chefs
   const response = await apiClient.get<ChefsResponse>(
-    `/chefs?page=${page}&limit=${limit}`
+    `/chef?page=${page}&limit=${limit}`
   );
   return response.data;
 };
@@ -27,8 +26,13 @@ export const getAllChefs = async (
 /**
  * Get chef by user ID
  */
-export const getChefById = async (userId: number): Promise<Chef> => {
-  const response = await apiClient.get<Chef>(`/chefs/${userId}`);
+export const getChefByUserId = async (userId: number): Promise<Chef> => {
+  const response = await apiClient.get<Chef>(`/chef/getChefByUserId/${userId}`);
+  return response.data;
+};
+
+export const getChefById = async (chefId: number): Promise<Chef> => {
+  const response = await apiClient.get<Chef>(`/chef/getChefById/${chefId}`);
   return response.data;
 };
 
@@ -36,7 +40,6 @@ export const getChefById = async (userId: number): Promise<Chef> => {
  * Become a chef
  */
 export const becomeChef = async (data: BecomeChefDto): Promise<Chef> => {
-  // Исправлено: /chef/becomeChef -> /chefs/become
-  const response = await apiClient.post<Chef>("/chefs/become", data);
+  const response = await apiClient.post<Chef>("/chef/become", data);
   return response.data;
 };

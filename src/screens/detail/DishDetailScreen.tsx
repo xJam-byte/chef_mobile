@@ -18,9 +18,7 @@ const DishDetailScreen = ({
   navigation,
 }: RootStackScreenProps<"DishDetail">) => {
   const c = useColors();
-  const { dishId } = route.params; // ID гарантированно есть благодаря типам
-
-  // Используем хук загрузки конкретного блюда
+  const { dishId } = route.params;
   const { data: dish, isLoading, isError } = useDish(dishId);
   const cartContext = useContext(CartContext);
 

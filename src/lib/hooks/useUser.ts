@@ -3,7 +3,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateContacts, uploadAvatar, updateEmail, updatePassword } from "../api";
+import { updateContacts, uploadAvatar, updateEmail, updatePassword } from "../api/user";
 import { getUserProfile, setUserProfile } from "../utils/storage";
 import { QUERY_KEYS } from "../constants";
 import type { User, UpdateContactsDto, UploadAvatarDto, UpdateEmailDto, UpdatePasswordDto } from "../types";
@@ -13,7 +13,7 @@ import type { User, UpdateContactsDto, UploadAvatarDto, UpdateEmailDto, UpdatePa
  */
 export const useProfile = () => {
     return useQuery<User | null>({
-        queryKey: QUERY_KEYS.PROFILE,
+        queryKey: QUERY_KEYS.PROFILE(),
         queryFn: getUserProfile,
         staleTime: 60000, // 1 minute
     });
@@ -29,7 +29,7 @@ export const useUpdateContacts = () => {
         mutationFn: (data: UpdateContactsDto) => updateContacts(data),
         onSuccess: (user) => {
             setUserProfile(user);
-            queryClient.setQueryData(QUERY_KEYS.PROFILE, user);
+            queryClient.setQueryData(QUERY_KEYS.PROFILE(), user);
         },
     });
 };
@@ -43,7 +43,7 @@ export const useUploadAvatar = () => {
     return useMutation({
         mutationFn: (data: UploadAvatarDto) => uploadAvatar(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE() });
         },
     });
 };
@@ -58,7 +58,7 @@ export const useUpdateEmail = () => {
         mutationFn: (data: UpdateEmailDto) => updateEmail(data),
         onSuccess: (user) => {
             setUserProfile(user);
-            queryClient.setQueryData(QUERY_KEYS.PROFILE, user);
+            queryClient.setQueryData(QUERY_KEYS.PROFILE(), user);
         },
     });
 };

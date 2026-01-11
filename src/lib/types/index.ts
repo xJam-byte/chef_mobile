@@ -67,7 +67,7 @@ export interface Chef {
   rating: number;
   createdAt: string;
   updatedAt: string;
-  user?: User;
+  users?: User;
 }
 
 export interface BecomeChefDto {

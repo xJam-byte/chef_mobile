@@ -9,7 +9,7 @@ import type { CreateOrderDto } from "../types";
 
 export function useOrders(userId?: number) {
   return useQuery({
-    queryKey: QUERY_KEYS.ORDERS(userId ?? -1),
+    queryKey: QUERY_KEYS.ORDERS({userId}),
     enabled: !!userId && userId > 0,
     queryFn: () => getOrderHistory(userId!),
   });

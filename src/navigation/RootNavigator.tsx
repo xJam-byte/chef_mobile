@@ -1,62 +1,76 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { RootStackParamList } from "./types";
-import { AuthStack } from "./AuthStack";
+import { ActivityIndicator, View, StatusBar } from "react-native";
+import { useAuthStatus } from "../lib/hooks";
+import { useTheme } from "../lib/theme";
+import AuthStack from "./AuthStack";
 import { MainTabs } from "./MainTabs";
-import { Spinner } from "../components/ui";
-import { ThemeProvider } from "../lib/theme";
-import { useColors } from "../lib/theme";
-import { useAuthStatus } from "../lib/hooks/useAuth";
+import { getNavTheme } from "../lib/constants";
+import FlashMessage from "react-native-flash-message";
 
-import DishDetailScreen from "../screens/detail/DishDetailScreen";
+// Detail screens
+import SettingsScreen from "../screens/main/SettingsScreen";
 import ChefDetailScreen from "../screens/detail/ChefDetailScreen";
+import DishDetailScreen from "../screens/detail/DishDetailScreen";
+import AddDishScreen from "../screens/chef/AddDishScreen";
+import AddVideoScreen from "../screens/chef/AddVideoScreen";
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator();
 
-function Inner() {
-  const c = useColors();
-  const { isLoading, isAuthenticated } = useAuthStatus();
+export default function RootNavigator() {
+  const { data: user, isLoading } = useAuthStatus();
+  const { themeName } = useTheme();
+  const theme = getNavTheme(themeName);
 
-  if (isLoading) return <Spinner fullScreen />;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="DishDetail"
-              component={DishDetailScreen}
-              options={{
-                headerShown: true,
-                headerStyle: { backgroundColor: c.surface },
-                headerTintColor: c.text,
-                title: "Блюдо",
-              }}
-            />
-            <Stack.Screen
-              name="ChefDetail"
-              component={ChefDetailScreen}
-              options={{
-                headerShown: true,
-                headerStyle: { backgroundColor: c.surface },
-                headerTintColor: c.text,
-                title: "Шеф-повар",
-              }}
-            />
-          </>
-        ) : (
-          <Stack.Screen name="Auth" component={AuthStack} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <StatusBar barStyle={themeName === "dark" ? "light-content" : "dark-content"} />
+      <NavigationContainer theme={theme}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {user ? (
+            <>
+              <Stack.Screen name="Main" component={MainTabs} />
+              <Stack.Screen
+                name="Settings"
+                component={SettingsScreen}
+                options={{ headerShown: true, title: "Настройки" }}
+              />
+              <Stack.Screen
+                name="ChefDetail"
+                component={ChefDetailScreen}
+                options={{ headerShown: true, title: "Профиль повара" }}
+              />
+              <Stack.Screen
+                name="DishDetail"
+                component={DishDetailScreen}
+                options={{ headerShown: true, title: "Блюдо" }}
+              />
+              <Stack.Screen
+                name="AddDish"
+                component={AddDishScreen}
+                options={{ headerShown: true, title: "Добавить блюдо" }}
+              />
+              <Stack.Screen
+                name="AddVideo"
+                component={AddVideoScreen}
+                options={{ headerShown: true, title: "Добавить видео" }}
+              />
+            </>
+          ) : (
+            <Stack.Screen name="Auth" component={AuthStack} />
+          )}
+        </Stack.Navigator>
+        <FlashMessage position="top" />
+      </NavigationContainer>
+    </>
   );
 }
-
-export const RootNavigator = () => (
-  <ThemeProvider>
-    <Inner />
-  </ThemeProvider>
-);

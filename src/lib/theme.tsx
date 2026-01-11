@@ -118,35 +118,79 @@ export const DARK_COLORS: ThemeColors = {
 
 type ThemeContextValue = {
   theme: ThemeColors;
+  themeName: ThemeName;
+  setTheme: (theme: ThemeName) => void;
+  toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: LIGHT_COLORS,
+  themeName: "light",
+  setTheme: () => { },
+  toggleTheme: () => { },
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [name, setName] = useState<ThemeName>(
-    Appearance.getColorScheme() === "dark" ? "dark" : "light"
-  );
+  const [themeName, setThemeName] = useState<ThemeName>("light");
+  const [isReady, setIsReady] = useState(false);
 
+  // Load theme preference on mount
   useEffect(() => {
-    const sub = Appearance.addChangeListener(({ colorScheme }) => {
-      setName(colorScheme === "dark" ? "dark" : "light");
+    const loadTheme = async () => {
+      const { getThemePreference } = await import("./utils/storage");
+      const savedTheme = await getThemePreference();
+      if (savedTheme) {
+        setThemeName(savedTheme);
+      } else {
+        // Use system preference if no saved theme
+        const systemTheme = Appearance.getColorScheme();
+        setThemeName(systemTheme === "dark" ? "dark" : "light");
+      }
+      setIsReady(true);
+    };
+    loadTheme();
+  }, []);
+
+  // Listen to system theme changes only if user hasn't set a preference
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(async ({ colorScheme }) => {
+      const { getThemePreference } = await import("./utils/storage");
+      const savedTheme = await getThemePreference();
+      if (!savedTheme) {
+        setThemeName(colorScheme === "dark" ? "dark" : "light");
+      }
     });
     return () => sub.remove();
   }, []);
 
   const theme = useMemo(
-    () => (name === "dark" ? DARK_COLORS : LIGHT_COLORS),
-    [name]
+    () => (themeName === "dark" ? DARK_COLORS : LIGHT_COLORS),
+    [themeName]
   );
 
+  const setTheme = async (newTheme: ThemeName) => {
+    setThemeName(newTheme);
+    const { setThemePreference } = await import("./utils/storage");
+    await setThemePreference(newTheme);
+  };
+
+  const toggleTheme = () => {
+    setTheme(themeName === "light" ? "dark" : "light");
+  };
+
+  if (!isReady) {
+    return null; // or a splash screen
+  }
+
   return (
-    <ThemeContext.Provider value={{ theme }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{ theme, themeName, setTheme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
   );
 };
 
 export const useTheme = () => useContext(ThemeContext);
 export const useColors = () => useTheme().theme;
+

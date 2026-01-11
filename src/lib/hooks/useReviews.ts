@@ -12,7 +12,7 @@ import type { CreateReviewDto } from "../types";
  */
 export const useChefReviews = (chefId: number) => {
     return useQuery({
-        queryKey: QUERY_KEYS.CHEF_REVIEWS(chefId),
+        queryKey: QUERY_KEYS.REVIEWS(chefId),
         queryFn: () => getChefReviews(chefId),
         enabled: !!chefId,
     });
@@ -28,7 +28,7 @@ export const useCreateReview = () => {
         mutationFn: (data: CreateReviewDto) => createReview(data),
         onSuccess: (review) => {
             queryClient.invalidateQueries({
-                queryKey: QUERY_KEYS.CHEF_REVIEWS(review.chefId),
+                queryKey: QUERY_KEYS.REVIEWS(review.chefId),
             });
             // Also invalidate chef data to refresh rating
             queryClient.invalidateQueries({

@@ -8,34 +8,34 @@ import { StatusBar } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { RootNavigator } from "./src/navigation/RootNavigator";
+import "./src/lib/i18n"; // Initialize i18n
 import { CartProvider } from "./src/context/CartContext";
+import { ThemeProvider } from "./src/lib/theme";
+import RootNavigator from "./src/navigation/RootNavigator";
 
-// Create React Query client
+// React Query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 30000,
+      staleTime: 30_000,
     },
   },
 });
 
-/**
- * Main App Component
- */
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <CartProvider>
-            <StatusBar barStyle="light-content" />
-            <RootNavigator />
-          </CartProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <CartProvider>
+              <RootNavigator />
+            </CartProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

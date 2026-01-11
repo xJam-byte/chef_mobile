@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Video, ResizeMode } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "../../lib/theme";
@@ -97,23 +98,20 @@ export default function FeedScreen({ navigation }: any) {
           isMuted={false}
         />
 
-        {/* overlay */}
+        {/* overlay gradients */}
         <View style={styles.topFade} />
         <View style={styles.bottomFade} />
 
-        {/* Top bar */}
-        <View style={styles.topBar}>
+        {/* Top bar with SafeAreaView */}
+        <SafeAreaView style={styles.topBar} edges={['top']}>
           <Text style={styles.brand}>Chef</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate("Chefs")}
-            style={[
-              styles.topBtn,
-              { backgroundColor: "rgba(255,255,255,0.14)" },
-            ]}
+            onPress={() => navigation.navigate("Search")}
+            style={styles.topBtn}
           >
             <Ionicons name="search" size={20} color="#fff" />
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
 
         {/* Right actions */}
         <View style={styles.actions}>
@@ -157,8 +155,8 @@ export default function FeedScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom info */}
-        <View style={styles.bottomInfo}>
+        {/* Bottom info with SafeAreaView */}
+        <SafeAreaView style={styles.bottomInfo} edges={['bottom']}>
           <View style={styles.chefRow}>
             <View style={styles.avatar}>
               {item.chefAvatar ? (
@@ -176,14 +174,14 @@ export default function FeedScreen({ navigation }: any) {
           {item.title ? <Text style={styles.title}>{item.title}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.orderCta, { backgroundColor: "#fff" }]}
+            style={styles.orderCta}
             activeOpacity={0.9}
             onPress={() => navigation.navigate("Cart")}
           >
             <Ionicons name="cart-outline" size={18} color="#111827" />
             <Text style={styles.orderCtaText}>Перейти в корзину</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       </View>
     );
   };
@@ -226,18 +224,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 240,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    height: 280,
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
 
   topBar: {
     position: "absolute",
-    top: 52,
-    left: 14,
-    right: 14,
+    top: 0,
+    left: 16,
+    right: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingTop: 8,
   },
   brand: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: 0.2 },
   topBtn: {
@@ -246,18 +245,25 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
   },
 
   actions: {
     position: "absolute",
-    right: 12,
-    bottom: 170,
+    right: 14,
+    bottom: 200,
     alignItems: "center",
   },
-  actionBtn: { alignItems: "center", marginBottom: 18 },
+  actionBtn: { alignItems: "center", marginBottom: 20 },
   actionText: { color: "#fff", fontSize: 12, fontWeight: "700", marginTop: 6 },
 
-  bottomInfo: { position: "absolute", left: 14, right: 88, bottom: 42 },
+  bottomInfo: {
+    position: "absolute",
+    left: 16,
+    right: 100,
+    bottom: 0,
+    paddingBottom: 16,
+  },
   chefRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   avatar: {
     width: 32,
@@ -270,15 +276,16 @@ const styles = StyleSheet.create({
   },
   avatarImg: { width: 32, height: 32, borderRadius: 12 },
   chefName: { color: "#fff", fontSize: 14, fontWeight: "900" },
-  title: { color: "#fff", fontSize: 16, fontWeight: "800", lineHeight: 22 },
+  title: { color: "#fff", fontSize: 16, fontWeight: "800", lineHeight: 22, marginBottom: 12 },
 
   orderCta: {
-    marginTop: 14,
-    height: 46,
+    height: 48,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
+    backgroundColor: "#fff",
+    gap: 8,
   },
   orderCtaText: { color: "#111827", fontSize: 14, fontWeight: "900" },
 });

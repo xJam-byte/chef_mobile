@@ -1,5 +1,5 @@
 /**
- * Login Screen (theme-aware)
+ * Login Screen (react-query auth)
  */
 
 import React, { useState } from "react";
@@ -21,43 +21,40 @@ import { AuthScreenProps } from "../../navigation/types";
 const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const c = useColors();
 
+  const loginMutation = useLogin();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
 
-  const loginMutation = useLogin();
-
   const validate = () => {
-    const newErrors: typeof errors = {};
-
-    if (!email) newErrors.email = "Email обязателен";
-    else if (!/\S+@\S+\.\S+/.test(email))
-      newErrors.email = "Неверный формат email";
-
-    if (!password) newErrors.password = "Пароль обязателен";
-    else if (password.length < 6) newErrors.password = "Минимум 6 символов";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: typeof errors = {};
+    if (!email) e.email = "Email обязателен";
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = "Неверный формат email";
+    if (!password) e.password = "Пароль обязателен";
+    else if (password.length < 6) e.password = "Минимум 6 символов";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleLogin = async () => {
     if (!validate()) return;
 
     try {
-      await loginMutation.mutateAsync({ email, password });
-    } catch (error: any) {
-      console.error("Login error:", error);
+      const data = await loginMutation.mutateAsync({ email, password });
 
-      const errorMessage = error.response?.data?.message
-        ? Array.isArray(error.response.data.message)
-          ? error.response.data.message.join(", ")
-          : error.response.data.message
-        : "Неверные данные для входа";
-
-      Alert.alert("Ошибка входа", errorMessage);
+      // Check if user has a role set, if not navigate to role selection
+      if (!data.user.role || data.user.role === "admin") {
+        navigation.navigate("RoleSelection");
+      }
+      // Otherwise RootNavigator will handle navigation to Main
+    } catch (e: any) {
+      Alert.alert(
+        "Ошибка входа",
+        e?.response?.data?.message ?? "Неверные данные"
+      );
     }
   };
 
@@ -68,51 +65,29 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Chef</Text>
-            <Text
-              style={[
-                styles.subtitle,
-                { color: c.name === "dark" ? "#9CA3AF" : "#FED7AA" },
-              ]}
-            >
-              Домашняя еда от лучших поваров
+            <Text style={styles.subtitle}>
+              Вход в аккаунт
             </Text>
           </View>
 
-          {/* Card */}
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: c.authCard, borderColor: c.authCardBorder },
-            ]}
-          >
+          <View style={[styles.card, { backgroundColor: c.authCard }]}>
             <Text style={[styles.cardTitle, { color: c.text }]}>
-              Вход в аккаунт
+              Добро пожаловать
             </Text>
 
             <Input
               label="Email"
-              placeholder="ivan@example.com"
               value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrors((e) => ({ ...e, email: undefined }));
-              }}
-              autoCapitalize="none"
-              keyboardType="email-address"
+              onChangeText={setEmail}
               error={errors.email}
             />
 
             <Input
               label="Пароль"
-              placeholder="••••••••"
               value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors((e) => ({ ...e, password: undefined }));
-              }}
+              onChangeText={setPassword}
               secureTextEntry
               error={errors.password}
             />
@@ -122,14 +97,11 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
               onPress={handleLogin}
               loading={loginMutation.isPending}
               fullWidth
-              style={styles.loginButton}
             />
 
             <Text
-              style={[styles.registerText, { color: c.primary }]}
-              onPress={() =>
-                navigation.navigate("Register", { role: "customer" })
-              }
+              style={[styles.link, { color: c.primary }]}
+              onPress={() => navigation.navigate("Register")}
             >
               Создать аккаунт
             </Text>
@@ -143,46 +115,11 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-  },
-  card: {
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  loginButton: {
-    marginTop: 8,
-  },
-  registerText: {
-    marginTop: 20,
-    textAlign: "center",
-    fontWeight: "700",
-    fontSize: 16,
-  },
+  container: { flexGrow: 1, justifyContent: "center", padding: 24 },
+  header: { alignItems: "center", marginBottom: 32 },
+  title: { fontSize: 36, fontWeight: "800", color: "#fff" },
+  subtitle: { fontSize: 16, color: "#cbd5f5" },
+  card: { borderRadius: 24, padding: 24 },
+  cardTitle: { fontSize: 22, fontWeight: "700", textAlign: "center", marginBottom: 16 },
+  link: { marginTop: 20, textAlign: "center", fontWeight: "700" },
 });
