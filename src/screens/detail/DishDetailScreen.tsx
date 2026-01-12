@@ -40,11 +40,7 @@ const DishDetailScreen = ({
     );
   }
 
-  const imageUri = dish.picture
-    ? dish.picture.startsWith("http")
-      ? dish.picture
-      : `${API_BASE_URL}/uploads/dishes/${dish.picture}`
-    : null;
+  const imageUri = dish.picture || null;
 
   const isAvailable = dish.availability_status === "available";
 
@@ -72,6 +68,7 @@ const DishDetailScreen = ({
           <Image
             source={{ uri: imageUri }}
             style={[styles.image, { backgroundColor: c.border }]}
+            onError={(e) => console.log('Dish image load error:', imageUri, e.nativeEvent.error)}
           />
         ) : (
           <View

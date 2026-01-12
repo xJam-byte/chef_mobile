@@ -35,6 +35,7 @@ export interface User {
   role: UserRole | "admin";
   createdAt: string;
   updatedAt: string;
+  chefs?: Chef[]; // Chef profile if user is a chef
 }
 
 export interface UpdateContactsDto {
@@ -102,8 +103,8 @@ export interface Dish {
 export interface CreateDishDto {
   chefId: number;
   name: string;
-  description?: string;
-  picture?: string; // base64
+  description: string;
+  picture: string; // base64
   type: string;
   ingredients: string;
   price: number;

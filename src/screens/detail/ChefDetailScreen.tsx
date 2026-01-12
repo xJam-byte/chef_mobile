@@ -159,6 +159,7 @@ const ChefDetailScreen = ({
                       source={{ uri: dish.picture }}
                       style={styles.dishImage}
                       resizeMode="cover"
+                      onError={(e) => console.log('Image load error:', dish.picture, e.nativeEvent.error)}
                     />
                   ) : (
                     <View style={[styles.dishImagePlaceholder, { backgroundColor: c.surface }]}>

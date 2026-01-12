@@ -26,9 +26,9 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const handleRegister = async () => {
     try {
       await registerMutation.mutateAsync({
-        name,
-        email,
-        password,
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
       });
       // After successful registration, navigate to role selection
       navigation.navigate("RoleSelection");
@@ -55,7 +55,12 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
 
           <View style={[styles.card, { backgroundColor: c.authCard }]}>
             <Input label="Имя" value={name} onChangeText={setName} />
-            <Input label="Email" value={email} onChangeText={setEmail} />
+            <Input 
+              label="Email" 
+              value={email} 
+              onChangeText={setEmail} 
+              autoCapitalize="none"
+            />
             <Input
               label="Пароль"
               value={password}

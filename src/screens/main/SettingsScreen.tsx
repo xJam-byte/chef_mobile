@@ -145,6 +145,17 @@ export default function SettingsScreen({ navigation }: any) {
                 />
             </View>
 
+            {/* Addresses Section */}
+            <View style={[styles.section, { backgroundColor: c.card }]}>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>Адреса</Text>
+
+                <SettingRow
+                    icon="location"
+                    title="Мои адреса"
+                    onPress={() => navigation.navigate("AddressManagement")}
+                />
+            </View>
+
             {/* About Section */}
             <View style={[styles.section, { backgroundColor: c.card }]}>
                 <Text style={[styles.sectionTitle, { color: c.text }]}>{t('settings.about')}</Text>

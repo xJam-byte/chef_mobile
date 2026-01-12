@@ -18,7 +18,7 @@ export const getAllChefs = async (
 ): Promise<ChefsResponse> => {
   const { page = 1, limit = 10 } = params;
   const response = await apiClient.get<ChefsResponse>(
-    `/chef?page=${page}&limit=${limit}`
+    `/chef/getAll?page=${page}&limit=${limit}`
   );
   return response.data;
 };

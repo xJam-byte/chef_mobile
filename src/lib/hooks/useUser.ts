@@ -9,13 +9,16 @@ import { QUERY_KEYS } from "../constants";
 import type { User, UpdateContactsDto, UploadAvatarDto, UpdateEmailDto, UpdatePasswordDto } from "../types";
 
 /**
- * Get current user profile from storage
+ * Get current user profile from the same query cache as useAuthStatus
+ * This ensures we always have the latest data including chef information
  */
 export const useProfile = () => {
     return useQuery<User | null>({
-        queryKey: QUERY_KEYS.PROFILE(),
-        queryFn: getUserProfile,
-        staleTime: 60000, // 1 minute
+        queryKey: ["profile"], // Same key as useAuthStatus
+        queryFn: () => null as User | null, // Required by React Query, but won't be called
+        enabled: false, // Don't refetch, just read from cache
+        staleTime: Infinity, // Always use cached data
+        gcTime: Infinity,
     });
 };
 
@@ -29,7 +32,7 @@ export const useUpdateContacts = () => {
         mutationFn: (data: UpdateContactsDto) => updateContacts(data),
         onSuccess: (user) => {
             setUserProfile(user);
-            queryClient.setQueryData(QUERY_KEYS.PROFILE(), user);
+            queryClient.setQueryData(["profile"], user);
         },
     });
 };
@@ -43,7 +46,7 @@ export const useUploadAvatar = () => {
     return useMutation({
         mutationFn: (data: UploadAvatarDto) => uploadAvatar(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE() });
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
         },
     });
 };
@@ -58,7 +61,7 @@ export const useUpdateEmail = () => {
         mutationFn: (data: UpdateEmailDto) => updateEmail(data),
         onSuccess: (user) => {
             setUserProfile(user);
-            queryClient.setQueryData(QUERY_KEYS.PROFILE(), user);
+            queryClient.setQueryData(["profile"], user);
         },
     });
 };

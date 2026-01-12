@@ -1,5 +1,6 @@
 /**
  * Add Dish Screen - For chefs to add new dishes
+ * FULLY IMPLEMENTED with image picker and API integration
  */
 
 import React, { useState } from "react";
@@ -12,12 +13,23 @@ import {
     TouchableOpacity,
     Image,
     Alert,
+    ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useColors } from "../../lib/theme";
+import { useCreateDish, useProfile } from "../../lib/hooks";
+import { showMessage } from "react-native-flash-message";
+import { useChefByUserId } from "../../lib/hooks/useChefs";
 
 export default function AddDishScreen({ navigation }: any) {
     const c = useColors();
+    const { data: profile } = useProfile();
+    // console.log(profile)
+    const createDishMutation = useCreateDish();
+    const { data: chef } = useChefByUserId(profile?.user_id);
+    // console.log(chef)
+
     const [dishName, setDishName] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
@@ -25,31 +37,100 @@ export default function AddDishScreen({ navigation }: any) {
     const [ingredients, setIngredients] = useState("");
     const [image, setImage] = useState<string | null>(null);
 
-    const handleSubmit = () => {
-        if (!dishName || !price) {
-            Alert.alert("Ошибка", "Заполните название и цену блюда");
+    const handleSubmit = async () => {
+        // Validation
+        if (!dishName.trim()) {
+            showMessage({ message: "Введите название блюда", type: "warning" });
+            return;
+        }
+        if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+            showMessage({ message: "Введите корректную цену", type: "warning" });
+            return;
+        }
+        if (!description.trim()) {
+            showMessage({ message: "Добавьте описание блюда", type: "warning" });
+            return;
+        }
+        if (!type.trim()) {
+            showMessage({ message: "Укажите тип блюда", type: "warning" });
+            return;
+        }
+        if (!ingredients.trim()) {
+            showMessage({ message: "Укажите ингредиенты", type: "warning" });
+            return;
+        }
+        if (!image) {
+            showMessage({ message: "Добавьте фото блюда", type: "warning" });
             return;
         }
 
-        // TODO: API call to create dish
-        console.log({
-            name: dishName,
-            description,
-            price: parseFloat(price),
-            type,
-            ingredients,
-            image,
-        });
+        // Get chef ID from profile
+        const chefId = chef?.chef_id;
 
-        Alert.alert("Успешно", "Блюдо добавлено!", [
-            { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+        console.log("chefId", chefId)
+        if (!chefId) {
+            showMessage({ message: "Профиль шефа не найден", type: "danger" });
+            return;
+        }
+
+        try {
+            await createDishMutation.mutateAsync({
+                chefId,
+                name: dishName.trim(),
+                description: description.trim(),
+                price: Number(price),
+                type: type.trim(),
+                ingredients: ingredients.trim(),
+                picture: image, // base64 data URL
+            });
+
+            showMessage({ message: "Блюдо успешно добавлено!", type: "success" });
+            navigation.goBack();
+        } catch (error: any) {
+            console.error("Error creating dish:", error);
+            showMessage({
+                message: error?.response?.data?.message || "Ошибка при создании блюда",
+                type: "danger",
+            });
+        }
     };
 
-    const handleImagePick = () => {
-        // TODO: Implement image picker
-        Alert.alert("Выбор фото", "Функция выбора фото будет добавлена");
+    const handleImagePick = async () => {
+        try {
+            // Request permission
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== "granted") {
+                Alert.alert(
+                    "Нет разрешения",
+                    "Необходимо разрешение для доступа к галерее"
+                );
+                return;
+            }
+
+            // Launch image picker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.5,
+                base64: true,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                const asset = result.assets[0];
+                // Create base64 data URL
+                const base64 = asset.base64;
+                const mimeType = asset.uri.endsWith(".png") ? "image/png" : "image/jpeg";
+                const dataUrl = `data:${mimeType};base64,${base64}`;
+                setImage(dataUrl);
+            }
+        } catch (error) {
+            console.error("Error picking image:", error);
+            Alert.alert("Ошибка", "Не удалось выбрать изображение");
+        }
     };
+
+    const isLoading = createDishMutation.isPending;
 
     return (
         <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -59,6 +140,7 @@ export default function AddDishScreen({ navigation }: any) {
                     style={[styles.imageSection, { backgroundColor: c.surface, borderColor: c.border }]}
                     onPress={handleImagePick}
                     activeOpacity={0.8}
+                    disabled={isLoading}
                 >
                     {image ? (
                         <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
@@ -84,12 +166,15 @@ export default function AddDishScreen({ navigation }: any) {
                             placeholderTextColor={c.textMuted}
                             value={dishName}
                             onChangeText={setDishName}
+                            editable={!isLoading}
                         />
                     </View>
 
                     {/* Description */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.text }]}>Описание</Text>
+                        <Text style={[styles.label, { color: c.text }]}>
+                            Описание <Text style={{ color: c.error }}>*</Text>
+                        </Text>
                         <TextInput
                             style={[styles.textArea, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
                             placeholder="Расскажите о блюде..."
@@ -99,6 +184,7 @@ export default function AddDishScreen({ navigation }: any) {
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
+                            editable={!isLoading}
                         />
                     </View>
 
@@ -114,24 +200,30 @@ export default function AddDishScreen({ navigation }: any) {
                             value={price}
                             onChangeText={setPrice}
                             keyboardType="numeric"
+                            editable={!isLoading}
                         />
                     </View>
 
                     {/* Type */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.text }]}>Тип блюда</Text>
+                        <Text style={[styles.label, { color: c.text }]}>
+                            Тип блюда <Text style={{ color: c.error }}>*</Text>
+                        </Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="Например: Основное блюдо"
+                            placeholder="Например: Основное блюдо, Десерт, Закуска"
                             placeholderTextColor={c.textMuted}
                             value={type}
                             onChangeText={setType}
+                            editable={!isLoading}
                         />
                     </View>
 
                     {/* Ingredients */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.text }]}>Ингредиенты</Text>
+                        <Text style={[styles.label, { color: c.text }]}>
+                            Ингредиенты <Text style={{ color: c.error }}>*</Text>
+                        </Text>
                         <TextInput
                             style={[styles.textArea, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
                             placeholder="Рис, мясо, морковь, лук..."
@@ -141,17 +233,28 @@ export default function AddDishScreen({ navigation }: any) {
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
+                            editable={!isLoading}
                         />
                     </View>
 
                     {/* Submit Button */}
                     <TouchableOpacity
-                        style={[styles.submitBtn, { backgroundColor: c.primary }]}
+                        style={[
+                            styles.submitBtn,
+                            { backgroundColor: isLoading ? c.textMuted : c.primary },
+                        ]}
                         onPress={handleSubmit}
                         activeOpacity={0.8}
+                        disabled={isLoading}
                     >
-                        <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                        <Text style={styles.submitBtnText}>Добавить блюдо</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <>
+                                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                                <Text style={styles.submitBtnText}>Добавить блюдо</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </View>
             </ScrollView>

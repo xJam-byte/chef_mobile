@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllChefs, getChefById, becomeChef } from "../api/chef";
+import { getAllChefs, getChefById, becomeChef, getChefByUserId } from "../api/chef";
 import type { BecomeChefDto } from "../types";
 
 /* =========================
@@ -29,6 +29,13 @@ export function useChef(chefId?: number) {
     queryKey: ["chef", chefId],
     enabled: !!chefId,
     queryFn: () => getChefById(chefId!),
+  });
+}
+export function useChefByUserId(userId?: number) {
+  return useQuery({
+    queryKey: ["chef", userId],
+    enabled: !!userId,
+    queryFn: () => getChefByUserId(userId!),
   });
 }
 

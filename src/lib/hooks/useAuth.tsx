@@ -3,24 +3,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { apiClient } from "../api/client";
 import { login, registration, me } from "../api/auth";
+import { setUserProfile, getAccessToken } from "../utils/storage";
 import type { LoginDto, RegisterDto, User } from "../types";
 
 const TOKEN_KEY = "auth_token";
-
-async function ensureAuthHeader() {
-  const token = await SecureStore.getItemAsync(TOKEN_KEY);
-  if (token) apiClient.defaults.headers.Authorization = `Bearer ${token}`;
-  else delete apiClient.defaults.headers.Authorization;
-  return token;
-}
 
 export function useAuthStatus() {
   return useQuery<User | null>({
     queryKey: ["profile"],
     queryFn: async () => {
       try {
-        await ensureAuthHeader();
-        return await me();
+        const token = await getAccessToken();
+        if (!token) return null; // No token locally = definitely not logged in
+
+        const user = await me();
+        
+        // ✅ Save profile to storage so useProfile() can access it
+        if (user) {
+          await setUserProfile(user);
+        }
+        
+        return user;
       } catch (error: any) {
         // Only return null if it's a 401 (unauthenticated) error
         if (error?.response?.status === 401) {
@@ -38,10 +41,10 @@ export function useAuthStatus() {
       // Retry network errors up to 2 times
       return failureCount < 2;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - increase from 1 minute
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
-    refetchOnMount: false, // Don't refetch on every mount
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 5 * 60 * 1000, 
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 

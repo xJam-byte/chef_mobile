@@ -43,7 +43,10 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
     if (!validate()) return;
 
     try {
-      const data = await loginMutation.mutateAsync({ email, password });
+      const data = await loginMutation.mutateAsync({ 
+        email: email.trim(), 
+        password: password.trim() 
+      });
 
       // Check if user has a role set, if not navigate to role selection
       if (!data.user.role || data.user.role === "admin") {
@@ -82,6 +85,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
               value={email}
               onChangeText={setEmail}
               error={errors.email}
+              autoCapitalize="none"
             />
 
             <Input

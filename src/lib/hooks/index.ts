@@ -20,3 +20,5 @@ export {
   useLogout,
   useAuthStatus,
 } from "./useAuth";
+export { useMyAddresses, useCreateAddress } from "./useAddresses";
+export { useVideoFeed, useLikeVideo, useUnlikeVideo, useRecordView, useCreateVideo } from "./useVideos";
