@@ -24,7 +24,7 @@ export const MainTabs = () => {
           borderTopColor: c.border,
           paddingBottom: 8,
           paddingTop: 8,
-          height: 60,
+          height: 78,
           backgroundColor: c.surface,
         },
         headerStyle: {

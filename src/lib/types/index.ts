@@ -185,6 +185,8 @@ export interface Address {
   street: string;
   city: string;
   postalCode: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
   updatedAt: string;
 }

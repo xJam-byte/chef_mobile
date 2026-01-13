@@ -10,7 +10,8 @@ import {
     Dimensions,
     Platform,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
+import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "../../lib/theme";
 import { useDishes, useChefs } from "../../lib/hooks";
@@ -35,6 +36,8 @@ export default function SearchScreen({ navigation }: any) {
     const c = useColors();
     const [activeTab, setActiveTab] = useState<TabType>("menu");
     const [searchQuery, setSearchQuery] = useState("");
+    const [userLocation, setUserLocation] = useState<Region | null>(null);
+    const [locationPermission, setLocationPermission] = useState(false);
 
     // Fetch dishes and chefs
     const { data: dishesData } = useDishes({ page: 1, limit: 50 });
@@ -42,6 +45,31 @@ export default function SearchScreen({ navigation }: any) {
 
     const dishes = dishesData?.data ?? [];
     const chefs = chefsData?.data ?? [];
+
+    // Request location permission and get user location
+    React.useEffect(() => {
+        (async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== "granted") {
+                setLocationPermission(false);
+                return;
+            }
+
+            setLocationPermission(true);
+
+            try {
+                const location = await Location.getCurrentPositionAsync({});
+                setUserLocation({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                });
+            } catch (error) {
+                console.error("Error getting location:", error);
+            }
+        })();
+    }, []);
 
     // Filter dishes based on search query
     const filteredDishes = dishes.filter((dish) => {
@@ -56,14 +84,37 @@ export default function SearchScreen({ navigation }: any) {
         );
     });
 
-    // Generate chef markers (spread around Almaty)
-    const chefMarkers = chefs.map((chef) => ({
-        chef,
-        coordinate: {
-            latitude: DEFAULT_REGION.latitude + (Math.random() - 0.5) * 0.05,
-            longitude: DEFAULT_REGION.longitude + (Math.random() - 0.5) * 0.05,
-        },
-    }));
+    // Generate chef markers based on their real addresses
+    // Show all chefs: use real coordinates if available, fallback to user location if not
+    const baseLocation = userLocation || DEFAULT_REGION;
+    
+    const chefMarkers = chefs.map((chef: any, index: number) => {
+        const addresses = chef.user?.addresses || [];
+        const addressWithCoords = addresses.find((addr: any) => addr.latitude && addr.longitude);
+        
+        // If chef has real coordinates, use them. Otherwise scatter around user location.
+        const coordinate = addressWithCoords
+            ? {
+                latitude: addressWithCoords.latitude,
+                longitude: addressWithCoords.longitude,
+              }
+            : {
+                // Spread chefs without coordinates around the center in a circle pattern
+                latitude: baseLocation.latitude + (Math.cos(index * Math.PI / 4) * 0.02),
+                longitude: baseLocation.longitude + (Math.sin(index * Math.PI / 4) * 0.02),
+              };
+        
+        return {
+            chef,
+            coordinate,
+            address: addressWithCoords,
+            hasRealAddress: !!addressWithCoords,
+        };
+    });
+
+    // Debug: log chef markers info
+    console.log(`Total chefs: ${chefs.length}, Chef markers: ${chefMarkers.length}`);
+    console.log(`Chefs with real addresses: ${chefMarkers.filter(m => m.hasRealAddress).length}`);
 
     const renderDishCard = ({ item }: { item: Dish }) => (
         <TouchableOpacity
@@ -191,9 +242,9 @@ export default function SearchScreen({ navigation }: any) {
                     <MapView
                         style={styles.map}
                         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                        initialRegion={DEFAULT_REGION}
-                        showsUserLocation
-                        showsMyLocationButton
+                        initialRegion={userLocation || DEFAULT_REGION}
+                        showsUserLocation={locationPermission}
+                        showsMyLocationButton={locationPermission}
                     >
                         {chefMarkers.map((marker) => (
                             <Marker
@@ -203,7 +254,10 @@ export default function SearchScreen({ navigation }: any) {
                                     navigation.navigate("ChefDetail", { chefId: marker.chef.chef_id });
                                 }}
                             >
-                                <View style={[styles.markerContainer, { backgroundColor: c.primary }]}>
+                                <View style={[
+                                    styles.markerContainer, 
+                                    { backgroundColor: marker.hasRealAddress ? c.primary : '#888' }
+                                ]}>
                                     <Ionicons name="restaurant" size={20} color="#fff" />
                                 </View>
                             </Marker>

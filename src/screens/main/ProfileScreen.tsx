@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "../../components/ui";
-import { useProfile } from "../../lib/hooks";
+import { useProfile, useChefDishes, useVideosByAuthor } from "../../lib/hooks";
+import { useChefByUserId } from "../../lib/hooks/useChefs";
 import { API_BASE_URL } from "../../lib/constants";
 import { useColors } from "../../lib/theme";
 
@@ -33,19 +34,16 @@ export default function ProfileScreen({ navigation }: any) {
 
   const roleIsChef = profile?.role === "chef";
 
-  // Mock video data for demonstration (would come from API)
-  const mockVideos = Array.from({ length: 9 }, (_, i) => ({
-    id: i + 1,
-    thumbnail: `https://picsum.photos/200/200?random=${i}`,
-  }));
+  // Get chef info if user is a chef
+  const { data: chef } = useChefByUserId(profile?.user_id);
+  const chefId = chef?.chef_id;
 
-  // Mock dishes data for demonstration (would come from API)
-  const mockDishes = Array.from({ length: 6 }, (_, i) => ({
-    id: i + 1,
-    name: `Блюдо ${i + 1}`,
-    price: 1500 + i * 500,
-    image: `https://picsum.photos/200/200?random=${i + 50}`,
-  }));
+  // Fetch real data from backend
+  const { data: videosData } = useVideosByAuthor(profile?.user_id);
+  const { data: dishesData } = useChefDishes(chefId);
+
+  const videos = videosData?.pages.flatMap((page) => page.items) ?? [];
+  const dishes = dishesData?.data ?? [];
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
@@ -153,7 +151,7 @@ export default function ProfileScreen({ navigation }: any) {
                     { color: activeTab === "videos" ? c.primary : c.textMuted },
                   ]}
                 >
-                  Видео ({mockVideos.length})
+                  Видео ({videos.length})
                 </Text>
               </TouchableOpacity>
 
@@ -176,26 +174,24 @@ export default function ProfileScreen({ navigation }: any) {
                     { color: activeTab === "dishes" ? c.primary : c.textMuted },
                   ]}
                 >
-                  Блюда ({mockDishes.length})
+                  Блюда ({dishes.length})
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Content based on active tab */}
             {activeTab === "videos" ? (
-              // Instagram-style Video Grid (3 columns)
               <View style={styles.videoGrid}>
-                {mockVideos.map((video) => (
+                {videos.map((video) => (
                   <TouchableOpacity
                     key={video.id}
                     style={styles.videoItem}
                     activeOpacity={0.8}
                     onPress={() => {
-                      console.log("Video clicked:", video.id);
+                      navigation.navigate("VideoViewer", { video });
                     }}
                   >
                     <Image
-                      source={{ uri: video.thumbnail }}
+                      source={{ uri: video.posterUrl || video.url }}
                       style={styles.videoThumbnail}
                       resizeMode="cover"
                     />
@@ -206,22 +202,27 @@ export default function ProfileScreen({ navigation }: any) {
                 ))}
               </View>
             ) : (
-              // Dishes Grid (2 columns)
               <View style={styles.dishesGrid}>
-                {mockDishes.map((dish) => (
+                {dishes.map((dish: any) => (
                   <TouchableOpacity
-                    key={dish.id}
+                    key={dish.dish_id}
                     style={[styles.dishCard, { backgroundColor: c.card, borderColor: c.border }]}
                     activeOpacity={0.8}
                     onPress={() => {
-                      console.log("Dish clicked:", dish.id);
+                      navigation.navigate("DishDetail", { dishId: dish.dish_id });
                     }}
                   >
-                    <Image
-                      source={{ uri: dish.image }}
-                      style={styles.dishImage}
-                      resizeMode="cover"
-                    />
+                    {dish.picture ? (
+                      <Image
+                        source={{ uri: dish.picture }}
+                        style={styles.dishImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.dishImage, { backgroundColor: c.surface, alignItems: "center", justifyContent: "center" }]}>
+                        <Ionicons name="restaurant" size={28} color={c.textMuted} />
+                      </View>
+                    )}
                     <View style={styles.dishInfo}>
                       <Text style={[styles.dishName, { color: c.text }]} numberOfLines={1}>
                         {dish.name}

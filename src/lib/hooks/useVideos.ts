@@ -2,6 +2,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getVideoFeed,
+  getVideosByAuthor,
   likeVideo,
   unlikeVideo,
   recordVideoView,
@@ -17,6 +18,21 @@ export function useVideoFeed() {
     queryFn: ({ pageParam }) => getVideoFeed({ cursor: pageParam, limit: 10 }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
+  });
+}
+
+export function useVideosByAuthor(authorId: number | undefined) {
+  return useInfiniteQuery({
+    queryKey: ["videos-by-author", authorId],
+    queryFn: ({ pageParam }) =>
+      getVideosByAuthor({
+        authorId: authorId!,
+        cursor: pageParam,
+        limit: 20,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: undefined as string | undefined,
+    enabled: !!authorId,
   });
 }
 
@@ -116,12 +132,15 @@ export function useCreateVideo() {
       description?: string;
       dishId?: number;
     }) => {
-      // 1. Get presigned URL
-      const { uploadUrl, publicUrl } = await createVideoUploadUrl("video/mp4");
-
-      // 2. Fetch video file from local URI
+      // 1. Fetch video file from local URI to get the Blob and correct type
       const response = await fetch(params.videoUri);
       const blob = await response.blob();
+      
+      // infer type from blob or fallback
+      const contentType = blob.type || "video/mp4";
+
+      // 2. Get presigned URL with the ACTUAL content type
+      const { uploadUrl, publicUrl } = await createVideoUploadUrl(contentType);
 
       // 3. Upload to R2
       await uploadVideoToR2(uploadUrl, blob);

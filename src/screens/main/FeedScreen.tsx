@@ -3,7 +3,7 @@
  * Shows videos with linked dishes and add-to-cart functionality
  */
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useMemo } from "react";
 import {
   View,
   FlatList,
@@ -14,19 +14,39 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
 import { useColors } from "../../lib/theme";
-import { useVideoFeed, useLikeVideo, useUnlikeVideo, useCart } from "../../lib/hooks";
+import {
+  useVideoFeed,
+  useLikeVideo,
+  useUnlikeVideo,
+  useCart,
+} from "../../lib/hooks";
 import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
 import type { VideoFeedItem } from "../../lib/api/videos";
+import type { Dish } from "../../lib/types";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 export default function FeedScreen() {
   const c = useColors();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useVideoFeed();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const isFocused = useIsFocused();
+
+  // Реальная высота "страницы" внутри TabNavigator (чтобы не было бага с первым свайпом)
+  const PAGE_HEIGHT = Math.max(1, WINDOW_HEIGHT - tabBarHeight);
+
+  // Поднятие UI над таббаром
+  const bottomLift = tabBarHeight + insets.bottom;
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useVideoFeed();
   const likeMutation = useLikeVideo();
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
@@ -34,7 +54,10 @@ export default function FeedScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  const videos = data?.pages.flatMap((page) => page.items) ?? [];
+  const videos = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data]
+  );
 
   const handleViewableItemChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -57,43 +80,48 @@ export default function FeedScreen() {
   const handleAddToCart = (video: VideoFeedItem) => {
     if (!video.dish) return;
 
-    addItem({
-      dish: {
-        dish_id: video.dish.id,
-        name: video.dish.name,
-        price: video.dish.price,
-        picture: video.dish.picture,
-        chefId: 0, // Will be fetched from backend
-        description: video.dish.description,
-        type: "",
-        ingredients: "",
-        availability_status: "available",
-        createdAt: "",
-        updatedAt: "",
-      },
-      quantity: 1,
-      preferences: "",
-    });
+    const dish: Dish = {
+      dish_id: video.dish.id,
+      name: video.dish.name,
+      price: video.dish.price,
+      picture: video.dish.picture,
+      chefId: video.author.id,
+      description: video.dish.description,
+      type: "main",
+      ingredients: "",
+      availability_status: "available",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-    showMessage({
-      message: `${video.dish.name} добавлено в корзину!`,
-      type: "success",
-      icon: "success",
-    });
+    const result = addItem(dish, 1, "");
+
+    if (result.alreadyExists) {
+      showMessage({
+        message: `${video.dish.name} уже в корзине`,
+        description: "Измените количество в корзине",
+        type: "info",
+        icon: "info",
+      });
+    } else {
+      showMessage({
+        message: `${video.dish.name} добавлено в корзину!`,
+        type: "success",
+        icon: "success",
+      });
+    }
   };
 
   const renderVideo = ({ item, index }: { item: VideoFeedItem; index: number }) => {
-    const isActive = index === activeIndex;
+    const isActive = isFocused && index === activeIndex;
 
     return (
-      <View style={styles.videoContainer}>
+      <View style={[styles.videoContainer, { height: PAGE_HEIGHT }]}>
         <VideoPlayer uri={item.url} isActive={isActive} />
 
-        {/* Video Info Overlay */}
         <View style={styles.overlay}>
           {/* Right Side Actions */}
-          <View style={styles.actions}>
-            {/* Like Button */}
+          <View style={[styles.actions, { bottom: bottomLift + 80 }]}>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item)}
@@ -107,13 +135,11 @@ export default function FeedScreen() {
               <Text style={styles.actionText}>{item.stats.likes}</Text>
             </TouchableOpacity>
 
-            {/* Views */}
             <View style={styles.actionButton}>
               <Ionicons name="eye-outline" size={32} color="#fff" />
               <Text style={styles.actionText}>{item.stats.views}</Text>
             </View>
 
-            {/* Add to Cart Button (if dish linked) */}
             {item.dish && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.cartButton]}
@@ -127,8 +153,7 @@ export default function FeedScreen() {
           </View>
 
           {/* Bottom Info */}
-          <View style={styles.bottomInfo}>
-            {/* Author */}
+          <View style={[styles.bottomInfo, { bottom: bottomLift - 40}]}>
             <View style={styles.authorRow}>
               {item.author.avatar ? (
                 <Image source={{ uri: item.author.avatar }} style={styles.avatar} />
@@ -143,15 +168,19 @@ export default function FeedScreen() {
               )}
             </View>
 
-            {/* Description */}
-            {item.description && (
+            {item.description ? (
               <Text style={styles.description} numberOfLines={2}>
                 {item.description}
               </Text>
-            )}
+            ) : null}
 
-            {/* Dish Info (if linked) */}
-            {item.dish && (
+            {/* Spacer под pinned-banner, чтобы текст не залезал под него */}
+            {item.dish ? <View style={{ height: 92 }} /> : null}
+          </View>
+
+          {/* Dish banner pinned above tabbar */}
+          {item.dish && (
+            <View style={[styles.dishBannerPinned, { bottom: bottomLift - 20 }]}>
               <View style={styles.dishBanner}>
                 {item.dish.picture && (
                   <Image source={{ uri: item.dish.picture }} style={styles.dishImage} />
@@ -162,6 +191,7 @@ export default function FeedScreen() {
                   </Text>
                   <Text style={styles.dishPrice}>{Number(item.dish.price)} ₸</Text>
                 </View>
+
                 <TouchableOpacity
                   style={styles.addButton}
                   onPress={() => handleAddToCart(item)}
@@ -170,8 +200,8 @@ export default function FeedScreen() {
                   <Ionicons name="add" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -197,7 +227,7 @@ export default function FeedScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
         ref={flatListRef}
         data={videos}
@@ -205,20 +235,23 @@ export default function FeedScreen() {
         keyExtractor={(item) => item.id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToInterval={SCREEN_HEIGHT}
+        snapToInterval={PAGE_HEIGHT}
         snapToAlignment="start"
         decelerationRate="fast"
         onViewableItemsChanged={handleViewableItemChanged}
         viewabilityConfig={viewabilityConfig}
+        getItemLayout={(_, index) => ({
+          length: PAGE_HEIGHT,
+          offset: PAGE_HEIGHT * index,
+          index,
+        })}
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
-          }
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           isFetchingNextPage ? (
-            <View style={styles.footer}>
+            <View style={[styles.footer, { height: PAGE_HEIGHT }]}>
               <ActivityIndicator size="small" color={c.primary} />
             </View>
           ) : null
@@ -229,40 +262,23 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 16,
-  },
-  videoContainer: {
-    height: SCREEN_HEIGHT,
-    width: "100%",
-  },
+  container: { flex: 1, backgroundColor: "#000" },
+  centered: { justifyContent: "center", alignItems: "center" },
+  emptyText: { fontSize: 16, marginTop: 16 },
+
+  videoContainer: { width: "100%" },
+
   overlay: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "space-between",
+    top: 0, left: 0, right: 0, bottom: 0,
   },
+
   actions: {
     position: "absolute",
     right: 12,
-    bottom: 100,
     gap: 24,
   },
-  actionButton: {
-    alignItems: "center",
-    gap: 4,
-  },
+  actionButton: { alignItems: "center", gap: 4 },
   cartButton: {
     backgroundColor: "rgba(0,0,0,0.5)",
     padding: 12,
@@ -276,24 +292,20 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+
   bottomInfo: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     padding: 16,
-    paddingBottom: 40,
     gap: 12,
   },
-  authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 2, borderColor: "#fff",
+    alignItems: "center", justifyContent: "center",
   },
   authorName: {
     color: "#fff",
@@ -311,44 +323,30 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+
+  dishBannerPinned: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+  },
   dishBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: "rgba(0,0,0,0.75)",
     borderRadius: 12,
     padding: 12,
     gap: 12,
   },
-  dishImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-  },
-  dishInfo: {
-    flex: 1,
-  },
-  dishName: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  dishPrice: {
-    color: "#4CAF50",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  dishImage: { width: 50, height: 50, borderRadius: 8 },
+  dishInfo: { flex: 1 },
+  dishName: { color: "#fff", fontSize: 15, fontWeight: "700", marginBottom: 4 },
+  dishPrice: { color: "#4CAF50", fontSize: 16, fontWeight: "700" },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: "#FF4458",
     alignItems: "center",
     justifyContent: "center",
   },
-  footer: {
-    height: SCREEN_HEIGHT,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
+  footer: { justifyContent: "center", alignItems: "center" },
 });

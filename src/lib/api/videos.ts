@@ -48,6 +48,17 @@ export const getVideoFeed = async (params?: {
   return res.data;
 };
 
+export const getVideosByAuthor = async (params: {
+  authorId: number;
+  limit?: number;
+  cursor?: string;
+}): Promise<VideoFeedResponse> => {
+  const res = await apiClient.get<VideoFeedResponse>(`/v1/videos/author/${params.authorId}`, {
+    params: { limit: params.limit, cursor: params.cursor },
+  });
+  return res.data;
+};
+
 export const likeVideo = async (videoId: string) => {
   const res = await apiClient.post(`/v1/videos/${videoId}/like`);
   return res.data;

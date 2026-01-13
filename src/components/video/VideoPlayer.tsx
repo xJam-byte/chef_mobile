@@ -44,9 +44,9 @@ export default function VideoPlayer({ uri, isActive, onPlaybackStatusUpdate }: V
   useEffect(() => {
     if (!player) return;
 
-    const subscription = player.addListener("playingChange", (newIsPlaying) => {
-      setIsPlaying(newIsPlaying);
-      onPlaybackStatusUpdate?.(newIsPlaying);
+    const subscription = player.addListener("playingChange", (event) => {
+      setIsPlaying(event.isPlaying);
+      onPlaybackStatusUpdate?.(event.isPlaying);
     });
 
     return () => {

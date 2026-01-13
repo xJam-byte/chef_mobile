@@ -2,25 +2,22 @@
  * Cart Screen
  */
 
-import React, { useContext } from "react";
+import React from "react";
 import { View, Text, StyleSheet, FlatList, Alert } from "react-native";
 import { showMessage } from "react-native-flash-message";
 import { CartItem } from "../../components/features";
 import { Button } from "../../components/ui";
-import { useCreateOrder, useProfile } from "../../lib/hooks";
-import { CartContext } from "../../context/CartContext";
+import { useCreateOrder, useProfile, useCart } from "../../lib/hooks";
 import { useColors } from "../../lib/theme";
 
 const CartScreen = () => {
   const c = useColors();
-  const cartContext = useContext(CartContext);
+  const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
   const { data: profile } = useProfile();
   const createOrderMutation = useCreateOrder();
 
-  if (!cartContext) return null;
-
-  const { items, updateQuantity, removeItem, clearCart, totalPrice } =
-    cartContext;
+  console.log("[CartScreen] Items count:", items.length);
+  console.log("[CartScreen] Items:", items);
 
   const handleOrder = async () => {
     if (!profile?.user_id) {

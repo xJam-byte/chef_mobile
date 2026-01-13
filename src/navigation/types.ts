@@ -27,6 +27,7 @@ export type RootStackParamList = {
   AddDish: undefined;
   AddVideo: undefined;
   AddressManagement: undefined;
+  VideoViewer: { video: any };
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> = StackScreenProps<

@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Avatar, StarRating, Spinner, Card } from "../../components/ui";
-import { useChef, useChefDishes } from "../../lib/hooks";
+import { useChef, useChefDishes, useVideosByAuthor } from "../../lib/hooks";
 import { API_BASE_URL } from "../../lib/constants";
 import type { RootStackScreenProps } from "../../navigation/types";
 import { useColors } from "../../lib/theme";
@@ -30,11 +30,9 @@ const ChefDetailScreen = ({
 
   const dishes = dishesData?.data ?? [];
 
-  // Mock video data (would come from API)
-  const mockVideos = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    thumbnail: `https://picsum.photos/200/200?random=${i + 100}`,
-  }));
+  // Fetch chef's videos from API
+  const { data: videosData } = useVideosByAuthor(chef?.users?.user_id);
+  const videos = videosData?.pages.flatMap((page) => page.items) ?? [];
 
   if (isLoadingChef) return <Spinner fullScreen />;
 
@@ -132,7 +130,7 @@ const ChefDetailScreen = ({
               { color: activeTab === "videos" ? c.primary : c.textMuted },
             ]}
           >
-            Видео ({mockVideos.length})
+            Видео ({videos.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -190,26 +188,35 @@ const ChefDetailScreen = ({
         // Videos Grid (Instagram-style)
         <View style={styles.contentSection}>
           <View style={styles.videoGrid}>
-            {mockVideos.map((video) => (
-              <TouchableOpacity
-                key={video.id}
-                style={styles.videoItem}
-                activeOpacity={0.8}
-                onPress={() => {
-                  console.log("Video clicked:", video.id);
-                }}
-              >
-                <Image
-                  source={{ uri: video.thumbnail }}
-                  style={styles.videoThumbnail}
-                  resizeMode="cover"
-                />
-                {/* Play icon overlay */}
-                <View style={styles.playOverlay}>
-                  <Ionicons name="play-circle" size={32} color="#fff" style={{ opacity: 0.9 }} />
-                </View>
-              </TouchableOpacity>
-            ))}
+            {videos.length > 0 ? (
+              videos.map((video) => (
+                <TouchableOpacity
+                  key={video.id}
+                  style={styles.videoItem}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    navigation.navigate("VideoViewer", { video });
+                  }}
+                >
+                  <Image
+                    source={{ uri: video.posterUrl || video.url }}
+                    style={styles.videoThumbnail}
+                    resizeMode="cover"
+                  />
+                  {/* Play icon overlay */}
+                  <View style={styles.playOverlay}>
+                    <Ionicons name="play-circle" size={32} color="#fff" style={{ opacity: 0.9 }} />
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="videocam-outline" size={48} color={c.textMuted} />
+                <Text style={[styles.emptyText, { color: c.textSecondary }]}>
+                  Повар пока не добавил видео
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       )}

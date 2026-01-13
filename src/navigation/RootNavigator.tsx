@@ -17,6 +17,7 @@ import DishDetailScreen from "../screens/detail/DishDetailScreen";
 import AddDishScreen from "../screens/chef/AddDishScreen";
 import AddVideoScreen from "../screens/chef/AddVideoScreen";
 import AddressManagementScreen from "../screens/settings/AddressManagementScreen";
+import VideoViewerScreen from "../screens/video/VideoViewerScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -87,6 +88,11 @@ export default function RootNavigator() {
                 name="AddressManagement"
                 component={AddressManagementScreen}
                 options={{ headerShown: true, title: "Мои адреса" }}
+              />
+              <Stack.Screen
+                name="VideoViewer"
+                component={VideoViewerScreen}
+                options={{ headerShown: false, presentation: "modal" }}
               />
             </>
           ) : (
