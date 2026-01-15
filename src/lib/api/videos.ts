@@ -21,10 +21,12 @@ export interface VideoFeedItem {
     name: string;
     avatar?: string;
     role: string;
+    chefId?: number | null;
   };
   dish?: {
     id: number;
     name: string;
+    chefId: number;
     price: number;
     picture?: string;
     description?: string;

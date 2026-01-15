@@ -22,29 +22,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addItem = useCallback((dish: Dish, quantity: number = 1, preferences: string = ""): { success: boolean; alreadyExists: boolean } => {
-    console.log("[Cart] Adding item:", dish.name, "x", quantity);
+    // console.log("[Cart] Adding item:", dish.name, "x", quantity);
     
     // Check if item already exists in current state
     const existingIndex = items.findIndex((item) => item.dish.dish_id === dish.dish_id);
     
     if (existingIndex !== -1) {
-      console.log("[Cart] Item already in cart, not adding");
+      // console.log("[Cart] Item already in cart, not adding");
       return { success: false, alreadyExists: true };
     }
     
     // Add new item
-    console.log("[Cart] Adding new item");
+    // console.log("[Cart] Adding new item");
     setItems((prev) => [...prev, { dish, quantity, preferences }]);
     return { success: true, alreadyExists: false };
   }, [items]);
 
   const removeItem = useCallback((dishId: number) => {
-    console.log("[Cart] Removing item:", dishId);
+    // console.log("[Cart] Removing item:", dishId);
     setItems((prev) => prev.filter((item) => item.dish.dish_id !== dishId));
   }, []);
 
   const updateQuantity = useCallback((dishId: number, quantity: number) => {
-    console.log("[Cart] Updating quantity:", dishId, quantity);
+    // console.log("[Cart] Updating quantity:", dishId, quantity);
     if (quantity <= 0) {
       removeItem(dishId);
       return;
@@ -57,7 +57,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [removeItem]);
 
   const updatePreferences = useCallback((dishId: number, preferences: string) => {
-    console.log("[Cart] Updating preferences:", dishId);
+    // console.log("[Cart] Updating preferences:", dishId);
     setItems((prev) =>
       prev.map((item) =>
         item.dish.dish_id === dishId ? { ...item, preferences } : item
@@ -66,7 +66,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const clearCart = useCallback(() => {
-    console.log("[Cart] Clearing cart");
+    // console.log("[Cart] Clearing cart");
     setItems([]);
   }, []);
 

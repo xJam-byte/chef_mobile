@@ -14,6 +14,16 @@ export const registration = async (data: RegisterDto): Promise<AuthResponse> => 
   return res.data;
 };
 
+export const sendSms = async (phone_number: string): Promise<{ message: string }> => {
+  const res = await apiClient.post("/auth/send-sms", { phone_number });
+  return res.data;
+};
+
+export const verifySms = async (data: { phone_number: string; code: string }): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/verify-sms", data);
+  return res.data;
+};
+
 export const me = async (): Promise<User> => {
   const res = await apiClient.get<User>("/auth/me");
   return res.data;

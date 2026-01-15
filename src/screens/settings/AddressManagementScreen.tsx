@@ -15,6 +15,7 @@ import {
     ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
 import { useMyAddresses, useCreateAddress, useProfile } from "../../lib/hooks";
 import { showMessage } from "react-native-flash-message";
@@ -22,6 +23,7 @@ import { Card } from "../../components/ui";
 
 export default function AddressManagementScreen() {
     const c = useColors();
+    const { t } = useTranslation();
     const { data: profile } = useProfile();
     const userId = profile?.user_id;
 
@@ -35,12 +37,12 @@ export default function AddressManagementScreen() {
 
     const handleAddAddress = async () => {
         if (!street.trim() || !city.trim() || !postalCode.trim()) {
-            showMessage({ message: "Заполните все поля", type: "warning" });
+            showMessage({ message: t('addressManagement.fillAllFields'), type: "warning" });
             return;
         }
 
         if (!userId) {
-            showMessage({ message: "Пользователь не найден", type: "danger" });
+            showMessage({ message: t('addressManagement.userNotFound'), type: "danger" });
             return;
         }
 
@@ -52,7 +54,7 @@ export default function AddressManagementScreen() {
                 postalCode: postalCode.trim(),
             });
 
-            showMessage({ message: "Адрес добавлен!", type: "success" });
+            showMessage({ message: t('addressManagement.addressAdded'), type: "success" });
             setIsAdding(false);
             setStreet("");
             setCity("");
@@ -60,7 +62,7 @@ export default function AddressManagementScreen() {
         } catch (error: any) {
             console.error("Error creating address:", error);
             showMessage({
-                message: error?.response?.data?.message || "Ошибка при добавлении адреса",
+                message: error?.response?.data?.message || t('addressManagement.errorAddingAddress'),
                 type: "danger",
             });
         }
@@ -81,7 +83,7 @@ export default function AddressManagementScreen() {
                 {addresses && addresses.length > 0 ? (
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>
-                            Ваши адреса
+                            {t('addressManagement.yourAddresses')}
                         </Text>
                         {addresses.map((address: any) => (
                             <Card key={address.address_id} style={styles.addressCard}>
@@ -95,7 +97,7 @@ export default function AddressManagementScreen() {
                                     {address.street}
                                 </Text>
                                 <Text style={[styles.addressText, { color: c.textMuted }]}>
-                                    Индекс: {address.postal_code}
+                                    {t('addressManagement.postalCode')}: {address.postal_code}
                                 </Text>
                             </Card>
                         ))}
@@ -104,7 +106,7 @@ export default function AddressManagementScreen() {
                     <View style={styles.emptyState}>
                         <Ionicons name="location-outline" size={64} color={c.textMuted} />
                         <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                            У вас пока нет сохраненных адресов
+                            {t('addressManagement.noAddresses')}
                         </Text>
                     </View>
                 )}
@@ -117,21 +119,21 @@ export default function AddressManagementScreen() {
                         activeOpacity={0.8}
                     >
                         <Ionicons name="add-circle" size={20} color="#fff" />
-                        <Text style={styles.addButtonText}>Добавить адрес</Text>
+                        <Text style={styles.addButtonText}>{t('addressManagement.addAddress')}</Text>
                     </TouchableOpacity>
                 ) : (
                     <Card style={styles.formCard}>
                         <Text style={[styles.formTitle, { color: c.text }]}>
-                            Новый адрес
+                            {t('addressManagement.newAddress')}
                         </Text>
 
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.text }]}>
-                                Улица и номер дома *
+                                {t('addressManagement.street')} *
                             </Text>
                             <TextInput
                                 style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                                placeholder="Например: Абая 150"
+                                placeholder={t('addressManagement.streetPlaceholder')}
                                 placeholderTextColor={c.textMuted}
                                 value={street}
                                 onChangeText={setStreet}
@@ -140,11 +142,11 @@ export default function AddressManagementScreen() {
 
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.text }]}>
-                                Город *
+                                {t('addressManagement.city')} *
                             </Text>
                             <TextInput
                                 style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                                placeholder="Например: Алматы"
+                                placeholder={t('addressManagement.cityPlaceholder')}
                                 placeholderTextColor={c.textMuted}
                                 value={city}
                                 onChangeText={setCity}
@@ -178,7 +180,7 @@ export default function AddressManagementScreen() {
                                 disabled={createAddressMutation.isPending}
                             >
                                 <Text style={[styles.cancelButtonText, { color: c.text }]}>
-                                    Отмена
+                                    {t('common.cancel')}
                                 </Text>
                             </TouchableOpacity>
 
@@ -191,7 +193,7 @@ export default function AddressManagementScreen() {
                                 {createAddressMutation.isPending ? (
                                     <ActivityIndicator color="#fff" size="small" />
                                 ) : (
-                                    <Text style={styles.saveButtonText}>Сохранить</Text>
+                                    <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                                 )}
                             </TouchableOpacity>
                         </View>

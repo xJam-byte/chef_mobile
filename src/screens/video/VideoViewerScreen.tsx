@@ -27,13 +27,15 @@ export default function VideoViewerScreen({ route, navigation }: any) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const { video }: { video: VideoFeedItem } = route.params;
+  const tabBarHeight = 80;
 
   const likeMutation = useLikeVideo();
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
 
   const PAGE_HEIGHT = WINDOW_HEIGHT;
-  const bottomLift = insets.bottom;
+  const bottomLift = tabBarHeight + insets.bottom;
+  
 
   const handleLike = () => {
     if (video.likedByMe) {
@@ -78,6 +80,12 @@ export default function VideoViewerScreen({ route, navigation }: any) {
     }
   };
 
+  const handleChefPress = () => {
+    if (video.author.chefId) {
+      navigation.navigate("ChefDetail", { chefId: video.author.chefId });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={[]}>
       <View style={[styles.videoContainer, { height: PAGE_HEIGHT }]}>
@@ -94,7 +102,24 @@ export default function VideoViewerScreen({ route, navigation }: any) {
 
         <View style={styles.overlay}>
           {/* Right Side Actions */}
-          <View style={[styles.actions, { bottom: bottomLift + 80 }]}>
+          <View style={[styles.actions, { bottom: bottomLift - 6 }]}>
+            {/* Chef Avatar - Top */}
+            <TouchableOpacity
+              style={styles.chefAvatarButton}
+              onPress={handleChefPress}
+              activeOpacity={0.8}
+            >
+              {video.author.avatar ? (
+                <Image source={{ uri: video.author.avatar }} style={styles.chefAvatar} />
+              ) : (
+                <View style={[styles.chefAvatar, { backgroundColor: "#FF8C42" }]}>
+                  <Text style={styles.chefAvatarText}>
+                    {video.author.name?.charAt(0).toUpperCase() || "A"}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.actionButton}
               onPress={handleLike}
@@ -105,74 +130,62 @@ export default function VideoViewerScreen({ route, navigation }: any) {
                 size={32}
                 color={video.likedByMe ? "#FF4458" : "#fff"}
               />
-              <Text style={styles.actionText}>{video.stats.likes}</Text>
+              <Text style={styles.actionText}>
+                {video.stats.likes >= 1000 
+                  ? `${(video.stats.likes / 1000).toFixed(1)}k`
+                  : video.stats.likes}
+              </Text>
             </TouchableOpacity>
 
-            <View style={styles.actionButton}>
-              <Ionicons name="eye-outline" size={32} color="#fff" />
-              <Text style={styles.actionText}>{video.stats.views}</Text>
-            </View>
+            {/* Share Button */}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                showMessage({
+                  message: "Поделиться",
+                  description: "Функция скоро будет доступна",
+                  type: "info",
+                  icon: "info",
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share-outline" size={30} color="#fff" />
+              <Text style={styles.actionText}>Поделиться</Text>
+            </TouchableOpacity>
 
-            {video.dish && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cartButton]}
-                onPress={handleAddToCart}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="cart" size={32} color="#fff" />
-                <Text style={styles.actionText}>В корзину</Text>
-              </TouchableOpacity>
-            )}
+            {/* Mute/Unmute Button */}
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="volume-mute-outline" size={30} color="#fff" />
+            </TouchableOpacity>
           </View>
 
-          {/* Bottom Info */}
-          <View style={[styles.bottomInfo, { bottom: bottomLift + 20 }]}>
-            <View style={styles.authorRow}>
-              {video.author.avatar ? (
-                <Image source={{ uri: video.author.avatar }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-                  <Ionicons name="person" size={20} color="#fff" />
-                </View>
-              )}
-              <Text style={styles.authorName}>{video.author.name}</Text>
-              {video.author.role === "chef" && (
-                <Ionicons name="checkmark-circle" size={16} color={c.primary} />
-              )}
-            </View>
-
-            {video.description ? (
-              <Text style={styles.description} numberOfLines={2}>
-                {video.description}
-              </Text>
-            ) : null}
-
-            {/* Spacer под pinned-banner, чтобы текст не залезал под него */}
-            {video.dish ? <View style={{ height: 92 }} /> : null}
-          </View>
-
-          {/* Dish banner pinned above bottom */}
+          {/* Bottom Info - New Design */}
           {video.dish && (
-            <View style={[styles.dishBannerPinned, { bottom: bottomLift + 20 }]}>
-              <View style={styles.dishBanner}>
-                {video.dish.picture && (
-                  <Image source={{ uri: video.dish.picture }} style={styles.dishImage} />
-                )}
-                <View style={styles.dishInfo}>
-                  <Text style={styles.dishName} numberOfLines={1}>
-                    {video.dish.name}
-                  </Text>
-                  <Text style={styles.dishPrice}>{Number(video.dish.price)} ₸</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={handleAddToCart}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="add" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
+            <View style={[styles.newBottomInfo, { bottom: bottomLift - 26 }]}>
+              {/* Chef Name */}
+              <Text style={styles.newChefName}>{video.author.name || "Повар"}</Text>
+              
+              {/* Dish Name */}
+              <Text style={styles.newDishName} numberOfLines={1}>
+                {video.dish.name}
+              </Text>
+              
+              {/* Dish Price in Orange */}
+              <Text style={styles.newDishPrice}>{Number(video.dish.price)} ₸</Text>
+              
+              {/* Large Orange Order Button */}
+              <TouchableOpacity
+                style={styles.orderButton}
+                onPress={handleAddToCart}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="cart-outline" size={20} color="#fff" />
+                <Text style={styles.orderButtonText}>Заказать</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -283,4 +296,79 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+  
+    chefAvatarButton: {
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    chefAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      borderWidth: 2,
+      borderColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    chefAvatarText: {
+      color: "#fff",
+      fontSize: 20,
+      fontWeight: "700",
+    },
+  
+    // New Bottom Info Section
+    newBottomInfo: {
+      position: "absolute",
+      left: 16,
+      right: 80,
+      paddingVertical: 16,
+    },
+    newChefName: {
+      color: "#fff",
+      fontSize: 15,
+      fontWeight: "600",
+      marginBottom: 6,
+      textShadowColor: "rgba(0,0,0,0.8)",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
+    },
+    newDishName: {
+      color: "#fff",
+      fontSize: 18,
+      fontWeight: "700",
+      marginBottom: 6,
+      textShadowColor: "rgba(0,0,0,0.8)",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
+    },
+    newDishPrice: {
+      color: "#FF8C42",
+      fontSize: 22,
+      fontWeight: "800",
+      marginBottom: 12,
+      textShadowColor: "rgba(0,0,0,0.8)",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
+    },
+    orderButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FF8C42",
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      gap: 8,
+      shadowColor: "#FF8C42",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    orderButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "700",
+    },
+
+});  

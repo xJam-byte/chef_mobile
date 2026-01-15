@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
 import { AuthScreenProps } from "../../navigation/types";
 import { UserRole } from "../../lib/types";
@@ -19,15 +20,29 @@ export default function RoleSelectionScreen({
   navigation,
 }: AuthScreenProps<"RoleSelection">) {
   const c = useColors();
+  const {t} = useTranslation();
   const queryClient = useQueryClient();
   const becomeChefMutation = useBecomeChef();
   const [loading, setLoading] = useState(false);
 
   const profile = queryClient.getQueryData<any>(["profile"]);
 
+  // If profile is not available, try to refetch it
+  useEffect(() => {
+    if (!profile) {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    }
+  }, [profile, queryClient]);
+
   const selectRole = async (role: UserRole) => {
-    if (!profile?.user_id) {
-      Alert.alert("Ошибка", "Профиль пользователя не найден");
+    // Get the latest profile data
+    const latestProfile = queryClient.getQueryData<any>(["profile"]);
+    
+    if (!latestProfile?.user_id) {
+      Alert.alert(
+        t('common.error'), 
+        t('roleSelection.errorProfileNotFound')
+      );
       return;
     }
 
@@ -37,7 +52,7 @@ export default function RoleSelectionScreen({
       if (role === "chef") {
         // Use existing becomeChef endpoint
         await becomeChefMutation.mutateAsync({
-          userId: profile.user_id,
+          userId: latestProfile.user_id,
           bio: "",
         });
       }
@@ -53,8 +68,8 @@ export default function RoleSelectionScreen({
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Не удалось установить роль";
-      Alert.alert("Ошибка", message);
+        t('roleSelection.errorSetRole');
+      Alert.alert(t('common.error'), message);
       setLoading(false);
     }
   };
@@ -76,10 +91,10 @@ export default function RoleSelectionScreen({
             <Ionicons name="person-add" size={32} color="#fff" />
           </View>
           <Text style={[styles.title, { color: textDark }]}>
-            Выбери свою роль
+            {t('roleSelection.chooseRole')}
           </Text>
           <Text style={[styles.subtitle, { color: textMuted }]}>
-            Ты можешь изменить роль позже в настройках профиля
+            {t('roleSelection.changeRoleLater')}
           </Text>
         </View>
 
@@ -113,11 +128,10 @@ export default function RoleSelectionScreen({
 
               <View style={styles.cardContent}>
                 <Text style={[styles.cardTitle, { color: textDark }]}>
-                  Пользователь
+                  {t('roleSelection.customer')}
                 </Text>
                 <Text style={[styles.cardText, { color: textMuted }]}>
-                  Смотри видео, выбирай блюда от лучших поваров и заказывай с
-                  доставкой
+                  {t('roleSelection.customerDescription')}
                 </Text>
               </View>
 
@@ -159,11 +173,10 @@ export default function RoleSelectionScreen({
 
               <View style={styles.cardContent}>
                 <Text style={[styles.cardTitle, { color: textDark }]}>
-                  Шеф-повар
+                  {t('roleSelection.chef')}
                 </Text>
                 <Text style={[styles.cardText, { color: textMuted }]}>
-                  Публикуй видео своих блюд, принимай заказы и развивай свой
-                  бизнес
+                  {t('roleSelection.chefFullDescription')}
                 </Text>
               </View>
 
@@ -183,19 +196,19 @@ export default function RoleSelectionScreen({
           <View style={styles.feature}>
             <Ionicons name="shield-checkmark" size={20} color={primaryColor} />
             <Text style={[styles.featureText, { color: textMuted }]}>
-              Безопасно
+              {t('roleSelection.features.secure')}
             </Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="flash" size={20} color={primaryColor} />
             <Text style={[styles.featureText, { color: textMuted }]}>
-              Быстро
+              {t('roleSelection.features.fast')}
             </Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="star" size={20} color={primaryColor} />
             <Text style={[styles.featureText, { color: textMuted }]}>
-              Надежно
+              {t('roleSelection.features.reliable')}
             </Text>
           </View>
         </View>
@@ -208,7 +221,7 @@ export default function RoleSelectionScreen({
               <Ionicons name="hourglass" size={32} color={primaryColor} />
             </Animated.View>
             <Text style={[styles.loadingText, { color: textDark }]}>
-              Настраиваем профиль...
+              {t('roleSelection.settingUpProfile')}
             </Text>
           </View>
         </View>

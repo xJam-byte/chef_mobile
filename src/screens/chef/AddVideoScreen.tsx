@@ -73,7 +73,6 @@ export default function AddVideoScreen({ navigation }: any) {
       
       navigation.goBack();
     } catch (error: any) {
-      console.error("Error uploading video:", error);
       showMessage({
         message: error?.message || "Ошибка при загрузке видео",
         type: "danger",
@@ -100,7 +99,6 @@ export default function AddVideoScreen({ navigation }: any) {
         showMessage({ message: "Видео выбрано", type: "success" });
       }
     } catch (error) {
-      console.error("Error picking video:", error);
       Alert.alert("Ошибка", "Не удалось выбрать видео");
     }
   };

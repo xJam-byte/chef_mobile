@@ -1,4 +1,5 @@
 import React from "react";
+import { View, TouchableOpacity } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { MainTabParamList } from "./types";
@@ -81,12 +82,23 @@ export const MainTabs = () => {
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{
+        options={({ navigation }) => ({
           title: "Профиль",
+          headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" color={color} size={size} />
           ),
-        }}
+          headerRight: () => (
+            <View style={{ flexDirection: "row", gap: 16, paddingRight: 16 }}>
+              <TouchableOpacity onPress={() => navigation.navigate("Cart")} activeOpacity={0.7}>
+                <Ionicons name="cart-outline" size={24} color={c.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => (navigation as any).navigate("Settings")} activeOpacity={0.7}>
+                <Ionicons name="settings-outline" size={24} color={c.text} />
+              </TouchableOpacity>
+            </View>
+          ),
+        })}
       />
     </Tab.Navigator>
   );

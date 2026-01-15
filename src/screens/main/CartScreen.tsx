@@ -5,6 +5,7 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList, Alert } from "react-native";
 import { showMessage } from "react-native-flash-message";
+import { useTranslation } from "react-i18next";
 import { CartItem } from "../../components/features";
 import { Button } from "../../components/ui";
 import { useCreateOrder, useProfile, useCart } from "../../lib/hooks";
@@ -12,21 +13,20 @@ import { useColors } from "../../lib/theme";
 
 const CartScreen = () => {
   const c = useColors();
+  const { t } = useTranslation();
   const { items, updateQuantity, removeItem, clearCart, totalPrice } = useCart();
   const { data: profile } = useProfile();
   const createOrderMutation = useCreateOrder();
 
-  console.log("[CartScreen] Items count:", items.length);
-  console.log("[CartScreen] Items:", items);
 
   const handleOrder = async () => {
     if (!profile?.user_id) {
-      Alert.alert("Ошибка", "Не удалось определить пользователя");
+      Alert.alert(t('common.error'), t('cart.errorUserNotFound'));
       return;
     }
 
     if (items.length === 0) {
-      Alert.alert("Корзина пуста", "Добавьте блюда в корзину");
+      Alert.alert(t('cart.empty'), t('cart.errorEmptyCart'));
       return;
     }
 
@@ -45,13 +45,13 @@ const CartScreen = () => {
 
       clearCart();
       showMessage({
-        message: "Заказ оформлен!",
-        description: "Повар получит уведомление о вашем заказе",
-        type: "success",
+        message: t('cart.orderPlaced'),
+        description: t('cart.chefWillBeNotified'),
+ type: "success",
         icon: "success",
       });
     } catch (error: any) {
-      Alert.alert("Ошибка", "Не удалось оформить заказ");
+      Alert.alert(t('common.error'), t('cart.errorPlaceOrder'));
     }
   };
 
@@ -60,10 +60,10 @@ const CartScreen = () => {
       <View style={[styles.emptyContainer, { backgroundColor: c.background }]}>
         <Text style={styles.emptyIcon}>🛒</Text>
         <Text style={[styles.emptyTitle, { color: c.text }]}>
-          Корзина пуста
+          {t('cart.empty')}
         </Text>
         <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          Добавьте блюда из меню
+          {t('cart.emptyDescription')}
         </Text>
       </View>
     );
@@ -96,7 +96,7 @@ const CartScreen = () => {
       >
         <View style={styles.totalRow}>
           <Text style={[styles.totalLabel, { color: c.textSecondary }]}>
-            Итого:
+            {t('cart.totalLabel')}
           </Text>
           <Text style={[styles.totalValue, { color: c.primary }]}>
             {totalPrice.toLocaleString()} ₸
@@ -104,7 +104,7 @@ const CartScreen = () => {
         </View>
 
         <Button
-          title="Оформить заказ"
+          title={t('cart.checkout')}
           onPress={handleOrder}
           loading={createOrderMutation.isPending}
           fullWidth

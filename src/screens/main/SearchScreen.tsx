@@ -13,16 +13,16 @@ import {
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
-import { useDishes, useChefs } from "../../lib/hooks";
-import type { Dish } from "../../lib/types";
+import { useChefs } from "../../lib/hooks";
 
 const { width } = Dimensions.get("window");
 const COLUMN_COUNT = 2;
 const CARD_MARGIN = 12;
 const CARD_WIDTH = (width - (COLUMN_COUNT + 1) * CARD_MARGIN) / COLUMN_COUNT;
 
-type TabType = "map" | "menu";
+type TabType = "map" | "chefs";
 
 // Default location - Almaty, Kazakhstan
 const DEFAULT_REGION = {
@@ -34,16 +34,14 @@ const DEFAULT_REGION = {
 
 export default function SearchScreen({ navigation }: any) {
     const c = useColors();
-    const [activeTab, setActiveTab] = useState<TabType>("menu");
+    const { t } = useTranslation();
+    const [activeTab, setActiveTab] = useState<TabType>("chefs");
     const [searchQuery, setSearchQuery] = useState("");
     const [userLocation, setUserLocation] = useState<Region | null>(null);
     const [locationPermission, setLocationPermission] = useState(false);
 
-    // Fetch dishes and chefs
-    const { data: dishesData } = useDishes({ page: 1, limit: 50 });
-    const { data: chefsData } = useChefs({ page: 1, limit: 20 });
-
-    const dishes = dishesData?.data ?? [];
+    // Fetch chefs
+    const { data: chefsData } = useChefs({ page: 1, limit: 50 });
     const chefs = chefsData?.data ?? [];
 
     // Request location permission and get user location
@@ -71,25 +69,23 @@ export default function SearchScreen({ navigation }: any) {
         })();
     }, []);
 
-    // Filter dishes based on search query
-    const filteredDishes = dishes.filter((dish) => {
+    // Filter chefs based on search query
+    const filteredChefs = chefs.filter((chef: any) => {
         if (!searchQuery.trim()) return true;
 
         const query = searchQuery.toLowerCase();
-        return (
-            dish.name.toLowerCase().includes(query) ||
-            dish.description?.toLowerCase().includes(query) ||
-            dish.ingredients?.toLowerCase().includes(query) ||
-            dish.type?.toLowerCase().includes(query)
-        );
+        const name = chef.users?.name?.toLowerCase() || "";
+        const bio = chef.bio?.toLowerCase() || "";
+        
+        return name.includes(query) || bio.includes(query);
     });
 
     // Generate chef markers based on their real addresses
-    // Show all chefs: use real coordinates if available, fallback to user location if not
     const baseLocation = userLocation || DEFAULT_REGION;
     
     const chefMarkers = chefs.map((chef: any, index: number) => {
         const addresses = chef.user?.addresses || [];
+        
         const addressWithCoords = addresses.find((addr: any) => addr.latitude && addr.longitude);
         
         // If chef has real coordinates, use them. Otherwise scatter around user location.
@@ -112,60 +108,64 @@ export default function SearchScreen({ navigation }: any) {
         };
     });
 
-    // Debug: log chef markers info
-    console.log(`Total chefs: ${chefs.length}, Chef markers: ${chefMarkers.length}`);
-    console.log(`Chefs with real addresses: ${chefMarkers.filter(m => m.hasRealAddress).length}`);
+    const renderChefCard = ({ item }: { item: any }) => {
+        const chef = item;
+        const avatarUri = chef.user?.profile_pic;
+        const chefName = chef.user?.name || t('profile.chef');
+        const rating = Number(chef.rating) || 0;
+        
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.chefCard,
+                    { backgroundColor: c.card, borderColor: c.border },
+                ]}
+                onPress={() => navigation.navigate("ChefDetail", { chefId: chef.chef_id })}
+                activeOpacity={0.8}
+            >
+                {/* Chef Avatar */}
+                {avatarUri ? (
+                    <Image
+                        source={{ uri: avatarUri }}
+                        style={styles.chefAvatar}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <View style={[styles.chefAvatarPlaceholder, { backgroundColor: c.primary }]}>
+                        <Ionicons name="person" size={48} color="#fff" />
+                    </View>
+                )}
 
-    const renderDishCard = ({ item }: { item: Dish }) => (
-        <TouchableOpacity
-            style={[
-                styles.dishCard,
-                { backgroundColor: c.card, borderColor: c.border },
-            ]}
-            onPress={() => navigation.navigate("DishDetail", { dishId: item.dish_id })}
-            activeOpacity={0.8}
-        >
-            {item.picture ? (
-                <Image
-                    source={{ uri: item.picture }}
-                    style={styles.dishImage}
-                    resizeMode="cover"
-                />
-            ) : (
-                <View style={[styles.dishImagePlaceholder, { backgroundColor: c.surface }]}>
-                    <Ionicons name="restaurant" size={32} color={c.textMuted} />
-                </View>
-            )}
-
-            <View style={styles.dishInfo}>
-                <Text style={[styles.dishName, { color: c.text }]} numberOfLines={1}>
-                    {item.name}
-                </Text>
-
-                <Text style={[styles.dishType, { color: c.textMuted }]} numberOfLines={1}>
-                    {item.type}
-                </Text>
-
-                <View style={styles.dishFooter}>
-                    <Text style={[styles.dishPrice, { color: c.primary }]}>
-                        {item.price} ₸
+                {/* Chef Info */}
+                <View style={styles.chefInfo}>
+                    <Text style={[styles.chefName, { color: c.text }]} numberOfLines={1}>
+                        {chefName}
                     </Text>
 
-                    <TouchableOpacity
-                        style={[styles.addBtn, { backgroundColor: c.primary }]}
-                        onPress={(e) => {
-                            e.stopPropagation();
-                            // TODO: Add to cart functionality
-                            console.log("Add to cart:", item.dish_id);
-                        }}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="add" size={18} color="#fff" />
-                    </TouchableOpacity>
+                    {/* Rating */}
+                    <View style={styles.ratingRow}>
+                        <Ionicons name="star" size={14} color="#FFD700" />
+                        <Text style={[styles.ratingText, { color: c.textSecondary }]}>
+                            {rating.toFixed(1)}
+                        </Text>
+                    </View>
+
+                    {/* Bio Preview */}
+                    {chef.bio && (
+                        <Text style={[styles.chefBio, { color: c.textMuted }]} numberOfLines={2}>
+                            {chef.bio}
+                        </Text>
+                    )}
+
+                    {/* View Profile Button */}
+                    <View style={[styles.viewButton, { backgroundColor: c.primary }]}>
+                    <Text style={styles.viewButtonText}>{t('search.profile')}</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#fff" />
+                    </View>
                 </View>
-            </View>
-        </TouchableOpacity>
-    );
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -174,7 +174,7 @@ export default function SearchScreen({ navigation }: any) {
                 <Ionicons name="search" size={20} color={c.textMuted} style={styles.searchIcon} />
                 <TextInput
                     style={[styles.searchInput, { color: c.text }]}
-                    placeholder="Поиск по блюдам, ингредиентам..."
+                    placeholder={t('search.searchPlaceholder')}
                     placeholderTextColor={c.textMuted}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -207,30 +207,30 @@ export default function SearchScreen({ navigation }: any) {
                             { color: activeTab === "map" ? c.primary : c.textMuted },
                         ]}
                     >
-                        Карта
+                        {t('search.map')}
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={[
                         styles.tab,
-                        activeTab === "menu" && { borderBottomColor: c.primary, borderBottomWidth: 3 },
+                        activeTab === "chefs" && { borderBottomColor: c.primary, borderBottomWidth: 3 },
                     ]}
-                    onPress={() => setActiveTab("menu")}
+                    onPress={() => setActiveTab("chefs")}
                     activeOpacity={0.7}
                 >
                     <Ionicons
-                        name="grid"
+                        name="people"
                         size={20}
-                        color={activeTab === "menu" ? c.primary : c.textMuted}
+                        color={activeTab === "chefs" ? c.primary : c.textMuted}
                     />
                     <Text
                         style={[
                             styles.tabText,
-                            { color: activeTab === "menu" ? c.primary : c.textMuted },
+                            { color: activeTab === "chefs" ? c.primary : c.textMuted },
                         ]}
                     >
-                        Меню
+                        {t('search.chefs')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -268,25 +268,25 @@ export default function SearchScreen({ navigation }: any) {
                     <View style={[styles.mapInfo, { backgroundColor: c.card }]}>
                         <Ionicons name="information-circle" size={16} color={c.primary} />
                         <Text style={[styles.mapInfoText, { color: c.text }]}>
-                            Нажмите на маркер повара ({chefs.length} на карте)
+                            {t('search.mapInfo', { count: chefs.length })}
                         </Text>
                     </View>
                 </View>
             ) : (
-                // Menu Grid View
+                // Chefs Grid View
                 <FlatList
-                    key="menu-grid"
-                    data={filteredDishes}
-                    renderItem={renderDishCard}
-                    keyExtractor={(item) => item.dish_id.toString()}
+                    key="chefs-grid"
+                    data={filteredChefs}
+                    renderItem={renderChefCard}
+                    keyExtractor={(item) => item.chef_id.toString()}
                     numColumns={COLUMN_COUNT}
-                    contentContainerStyle={styles.dishGrid}
+                    contentContainerStyle={styles.chefGrid}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Ionicons name="search-outline" size={48} color={c.textMuted} />
+                            <Ionicons name="people-outline" size={48} color={c.textMuted} />
                             <Text style={[styles.emptyText, { color: c.textMuted }]}>
-                                {searchQuery ? "Ничего не найдено" : "Нет доступных блюд"}
+                                {searchQuery ? t('search.noResults') : t('search.noChefs')}
                             </Text>
                         </View>
                     }
@@ -374,10 +374,10 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "600",
     },
-    dishGrid: {
+    chefGrid: {
         padding: CARD_MARGIN,
     },
-    dishCard: {
+    chefCard: {
         width: CARD_WIDTH,
         margin: CARD_MARGIN / 2,
         borderRadius: 16,
@@ -386,46 +386,55 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
         elevation: 3,
     },
-    dishImage: {
+    chefAvatar: {
         width: "100%",
         height: 140,
     },
-    dishImagePlaceholder: {
+    chefAvatarPlaceholder: {
         width: "100%",
         height: 140,
         alignItems: "center",
         justifyContent: "center",
     },
-    dishInfo: {
+    chefInfo: {
         padding: 12,
     },
-    dishName: {
-        fontSize: 15,
-        fontWeight: "700",
-        marginBottom: 4,
-    },
-    dishType: {
-        fontSize: 12,
-        marginBottom: 8,
-    },
-    dishFooter: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    dishPrice: {
+    chefName: {
         fontSize: 16,
         fontWeight: "800",
+        marginBottom: 6,
     },
-    addBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+    ratingRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        marginBottom: 8,
+    },
+    ratingText: {
+        fontSize: 13,
+        fontWeight: "600",
+    },
+    chefBio: {
+        fontSize: 12,
+        lineHeight: 16,
+        marginBottom: 12,
+    },
+    viewButton: {
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        gap: 6,
+    },
+    viewButtonText: {
+        color: "#fff",
+        fontSize: 13,
+        fontWeight: "700",
     },
     emptyState: {
         alignItems: "center",

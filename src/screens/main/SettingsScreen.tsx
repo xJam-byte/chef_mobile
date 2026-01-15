@@ -147,11 +147,11 @@ export default function SettingsScreen({ navigation }: any) {
 
             {/* Addresses Section */}
             <View style={[styles.section, { backgroundColor: c.card }]}>
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Адреса</Text>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>{t('settings.addresses')}</Text>
 
                 <SettingRow
                     icon="location"
-                    title="Мои адреса"
+                    title={t('settings.myAddresses')}
                     onPress={() => navigation.navigate("AddressManagement")}
                 />
             </View>

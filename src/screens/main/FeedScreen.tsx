@@ -18,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useTranslation } from "react-i18next";
 
 import { useColors } from "../../lib/theme";
 import {
@@ -30,19 +31,23 @@ import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
 import type { VideoFeedItem } from "../../lib/api/videos";
 import type { Dish } from "../../lib/types";
+import { useNavigation } from "@react-navigation/native";
+import type { StackNavigationProp } from "@react-navigation/stack";
+import type { RootStackParamList } from "../../navigation/types";
+
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 export default function FeedScreen() {
   const c = useColors();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const isFocused = useIsFocused();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  // Реальная высота "страницы" внутри TabNavigator (чтобы не было бага с первым свайпом)
   const PAGE_HEIGHT = Math.max(1, WINDOW_HEIGHT - tabBarHeight);
 
-  // Поднятие UI над таббаром
   const bottomLift = tabBarHeight + insets.bottom;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -98,18 +103,31 @@ export default function FeedScreen() {
 
     if (result.alreadyExists) {
       showMessage({
-        message: `${video.dish.name} уже в корзине`,
-        description: "Измените количество в корзине",
+        message: t('feed.alreadyInCart', { dishName: video.dish.name }),
+        description: t('feed.changeQuantityInCart'),
         type: "info",
         icon: "info",
       });
     } else {
       showMessage({
-        message: `${video.dish.name} добавлено в корзину!`,
+        message: t('feed.addedToCart', { dishName: video.dish.name }),
         type: "success",
         icon: "success",
       });
     }
+  };
+
+  const handleChefPress = (chefId?: number | null) => {
+    if (!chefId) {
+      showMessage({
+        message: t('feed.profileUnavailable'),
+        description: t('feed.notAChef'),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    navigation.navigate("ChefDetail", { chefId });
   };
 
   const renderVideo = ({ item, index }: { item: VideoFeedItem; index: number }) => {
@@ -121,7 +139,24 @@ export default function FeedScreen() {
 
         <View style={styles.overlay}>
           {/* Right Side Actions */}
-          <View style={[styles.actions, { bottom: bottomLift + 80 }]}>
+          <View style={[styles.actions, { bottom: bottomLift - 6 }]}>
+            {/* Chef Avatar - Top */}
+            <TouchableOpacity
+              style={styles.chefAvatarButton}
+              onPress={() => handleChefPress(item.author.chefId)}
+              activeOpacity={0.8}
+            >
+              {item.author.avatar ? (
+                <Image source={{ uri: item.author.avatar }} style={styles.chefAvatar} />
+              ) : (
+                <View style={[styles.chefAvatar, { backgroundColor: "#FF8C42" }]}>
+                  <Text style={styles.chefAvatarText}>
+                    {item.author.name?.charAt(0).toUpperCase() || "A"}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item)}
@@ -132,74 +167,62 @@ export default function FeedScreen() {
                 size={32}
                 color={item.likedByMe ? "#FF4458" : "#fff"}
               />
-              <Text style={styles.actionText}>{item.stats.likes}</Text>
+              <Text style={styles.actionText}>
+                {item.stats.likes >= 1000 
+                  ? `${(item.stats.likes / 1000).toFixed(1)}k`
+                  : item.stats.likes}
+              </Text>
             </TouchableOpacity>
 
-            <View style={styles.actionButton}>
-              <Ionicons name="eye-outline" size={32} color="#fff" />
-              <Text style={styles.actionText}>{item.stats.views}</Text>
-            </View>
+            {/* Share Button */}
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                showMessage({
+                  message: t('feed.share'),
+                  description: t('feed.shareComingSoon'),
+                  type: "info",
+                  icon: "info",
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share-outline" size={30} color="#fff" />
+              <Text style={styles.actionText}>Поделиться</Text>
+            </TouchableOpacity>
 
-            {item.dish && (
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cartButton]}
-                onPress={() => handleAddToCart(item)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="cart" size={32} color="#fff" />
-                <Text style={styles.actionText}>В корзину</Text>
-              </TouchableOpacity>
-            )}
+            {/* Mute/Unmute Button */}
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="volume-mute-outline" size={30} color="#fff" />
+            </TouchableOpacity>
           </View>
 
-          {/* Bottom Info */}
-          <View style={[styles.bottomInfo, { bottom: bottomLift - 40}]}>
-            <View style={styles.authorRow}>
-              {item.author.avatar ? (
-                <Image source={{ uri: item.author.avatar }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-                  <Ionicons name="person" size={20} color="#fff" />
-                </View>
-              )}
-              <Text style={styles.authorName}>{item.author.name}</Text>
-              {item.author.role === "chef" && (
-                <Ionicons name="checkmark-circle" size={16} color={c.primary} />
-              )}
-            </View>
-
-            {item.description ? (
-              <Text style={styles.description} numberOfLines={2}>
-                {item.description}
-              </Text>
-            ) : null}
-
-            {/* Spacer под pinned-banner, чтобы текст не залезал под него */}
-            {item.dish ? <View style={{ height: 92 }} /> : null}
-          </View>
-
-          {/* Dish banner pinned above tabbar */}
+          {/* Bottom Info - New Design */}
           {item.dish && (
-            <View style={[styles.dishBannerPinned, { bottom: bottomLift - 20 }]}>
-              <View style={styles.dishBanner}>
-                {item.dish.picture && (
-                  <Image source={{ uri: item.dish.picture }} style={styles.dishImage} />
-                )}
-                <View style={styles.dishInfo}>
-                  <Text style={styles.dishName} numberOfLines={1}>
-                    {item.dish.name}
-                  </Text>
-                  <Text style={styles.dishPrice}>{Number(item.dish.price)} ₸</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => handleAddToCart(item)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="add" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
+            <View style={[styles.newBottomInfo, { bottom: bottomLift - 26 }]}>
+              {/* Chef Name */}
+              <Text style={styles.newChefName}>{item.author.name || t('feed.chefLabel')}</Text>
+              
+              {/* Dish Name */}
+              <Text style={styles.newDishName} numberOfLines={1}>
+                {item.dish.name}
+              </Text>
+              
+              {/* Dish Price in Orange */}
+              <Text style={styles.newDishPrice}>{Number(item.dish.price)} ₸</Text>
+              
+              {/* Large Orange Order Button */}
+              <TouchableOpacity
+                style={styles.orderButton}
+                onPress={() => handleAddToCart(item)}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="cart-outline" size={20} color="#fff" />
+                <Text style={styles.orderButtonText}>{t('feed.order')}</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -220,7 +243,7 @@ export default function FeedScreen() {
       <View style={[styles.container, styles.centered]}>
         <Ionicons name="videocam-outline" size={64} color={c.textMuted} />
         <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          Видео пока нет
+          {t('feed.noVideos')}
         </Text>
       </View>
     );
@@ -280,7 +303,6 @@ const styles = StyleSheet.create({
   },
   actionButton: { alignItems: "center", gap: 4 },
   cartButton: {
-    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 12,
     borderRadius: 50,
   },
@@ -326,26 +348,136 @@ const styles = StyleSheet.create({
 
   dishBannerPinned: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    left: 12,
+    right: 12,
   },
   dishBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.75)",
-    borderRadius: 12,
-    padding: 12,
-    gap: 12,
+    backgroundColor: "rgba(20,20,20,0.85)",
+    borderRadius: 16,
+    padding: 10,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  dishImage: { width: 50, height: 50, borderRadius: 8 },
+  dishImage: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
   dishInfo: { flex: 1 },
-  dishName: { color: "#fff", fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  dishPrice: { color: "#4CAF50", fontSize: 16, fontWeight: "700" },
+  dishName: { 
+    color: "#fff", 
+    fontSize: 14, 
+    fontWeight: "700", 
+    marginBottom: 4,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  dishPrice: { 
+    color: "#4CAF50", 
+    fontSize: 15, 
+    fontWeight: "800",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   addButton: {
-    width: 44, height: 44, borderRadius: 22,
+    width: 40, 
+    height: 40, 
+    borderRadius: 20,
     backgroundColor: "#FF4458",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#FF4458",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+
+  // Chef Avatar in Actions
+  chefAvatarButton: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  chefAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chefAvatarText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+
+  // New Bottom Info Section
+  newBottomInfo: {
+    position: "absolute",
+    left: 16,
+    right: 80, // Leave space for right actions
+    paddingVertical: 16,
+  },
+  newChefName: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 6,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  newDishName: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  newDishPrice: {
+    color: "#FF8C42",
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 12,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  orderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FF8C42",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    gap: 8,
+    shadowColor: "#FF8C42",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  orderButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 
   footer: { justifyContent: "center", alignItems: "center" },

@@ -26,6 +26,18 @@ export default function RootNavigator() {
   const { themeName } = useTheme();
   const theme = getNavTheme(themeName);
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔐 Auth Status:', { 
+      hasUser: !!user, 
+      userId: user?.user_id,
+      isLoading, 
+      isError,
+      errorStatus: (error as any)?.response?.status 
+    });
+  }, [user, isLoading, isError, error]);
+
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

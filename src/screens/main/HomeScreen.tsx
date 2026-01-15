@@ -6,6 +6,7 @@ import React, { useState, useContext } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { showMessage } from "react-native-flash-message";
+import { useTranslation } from "react-i18next";
 import { DishCard } from "../../components/features";
 import { Spinner } from "../../components/ui";
 import { useDishes } from "../../lib/hooks";
@@ -16,6 +17,7 @@ import { CartContext } from "../../context/CartContext";
 
 const HomeScreen = () => {
   const c = useColors();
+  const { t } = useTranslation();
   const navigation =
     useNavigation<RootStackScreenProps<"Main">["navigation"]>();
 
@@ -42,7 +44,7 @@ const HomeScreen = () => {
 
     cartContext.addItem(dish, 1, "");
     showMessage({
-      message: "Добавлено в корзину",
+      message: t('home.addedToCart'),
       description: dish.name,
       type: "success",
       icon: "success",
@@ -50,7 +52,7 @@ const HomeScreen = () => {
   };
 
   if (isLoading) {
-    return <Spinner fullScreen text="Загрузка блюд..." />;
+    return <Spinner fullScreen text={t('home.loading')} />;
   }
 
   return (
@@ -77,7 +79,7 @@ const HomeScreen = () => {
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🍽️</Text>
             <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-              Блюда пока не добавлены
+              {t('home.noDishes')}
             </Text>
           </View>
         }

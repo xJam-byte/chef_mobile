@@ -2,11 +2,13 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
 import { AuthScreenProps } from "../../navigation/types";
 
 export default function AuthStartScreen({ navigation }: AuthScreenProps<"Start">) {
   const c = useColors();
+  const { t } = useTranslation();
 
   return (
     <LinearGradient colors={c.authGradient} style={styles.container}>
@@ -18,7 +20,7 @@ export default function AuthStartScreen({ navigation }: AuthScreenProps<"Start">
           </View>
           <Text style={styles.title}>Chef</Text>
           <Text style={styles.subtitle}>
-            Найди лучших домашних поваров в твоем городе
+            {t('auth.startSubtitle')}
           </Text>
         </View>
 
@@ -29,7 +31,7 @@ export default function AuthStartScreen({ navigation }: AuthScreenProps<"Start">
             onPress={() => navigation.navigate("Login")}
             activeOpacity={0.8}
           >
-            <Text style={[styles.buttonText, { color: c.primary }]}>Войти</Text>
+            <Text style={[styles.buttonText, { color: c.primary }]}>{t('auth.login')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -41,7 +43,7 @@ export default function AuthStartScreen({ navigation }: AuthScreenProps<"Start">
             onPress={() => navigation.navigate("Register")}
             activeOpacity={0.8}
           >
-            <Text style={[styles.buttonText, { color: "#fff" }]}>Создать аккаунт</Text>
+            <Text style={[styles.buttonText, { color: "#fff" }]}>{t('auth.createAccount')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -49,15 +51,15 @@ export default function AuthStartScreen({ navigation }: AuthScreenProps<"Start">
         <View style={styles.features}>
           <View style={styles.feature}>
             <Ionicons name="videocam" size={20} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.featureText}>Видео блюд</Text>
+            <Text style={styles.featureText}>{t('auth.features.videos')}</Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="cart" size={20} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.featureText}>Быстрый заказ</Text>
+            <Text style={styles.featureText}>{t('auth.features.fastOrder')}</Text>
           </View>
           <View style={styles.feature}>
             <Ionicons name="star" size={20} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.featureText}>Лучшие повара</Text>
+            <Text style={styles.featureText}>{t('auth.features.topChefs')}</Text>
           </View>
         </View>
       </View>

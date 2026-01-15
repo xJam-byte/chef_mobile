@@ -12,9 +12,9 @@ export interface LoginDto {
 
 export interface RegisterDto {
   name: string;
-  email: string;
+  email?: string;
   password: string;
-  phone_number?: string;
+  phone_number: string;
   role?: UserRole;
 }
 
@@ -28,15 +28,20 @@ export interface AuthResponse {
 export interface User {
   user_id: number;
   name: string;
-  email: string;
+  email?: string;
   password?: string;
-  phone_number?: string;
+  phone_number: string;
   profile_pic?: string;
   role: UserRole | "admin";
   createdAt: string;
   updatedAt: string;
-  chefs?: Chef[]; // Chef profile if user is a chef
+  chefs?: Chef[];
+  _count?: {
+    followers: number;
+    following: number;
+  };
 }
+
 
 export interface UpdateContactsDto {
   email: string;
@@ -204,4 +209,36 @@ export interface CartItem {
 export interface PaginationParams {
   page?: number;
   limit?: number;
+}
+
+// ==================== Follows ====================
+
+export interface Follow {
+  id: number;
+  followerId: number;
+  followingId: number;
+  createdAt: string;
+}
+
+export interface FollowStats {
+  followersCount: number;
+  followingCount: number;
+}
+
+export interface FollowsResponse {
+  success: boolean;
+  data: User[];
+  count: number;
+}
+
+export interface FollowStatsResponse {
+  success: boolean;
+  data: FollowStats;
+}
+
+export interface IsFollowingResponse {
+  success: boolean;
+  data: {
+    isFollowing: boolean;
+  };
 }

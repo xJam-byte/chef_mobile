@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
 import { useCreateDish, useProfile } from "../../lib/hooks";
 import { showMessage } from "react-native-flash-message";
@@ -24,6 +25,7 @@ import { useChefByUserId } from "../../lib/hooks/useChefs";
 
 export default function AddDishScreen({ navigation }: any) {
     const c = useColors();
+    const { t } = useTranslation();
     const { data: profile } = useProfile();
     // console.log(profile)
     const createDishMutation = useCreateDish();
@@ -40,36 +42,36 @@ export default function AddDishScreen({ navigation }: any) {
     const handleSubmit = async () => {
         // Validation
         if (!dishName.trim()) {
-            showMessage({ message: "Введите название блюда", type: "warning" });
+            showMessage({ message: t('addDish.errorNameRequired'), type: "warning" });
             return;
         }
         if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-            showMessage({ message: "Введите корректную цену", type: "warning" });
+            showMessage({ message: t('addDish.errorPriceRequired'), type: "warning" });
             return;
         }
         if (!description.trim()) {
-            showMessage({ message: "Добавьте описание блюда", type: "warning" });
+            showMessage({ message: t('addDish.errorDescriptionRequired'), type: "warning" });
             return;
         }
         if (!type.trim()) {
-            showMessage({ message: "Укажите тип блюда", type: "warning" });
+            showMessage({ message: t('addDish.errorTypeRequired'), type: "warning" });
             return;
         }
         if (!ingredients.trim()) {
-            showMessage({ message: "Укажите ингредиенты", type: "warning" });
+            showMessage({ message: t('addDish.errorIngredientsRequired'), type: "warning" });
             return;
         }
         if (!image) {
-            showMessage({ message: "Добавьте фото блюда", type: "warning" });
+            showMessage({ message: t('addDish.errorImageRequired'), type: "warning" });
             return;
         }
 
         // Get chef ID from profile
         const chefId = chef?.chef_id;
 
-        console.log("chefId", chefId)
+        // console.log("chefId", chefId)
         if (!chefId) {
-            showMessage({ message: "Профиль шефа не найден", type: "danger" });
+            showMessage({ message: t('addDish.errorChefNotFound'), type: "danger" });
             return;
         }
 
@@ -84,12 +86,12 @@ export default function AddDishScreen({ navigation }: any) {
                 picture: image, // base64 data URL
             });
 
-            showMessage({ message: "Блюдо успешно добавлено!", type: "success" });
+            showMessage({ message: t('addDish.success'), type: "success" });
             navigation.goBack();
         } catch (error: any) {
             console.error("Error creating dish:", error);
             showMessage({
-                message: error?.response?.data?.message || "Ошибка при создании блюда",
+                message: error?.response?.data?.message || t('addDish.errorCreatingDish'),
                 type: "danger",
             });
         }
@@ -101,8 +103,8 @@ export default function AddDishScreen({ navigation }: any) {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert(
-                    "Нет разрешения",
-                    "Необходимо разрешение для доступа к галерее"
+                    t('addDish.noPermission'),
+                    t('addDish.permissionRequired')
                 );
                 return;
             }
@@ -126,7 +128,7 @@ export default function AddDishScreen({ navigation }: any) {
             }
         } catch (error) {
             console.error("Error picking image:", error);
-            Alert.alert("Ошибка", "Не удалось выбрать изображение");
+            Alert.alert(t('common.error'), t('addDish.errorSelectingImage'));
         }
     };
 
@@ -148,7 +150,7 @@ export default function AddDishScreen({ navigation }: any) {
                         <View style={styles.imagePlaceholder}>
                             <Ionicons name="camera" size={48} color={c.textMuted} />
                             <Text style={[styles.imagePlaceholderText, { color: c.textMuted }]}>
-                                Добавить фото блюда
+                                {t('addDish.addPhoto')}
                             </Text>
                         </View>
                     )}
@@ -158,11 +160,11 @@ export default function AddDishScreen({ navigation }: any) {
                     {/* Name */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.text }]}>
-                            Название блюда <Text style={{ color: c.error }}>*</Text>
+                            {t('addDish.name')} <Text style={{ color: c.error }}>*</Text>
                         </Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="Например: Плов"
+                            placeholder={t('addDish.namePlaceholder')}
                             placeholderTextColor={c.textMuted}
                             value={dishName}
                             onChangeText={setDishName}
@@ -173,11 +175,11 @@ export default function AddDishScreen({ navigation }: any) {
                     {/* Description */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.text }]}>
-                            Описание <Text style={{ color: c.error }}>*</Text>
+                            {t('addDish.description')} <Text style={{ color: c.error }}>*</Text>
                         </Text>
                         <TextInput
                             style={[styles.textArea, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="Расскажите о блюде..."
+                            placeholder={t('addDish.descriptionPlaceholder')}
                             placeholderTextColor={c.textMuted}
                             value={description}
                             onChangeText={setDescription}
@@ -191,11 +193,11 @@ export default function AddDishScreen({ navigation }: any) {
                     {/* Price */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.text }]}>
-                            Цена (₸) <Text style={{ color: c.error }}>*</Text>
+                            {t('addDish.price')} <Text style={{ color: c.error }}>*</Text>
                         </Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="2000"
+                            placeholder={t('addDish.pricePlaceholder')}
                             placeholderTextColor={c.textMuted}
                             value={price}
                             onChangeText={setPrice}
@@ -207,11 +209,11 @@ export default function AddDishScreen({ navigation }: any) {
                     {/* Type */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.text }]}>
-                            Тип блюда <Text style={{ color: c.error }}>*</Text>
+                            {t('addDish.type')} <Text style={{ color: c.error }}>*</Text>
                         </Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="Например: Основное блюдо, Десерт, Закуска"
+                            placeholder={t('addDish.typePlaceholder')}
                             placeholderTextColor={c.textMuted}
                             value={type}
                             onChangeText={setType}
@@ -222,11 +224,11 @@ export default function AddDishScreen({ navigation }: any) {
                     {/* Ingredients */}
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.text }]}>
-                            Ингредиенты <Text style={{ color: c.error }}>*</Text>
+                            {t('addDish.ingredients')} <Text style={{ color: c.error }}>*</Text>
                         </Text>
                         <TextInput
                             style={[styles.textArea, { backgroundColor: c.surface, color: c.text, borderColor: c.border }]}
-                            placeholder="Рис, мясо, морковь, лук..."
+                            placeholder={t('addDish.ingredientsPlaceholder')}
                             placeholderTextColor={c.textMuted}
                             value={ingredients}
                             onChangeText={setIngredients}
@@ -252,7 +254,7 @@ export default function AddDishScreen({ navigation }: any) {
                         ) : (
                             <>
                                 <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                                <Text style={styles.submitBtnText}>Добавить блюдо</Text>
+                                <Text style={styles.submitBtnText}>{t('addDish.submit')}</Text>
                             </>
                         )}
                     </TouchableOpacity>

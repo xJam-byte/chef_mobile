@@ -1,5 +1,8 @@
 {
     "common": {
+        "yes": "Иә",
+        "no": "Жоқ",
+        "ok": "OK",
         "cancel": "Болдырмау",
         "confirm": "Растау",
         "save": "Сақтау",
@@ -12,13 +15,24 @@
         "success": "Сәтті",
         "submit": "Жіберу",
         "close": "Жабу",
-        "back": "Артқа"
+        "back": "Артқа",
+        "user": "Пайдаланушы",
+        "orders": "Тапсырыстар",
+        "favorites": "Таңдаулылар",
+        "addresses": "Мекенжайлар",
+        "addDish": "Тағам қосу",
+        "addVideo": "Бейне қосу",
+        "sessionExpired": "Сессия аяқталды. Қайта кіріңіз",
+        "followError": "Жазылу мүмкін болмады",
+        "unfollowError": "Жазылымды болдырмау мүмкін болмады"
     },
     "auth": {
         "welcome": "Қош келдіңіз",
         "subtitle": "Қалаңыздағы үздік аспазшыларды табыңыз",
+        "startSubtitle": "Қалаңыздағы үздік үй аспазшыларын табыңыз",
         "login": "Кіру",
         "register": "Тіркелу",
+        "createAccount": "Аккаунт жасау",
         "loginAsUser": "Қолданушы ретінде кіру",
         "loginAsChef": "Аспазшы ретінде кіру",
         "email": "Email",
@@ -31,15 +45,58 @@
         "alreadyHaveAccount": "Аккаунт бар ма?",
         "signUp": "Тіркелу",
         "signIn": "Кіру",
-        "logout": "Шығу"
+        "logout": "Шығу",
+        "loginToAccount": "Аккаунтқа кіру",
+        "enterSmsCode": "SMS кодты енгізіңіз",
+        "confirmation": "Растау",
+        "phoneLabel": "Телефон",
+        "phonePlaceholder": "+7 (999) 123-45-67",
+        "getCode": "Кодты алу",
+        "smsCodeLabel": "SMS коды",
+        "smsCodePlaceholder": "000000",
+        "resendIn": "{{seconds}} секундтан кейін қайта жіберу",
+        "resendCode": "Кодты қайта жіберу",
+        "changeNumber": "← Нөмірді өзгерту",
+        "registrationTitle": "Тіркелу",
+        "nameLabel": "Аты",
+        "phoneRequired": "Телефон *",
+        "emailOptional": "Email (міндетті емес)",
+        "passwordLabel": "Құпия сөз",
+        "registerButton": "Тіркелу",
+        "alreadyHaveAccountLogin": "Аккаунт бар ма? Кіру",
+        "errorInvalidPhone": "Дұрыс телефон нөмірін енгізіңіз",
+        "errorInvalidCode": "6 таңбалы кодты енгізіңіз",
+        "successSmsSent": "SMS-код нөміріңізге жіберілді",
+        "errorSmsSend": "SMS жіберу мүмкін болмады",
+        "errorLogin": "Кіру қатесі",
+        "errorInvalidSmsCode": "Қате код",
+        "errorRegistration": "Тіркелу қатесі",
+        "features": {
+            "videos": "Тағам бейнелері",
+            "fastOrder": "Жылдам тапсырыс",
+            "topChefs": "Үздік аспазшылар"
+        }
     },
     "roleSelection": {
         "title": "Рөлді таңдаңыз",
         "subtitle": "Кім болғыңыз келеді?",
+        "chooseRole": "Өз рөліңізді таңдаңыз",
+        "changeRoleLater": "Сіз рөлді кейінірек профиль баптауларында өзгерте аласыз",
         "user": "Қолданушы",
+        "customer": "Қолданушы",
         "chef": "Аспазшы",
         "userDescription": "Үздік аспазшылардан тағамдар тапсырыс беріңіз",
-        "chefDescription": "Аспаздық шығармаларыңызбен бөлісіңіз"
+        "customerDescription": "Бейнелерді көріңіз, үздік аспазшылардан тағамдарды таңдаңыз және жеткізіп алыңыз",
+        "chefDescription": "Аспаздық шығармаларыңызбен бөлісіңіз",
+        "chefFullDescription": "Тағамдарыңыздың бейнелерін жариялаңыз, тапсырыстарды қабылдаңыз және бизнесіңізді дамытыңыз",
+        "errorProfileNotFound": "Пайдаланушы профилі табылмады. Қайта кіріңіз.",
+        "errorSetRole": "Рөлді орнату мүмкін болмады",
+        "settingUpProfile": "Профильді баптау...",
+        "features": {
+            "secure": "Қауіпсіз",
+            "fast": "Жылдам",
+            "reliable": "Сенімді"
+        }
     },
     "tabs": {
         "feed": "Лента",
@@ -52,6 +109,7 @@
         "map": "Карта",
         "menu": "Мәзір",
         "chefs": "Аспазшылар",
+        "mapInfo": "Аспазшы белгісін басыңыз ({{count}} картада)",
         "noResults": "Ештеңе табылмады",
         "noDishes": "Тағамдар жоқ",
         "noChefs": "Аспазшылар жоқ",
@@ -70,13 +128,62 @@
         "videos": "Бейнелер",
         "dishes": "Тағамдар",
         "addDish": "Тағам қосу",
-        "addVideo": "Бейне қосу"
+        "addVideo": "Бейне қосу",
+        "followers": "Жазылушылар",
+        "following": "Жазылымдар",
+        "reviews": "Пікірлер",
+        "follow": "Жазылу",
+        "unfollow": "Жазылымды болдырмау",
+        "leaveReview": "Пікір қалдыру",
+        "reviewSent": "Пікір жіберілді!",
+        "reviewError": "Пікірді жіберу мүмкін болмады",
+        "noReviews": "Әлі пікірлер жоқ",
+        "ordersEmpty": "Тапсырыстар тарихы бос",
+        "startOrdering": "Біздің талантты аспазшылардан тапсырыс беруді бастаңыз!",
+        "findDishes": "Тағамдарды табу",
+        "noFavorites": "Таңдаулылар жоқ",
+        "addFavorites": "Сүйікті тағамдарды таңдаулыларға қосыңыз!",
+        "info": "Ақпарат",
+        "statistics": "Статистика"
+    },
+    "home": {
+        "loading": "Тағамдар жүктелуде...",
+        "addedToCart": "Себетке қосылды",
+        "noDishes": "Тағамдар әлі қосылмаған"
+    },
+    "orders": {
+        "title": "Тапсырыстар",
+        "emptyState": "Тапсырыстар әлі жоқ",
+        "emptyDesc": "Сіздің тапсырыстарыңыз осында пайда болады",
+        "loadingProfile": "Профиль жүктелуде...",
+        "preparingData": "Деректер дайындалуда...",
+        "loadingOrders": "Тапсырыстар жүктелуде...",
+        "orderNumber": "Тапсырыс #{{number}}",
+        "dish": "Тағам",
+        "more": "+{{count}} тағы",
+        "total": "Сомасы",
+        "noOrders": "Тапсырыстар әлі жоқ",
+        "ordersWillAppear": "Сіздің тапсырыстарыңыз осында пайда болады",
+        "pending": "Күтуде",
+        "confirmed": "Расталды",
+        "delivered": "Жеткізілді",
+        "cancelled": "Болдырылмады"
     },
     "chef": {
         "rating": "Рейтинг",
         "notFound": "Аспазшы табылмады",
         "noDishes": "Аспазшы әлі тағамдарды қоспаған",
-        "noVideos": "Бейнелер жоқ"
+        "noVideos": "Бейнелер жоқ",
+        "stats": {
+            "monthlyEarnings": "Айлық табыс",
+            "videoOrders": "Бейнелер арқылы тапсырыстар",
+            "totalOrders": "Барлық тапсырыстар",
+            "totalRevenue": "Жалпы табыс",
+            "avgOrderValue": "Орташа чек",
+            "topDishes": "Апта ішіндегі үздік тағамдар",
+            "ordersThisWeek": "тапсырыстар",
+            "noTopDishes": "Осы аптада тапсырыстар жоқ"
+        }
     },
     "dish": {
         "addToCart": "Себетке",
@@ -102,7 +209,18 @@
         "error": "Қате",
         "fillRequired": "Атауын және бағасын толтырыңыз",
         "success": "Тағам қосылды!",
-        "required": "*"
+        "required": "*",
+        "errorNameRequired": "Тағам атын енгізіңіз",
+        "errorPriceRequired": "Дұрыс бағаны енгізіңіз",
+        "errorDescriptionRequired": "Тағам сипаттамасын қосыңыз",
+        "errorTypeRequired": "Тағам түрін көрсетіңіз",
+        "errorIngredientsRequired": "Інгредиенттерді көрсетіңіз",
+        "errorImageRequired": "Тағам фотосын қосыңыз",
+        "errorChefNotFound": "Аспазшы профилі табылмады",
+        "errorCreatingDish": "Тағам жасау кезінде қате",
+        "noPermission": "Рұқсат жоқ",
+        "permissionRequired": "Галереяға қол жеткізу үшін рұқсат қажет",
+        "errorSelectingImage": "Суретті таңдау мүмкін болмады"
     },
     "addVideo": {
         "title": "Бейне қосу",
@@ -118,6 +236,23 @@
         "success": "Бейне қосылды!",
         "info": "Ұсынылатын формат: тік (9:16), 60 секундтан аспайды",
         "pickVideo": "Бейне таңдау функциясы қосылады"
+    },
+    "addressManagementOld": {
+        "title": "Мекенжайларды басқару",
+        "yourAddresses": "Сіздің мекенжайларыңыз",
+        "addAddress": "Мекенжай қосу",
+        "newAddress": "Жаңа мекенжай",
+        "noAddresses": "Сізде әлі сақталған мекенжайлар жоқ",
+        "street": "Көше және үй нөмірі",
+        "streetPlaceholder": "Мысалы: Абай 150",
+        "city": "Қала",
+        "cityPlaceholder": "Мысалы: Алматы",
+        "postalCode": "Пошта индексі",
+        "postalCodePlaceholder": "Мысалы: 050000",
+        "fillAllFields": "Барлық өрістерді толтырыңыз",
+        "userNotFound": "Пайдаланушы табылмады",
+        "addressAdded": "Мекенжай қосылды!",
+        "errorAddingAddress": "Мекенжай қосу кезінде қате"
     },
     "settings": {
         "title": "Баптаулар",
@@ -140,18 +275,50 @@
         "logoutConfirm": "Шығуға сенімдісіз бе?",
         "enabled": "Қосулы",
         "disabled": "Өшірулі",
-        "comingSoon": "Жақында..."
+        "comingSoon": "Жақында...",
+        "addresses": "Мекенжайлар",
+        "myAddresses": "Менің мекенжайларым"
+    },
+    "addressManagement": {
+        "title": "Менің мекенжайларым",
+        "addAddress": "Мекенжай қосу",
+        "editAddress": "Мекенжайды өңдеу",
+        "deleteAddress": "Мекенжайды жою",
+        "empty": "Сізде әлі сақталған мекенжайлар жоқ",
+        "street": "Көше",
+        "city": "Қала",
+        "zipCode": "Индекс",
+        "country": "Ел",
+        "makeDefault": "Негізгі ету",
+        "isDefault": "Негізгі мекенжай"
     },
     "cart": {
         "title": "Себет",
-        "empty": "Себет бос",
+        "empty": "Сізде әлі сақталған тағамдар жоқ",
+        "emptyDescription": "Мәзірден тағамдар қосыңыз",
         "total": "Барлығы",
-        "checkout": "Тапсырысты рәсімдеу"
+        "totalLabel": "Барлығы:",
+        "checkout": "Тапсырысты рәсімдеу",
+        "errorUserNotFound": "Пайдаланушыны анықтау мүмкін болмады",
+        "errorEmptyCart": "Себетке тағамдар қосыңыз",
+        "orderPlaced": "Тапсырыс рәсімделді!",
+        "chefWillBeNotified": "Аспазшы сіздің тапсырысыңыз туралы хабарландыру алады",
+        "errorPlaceOrder": "Тапсырысты рәсімдеу мүмкін болмады"
     },
     "feed": {
         "discover": "Табыңыз",
         "amazingDishes": "керемет тағамдар",
         "from": "бастап",
-        "topChefs": "үздік аспазшылар"
+        "topChefs": "үздік аспазшылар",
+        "share": "Бөлісу",
+        "shareComingSoon": "Функция жақында қол жетімді болады",
+        "order": "Тапсырыс беру",
+        "chefLabel": "Аспазшы",
+        "noVideos": "Бейнелер әлі жоқ",
+        "alreadyInCart": "{{dishName}} себетте бар",
+        "changeQuantityInCart": "Себеттегі санын өзгертіңіз",
+        "addedToCart": "{{dishName}} себетке қосылды!",
+        "profileUnavailable": "Профиль қол жетімді емес",
+        "notAChef": "Бұл пайдаланушы аспазшы емес"
     }
 }

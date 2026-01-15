@@ -4,6 +4,7 @@
 
 import React from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Card, Badge, Spinner } from "../../components/ui";
 import { useProfile, useOrders } from "../../lib/hooks";
 import { ORDER_STATUS } from "../../lib/constants";
@@ -12,6 +13,7 @@ import { useColors } from "../../lib/theme";
 
 const OrdersScreen = () => {
   const c = useColors();
+  const { t } = useTranslation();
   const { data: profile, isLoading: profileLoading } = useProfile();
 
   const userId = profile?.user_id;
@@ -50,15 +52,15 @@ const OrdersScreen = () => {
   };
 
   if (profileLoading) {
-    return <Spinner fullScreen text="Загрузка профиля..." />;
+    return <Spinner fullScreen text={t('orders.loadingProfile')} />;
   }
 
   if (!userId) {
-    return <Spinner fullScreen text="Подготовка данных..." />;
+    return <Spinner fullScreen text={t('orders.preparingData')} />;
   }
 
   if (ordersLoading) {
-    return <Spinner fullScreen text="Загрузка заказов..." />;
+    return <Spinner fullScreen text={t('orders.loadingOrders')} />;
   }
 
   return (
@@ -70,7 +72,7 @@ const OrdersScreen = () => {
           <Card style={styles.orderCard}>
             <View style={styles.orderHeader}>
               <Text style={[styles.orderId, { color: c.text }]}>
-                Заказ #{item.order_id}
+                {t('orders.orderNumber', { number: item.order_id })}
               </Text>
               <Badge
                 text={ORDER_STATUS[item.status as keyof typeof ORDER_STATUS]}
@@ -90,13 +92,13 @@ const OrdersScreen = () => {
                     key={detail.order_detail_id}
                     style={[styles.orderItem, { color: c.textSecondary }]}
                   >
-                    • {detail.quantity}x Блюдо #{detail.dishId}
+                    • {detail.quantity}x {t('orders.dish')} #{detail.dishId}
                   </Text>
                 ))}
 
                 {item.orderDetails.length > 3 && (
                   <Text style={[styles.moreItems, { color: c.textMuted }]}>
-                    +{item.orderDetails.length - 3} ещё
+                    {t('orders.more', { count: item.orderDetails.length - 3 })}
                   </Text>
                 )}
               </View>
@@ -104,7 +106,7 @@ const OrdersScreen = () => {
 
             <View style={[styles.orderFooter, { borderTopColor: c.divider }]}>
               <Text style={[styles.totalLabel, { color: c.textSecondary }]}>
-                Сумма:
+                {t('orders.total')}:
               </Text>
               <Text style={[styles.totalValue, { color: c.primary }]}>
                 {Number(item.total_price).toLocaleString()} ₸
@@ -124,10 +126,10 @@ const OrdersScreen = () => {
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>📋</Text>
             <Text style={[styles.emptyTitle, { color: c.text }]}>
-              Заказов пока нет
+              {t('orders.noOrders')}
             </Text>
             <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-              Ваши заказы появятся здесь
+              {t('orders.ordersWillAppear')}
             </Text>
           </View>
         }

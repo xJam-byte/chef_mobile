@@ -124,7 +124,7 @@ const DishDetailScreen = ({
         ]}
       >
         <Button
-          title={isAvailable ? "Добавить в корзину" : "Недоступно"}
+          title={isAvailable ? "Хочу это" : "Недоступно"}
           onPress={handleAddToCart}
           disabled={!isAvailable}
           fullWidth
