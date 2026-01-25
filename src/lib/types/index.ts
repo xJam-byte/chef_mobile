@@ -6,6 +6,12 @@ export type UserRole = "customer" | "chef";
 // ==================== Auth ====================
 
 export interface LoginDto {
+  email?: string;
+  phone_number?: string;
+  password?: string;
+}
+
+export interface LoginEmailDto {
   email: string;
   password: string;
 }
@@ -100,9 +106,12 @@ export interface Dish {
   type: string;
   ingredients: string;
   price: number;
+  time?: number;
+  is_spicy: boolean;
   availability_status: "available" | "not_available";
   createdAt: string;
   updatedAt: string;
+  chefs?: Chef;
 }
 
 export interface CreateDishDto {
@@ -113,6 +122,8 @@ export interface CreateDishDto {
   type: string;
   ingredients: string;
   price: number;
+  time?: number; // in minutes
+  is_spicy?: boolean;
   availability_status?: "available" | "not_available";
 }
 
@@ -131,8 +142,9 @@ export interface Order {
   userId: number;
   total_price: number;
   order_date: string;
-  status: "pending" | "confirmed" | "delivered" | "cancelled";
-  orderDetails?: OrderDetail[];
+  status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
+  order_details?: OrderDetail[];
+  estimated_minutes?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -158,6 +170,9 @@ export interface CreateOrderDto {
   userId: number;
   total_price: number;
   status?: "pending";
+  delivery_address_id?: number;
+  payment_method?: string;
+  payment_intent_id?: string;
   items: CreateOrderItemDto[];
 }
 

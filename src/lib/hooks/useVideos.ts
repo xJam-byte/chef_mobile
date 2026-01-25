@@ -12,10 +12,10 @@ import {
   type VideoFeedItem,
 } from "../api/videos";
 
-export function useVideoFeed() {
+export function useVideoFeed(mode: "forYou" | "following" = "forYou") {
   return useInfiniteQuery({
-    queryKey: ["video-feed"],
-    queryFn: ({ pageParam }) => getVideoFeed({ cursor: pageParam, limit: 10 }),
+    queryKey: ["video-feed", mode],
+    queryFn: ({ pageParam }) => getVideoFeed({ cursor: pageParam, limit: 10, mode }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined as string | undefined,
   });

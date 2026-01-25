@@ -1,6 +1,8 @@
 import type { StackScreenProps } from "@react-navigation/stack";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { UserRole } from "../lib/types";
+import { NavigatorScreenParams } from "@react-navigation/native";
+import type { VideoFeedItem } from "../lib/api/videos";
 
 // Auth stack - authentication first, then role selection
 export type AuthStackParamList = {
@@ -15,19 +17,25 @@ export type MainTabParamList = {
   Feed: undefined;
   Search: undefined;
   Cart: undefined;
+  Orders: undefined;
   Profile: undefined;
 };
 
 export type RootStackParamList = {
   Auth: undefined;
-  Main: undefined;
-  DishDetail: { dishId: number };
-  ChefDetail: { chefId: number };
+  Main: NavigatorScreenParams<MainTabParamList>;
+  MainTabs: NavigatorScreenParams<MainTabParamList>;
   Settings: undefined;
+  ChefDetail: { chefId: number };
+  DishDetail: { dishId: number };
+  OrderDetail: { orderId: number };
+  OrderTracking: { orderId: number };
   AddDish: undefined;
   AddVideo: undefined;
-  AddressManagement: undefined;
-  VideoViewer: { video: any };
+  AddressManagement: { mode?: "select" };
+  VideoViewer: { video: VideoFeedItem };
+  Checkout: undefined;
+  Payment: { addressId: number; totalAmount: number };
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> = StackScreenProps<

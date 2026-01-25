@@ -85,9 +85,9 @@ const OrdersScreen = () => {
               {formatDate(item.order_date)}
             </Text>
 
-            {item.orderDetails && item.orderDetails.length > 0 && (
+            {item.order_details && item.order_details.length > 0 && (
               <View style={[styles.orderItems, { borderTopColor: c.divider }]}>
-                {item.orderDetails.slice(0, 3).map((detail: any) => (
+                {item.order_details.slice(0, 3).map((detail: any) => (
                   <Text
                     key={detail.order_detail_id}
                     style={[styles.orderItem, { color: c.textSecondary }]}
@@ -96,9 +96,9 @@ const OrdersScreen = () => {
                   </Text>
                 ))}
 
-                {item.orderDetails.length > 3 && (
+                {item.order_details.length > 3 && (
                   <Text style={[styles.moreItems, { color: c.textMuted }]}>
-                    {t('orders.more', { count: item.orderDetails.length - 3 })}
+                    {t('orders.more', { count: item.order_details.length - 3 })}
                   </Text>
                 )}
               </View>

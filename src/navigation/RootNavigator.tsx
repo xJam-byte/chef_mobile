@@ -14,10 +14,14 @@ import type { RootStackParamList } from "./types";
 import SettingsScreen from "../screens/main/SettingsScreen";
 import ChefDetailScreen from "../screens/detail/ChefDetailScreen";
 import DishDetailScreen from "../screens/detail/DishDetailScreen";
+import OrderTrackingScreen from "../screens/orders/OrderTrackingScreen";
 import AddDishScreen from "../screens/chef/AddDishScreen";
 import AddVideoScreen from "../screens/chef/AddVideoScreen";
 import AddressManagementScreen from "../screens/settings/AddressManagementScreen";
 import VideoViewerScreen from "../screens/video/VideoViewerScreen";
+import CheckoutScreen from "../screens/checkout/CheckoutScreen";
+import PaymentScreen from "../screens/checkout/PaymentScreen";
+import OrderDetailScreen from "../screens/detail/OrderDetailScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -28,14 +32,15 @@ export default function RootNavigator() {
 
   // Debug logging
   React.useEffect(() => {
-    console.log('🔐 Auth Status:', { 
+    console.log('🔄 RootNavigator: State updated', { 
       hasUser: !!user, 
       userId: user?.user_id,
       isLoading, 
-      isError,
-      errorStatus: (error as any)?.response?.status 
+      isError 
     });
-  }, [user, isLoading, isError, error]);
+  }, [user, isLoading, isError]);
+
+  console.log('🎨 RootNavigator: Render', { hasUser: !!user, isLoading });
 
 
   if (isLoading) {
@@ -74,7 +79,7 @@ export default function RootNavigator() {
               <Stack.Screen
                 name="Settings"
                 component={SettingsScreen}
-                options={{ headerShown: true, title: "Настройки" }}
+                // options={{ headerShown: true, title: "Настройки" }}
               />
               <Stack.Screen
                 name="ChefDetail"
@@ -84,33 +89,53 @@ export default function RootNavigator() {
               <Stack.Screen
                 name="DishDetail"
                 component={DishDetailScreen}
-                options={{ headerShown: true, title: "Блюдо" }}
+                // options={{ headerShown: true, title: "Блюдо" }}
               />
               <Stack.Screen
                 name="AddDish"
                 component={AddDishScreen}
-                options={{ headerShown: true, title: "Добавить блюдо" }}
+                // options={{ headerShown: true, title: "Добавить блюдо" }}
               />
               <Stack.Screen
                 name="AddVideo"
                 component={AddVideoScreen}
-                options={{ headerShown: true, title: "Добавить видео" }}
+                // options={{ headerShown: true, title: "Добавить видео" }}
               />
               <Stack.Screen
                 name="AddressManagement"
                 component={AddressManagementScreen}
-                options={{ headerShown: true, title: "Мои адреса" }}
+                // options={{ headerShown: true, title: "Мои адреса" }}
               />
               <Stack.Screen
                 name="VideoViewer"
                 component={VideoViewerScreen}
                 options={{ headerShown: false, presentation: "modal" }}
               />
+              <Stack.Screen
+                name="OrderDetail"
+                component={OrderDetailScreen}
+                // options={{ headerShown: true, title: "Детали заказа" }}
+              />
+              <Stack.Screen
+                name="Checkout"
+                component={CheckoutScreen}
+                // options={{ headerShown: true, title: "Оформление заказа" }}
+              />
+              <Stack.Screen
+                name="Payment"
+                component={PaymentScreen}
+                // options={{ headerShown: true, title: "Оплата" }}
+              />
             </>
           ) : (
             <Stack.Screen name="Auth" component={AuthStack} />
           )}
-        </Stack.Navigator>
+          <Stack.Screen
+        name="OrderTracking"
+        component={OrderTrackingScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
         <FlashMessage position="top" />
       </NavigationContainer>
     </>

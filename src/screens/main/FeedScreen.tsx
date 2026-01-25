@@ -13,8 +13,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Share,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -26,6 +30,8 @@ import {
   useLikeVideo,
   useUnlikeVideo,
   useCart,
+  useFollowUser,
+  useIsFollowing,
 } from "../../lib/hooks";
 import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
@@ -35,8 +41,25 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../../navigation/types";
 
-
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
+
+const SubscribeButton = ({ authorId }: { authorId: number }) => {
+    const { follow, unfollow } = useFollowUser();
+    const { data: isFollowingData } = useIsFollowing(authorId);
+    const isFollowing = isFollowingData?.data?.isFollowing;
+    const { t } = useTranslation();
+
+    if (isFollowing) return null;
+
+    return (
+        <TouchableOpacity 
+            style={styles.subscribeButton}
+            onPress={() => follow(authorId)}
+        >
+            <Text style={styles.subscribeText}>{t('profile.follow') || 'Follow'}</Text>
+        </TouchableOpacity>
+    );
+};
 
 export default function FeedScreen() {
   const c = useColors();
@@ -46,12 +69,14 @@ export default function FeedScreen() {
   const isFocused = useIsFocused();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  const PAGE_HEIGHT = Math.max(1, WINDOW_HEIGHT - tabBarHeight);
+  const [activeTab, setActiveTab] = useState<"forYou" | "following">("forYou");
 
+  const PAGE_HEIGHT = Math.max(1, WINDOW_HEIGHT - tabBarHeight);
   const bottomLift = tabBarHeight + insets.bottom;
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useVideoFeed();
+    useVideoFeed(activeTab);
+
   const likeMutation = useLikeVideo();
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
@@ -61,7 +86,7 @@ export default function FeedScreen() {
 
   const videos = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
-    [data]
+    [data],
   );
 
   const handleViewableItemChanged = useCallback(({ viewableItems }: any) => {
@@ -103,14 +128,14 @@ export default function FeedScreen() {
 
     if (result.alreadyExists) {
       showMessage({
-        message: t('feed.alreadyInCart', { dishName: video.dish.name }),
-        description: t('feed.changeQuantityInCart'),
+        message: t("feed.alreadyInCart", { dishName: video.dish.name }),
+        description: t("feed.changeQuantityInCart"),
         type: "info",
         icon: "info",
       });
     } else {
       showMessage({
-        message: t('feed.addedToCart', { dishName: video.dish.name }),
+        message: t("feed.addedToCart", { dishName: video.dish.name }),
         type: "success",
         icon: "success",
       });
@@ -120,8 +145,8 @@ export default function FeedScreen() {
   const handleChefPress = (chefId?: number | null) => {
     if (!chefId) {
       showMessage({
-        message: t('feed.profileUnavailable'),
-        description: t('feed.notAChef'),
+        message: t("feed.profileUnavailable"),
+        description: t("feed.notAChef"),
         type: "warning",
         icon: "warning",
       });
@@ -130,7 +155,13 @@ export default function FeedScreen() {
     navigation.navigate("ChefDetail", { chefId });
   };
 
-  const renderVideo = ({ item, index }: { item: VideoFeedItem; index: number }) => {
+  const renderVideo = ({
+    item,
+    index,
+  }: {
+    item: VideoFeedItem;
+    index: number;
+  }) => {
     const isActive = isFocused && index === activeIndex;
 
     return (
@@ -138,25 +169,52 @@ export default function FeedScreen() {
         <VideoPlayer uri={item.url} isActive={isActive} />
 
         <View style={styles.overlay}>
-          {/* Right Side Actions */}
-          <View style={[styles.actions, { bottom: bottomLift - 6 }]}>
-            {/* Chef Avatar - Top */}
+          {/* Top Tabs - Following / For You */}
+          <View style={[styles.topTabsContainer, { top: insets.top + 10 }]}>
             <TouchableOpacity
-              style={styles.chefAvatarButton}
-              onPress={() => handleChefPress(item.author.chefId)}
-              activeOpacity={0.8}
+              onPress={() => setActiveTab("following")}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              {item.author.avatar ? (
-                <Image source={{ uri: item.author.avatar }} style={styles.chefAvatar} />
-              ) : (
-                <View style={[styles.chefAvatar, { backgroundColor: "#FF8C42" }]}>
-                  <Text style={styles.chefAvatarText}>
-                    {item.author.name?.charAt(0).toUpperCase() || "A"}
-                  </Text>
-                </View>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "following"
+                    ? styles.activeTab
+                    : styles.inactiveTab,
+                ]}
+              >
+                {t("feed.following")}
+              </Text>
+              {activeTab === "following" && (
+                <View style={styles.activeIndicator} />
               )}
             </TouchableOpacity>
 
+            <View style={styles.tabDivider} />
+
+            <TouchableOpacity
+              onPress={() => setActiveTab("forYou")}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "forYou"
+                    ? styles.activeTab
+                    : styles.inactiveTab,
+                ]}
+              >
+                {t("feed.forYou")}
+              </Text>
+              {activeTab === "forYou" && (
+                <View style={styles.activeIndicator} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Right Side Actions */}
+          <View style={[styles.actions, { bottom: bottomLift + 50 }]}>
+            
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item)}
@@ -164,67 +222,95 @@ export default function FeedScreen() {
             >
               <Ionicons
                 name={item.likedByMe ? "heart" : "heart-outline"}
-                size={32}
-                color={item.likedByMe ? "#FF4458" : "#fff"}
+                size={34}
+                color={item.likedByMe ? "#EF4444" : "#fff"}
               />
               <Text style={styles.actionText}>
-                {item.stats.likes >= 1000 
+                {item.stats.likes >= 1000
                   ? `${(item.stats.likes / 1000).toFixed(1)}k`
                   : item.stats.likes}
               </Text>
             </TouchableOpacity>
 
-            {/* Share Button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => {
-                showMessage({
-                  message: t('feed.share'),
-                  description: t('feed.shareComingSoon'),
-                  type: "info",
-                  icon: "info",
-                });
-              }}
+              onPress={() => {}}
               activeOpacity={0.7}
             >
-              <Ionicons name="share-outline" size={30} color="#fff" />
-              <Text style={styles.actionText}>Поделиться</Text>
-            </TouchableOpacity>
+              <Ionicons name="chatbubble-outline" size={32} color="#fff" />
+              <Text style={styles.actionText}>{item.stats.comments || 24}</Text>
+            </TouchableOpacity> */}
 
-            {/* Mute/Unmute Button */}
             <TouchableOpacity
               style={styles.actionButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="volume-mute-outline" size={30} color="#fff" />
-            </TouchableOpacity>
+                  onPress={() => {
+                    Share.share({
+                      message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
+                      url: `chefmobile://video/${item.id}`, // for iOS
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+                </TouchableOpacity>
+                
+              </View>
+    
+              {/* Bottom Info Area */}
+              <View style={[styles.bottomContainer, { bottom: bottomLift - 50}]}>
+                
+                {/* User Info Row */}
+                <View style={styles.userInfoRow}>
+                  <TouchableOpacity onPress={() => handleChefPress(item.author.chefId)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    {item.author.avatar ? (
+                        <Image source={{ uri: item.author.avatar }} style={styles.userAvatar} />
+                    ) : (
+                        <View style={[styles.userAvatar, { backgroundColor: c.primary }]}>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.author.name?.[0]}</Text>
+                        </View>
+                    )}
+                    <View style={{ marginLeft: 8 }}>
+                        <Text style={styles.userName}>{item.author.name}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="star" size={12} color={c.warning} />
+                            <Text style={styles.userRating}>4.9</Text>
+                            <Text style={styles.userDot}>•</Text>
+                            <Text style={styles.userTime}>~25 мин</Text>
+                        </View>
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <SubscribeButton authorId={item.author.id} />
+                </View>
+
+            {/* Description */}
+            <Text style={styles.descriptionText} numberOfLines={2}>
+                {item.description || item.dish?.description || "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
+            </Text>
+
+            {/* Action Bar */}
+            {item.dish && (
+                <View style={styles.actionBar}>
+                    <TouchableOpacity style={styles.dishMiniCard} activeOpacity={0.9} onPress={() => navigation.navigate("DishDetail", { dishId: item.dish!.id })}>
+                        <Image source={{ uri: item.dish.picture }} style={styles.dishMiniImage} />
+                        <View style={{ flex: 1, justifyContent: 'center' }}>
+                            <Text style={styles.dishMiniName} numberOfLines={1}>{item.dish.name}</Text>
+                            <Text style={styles.dishMiniPrice}>{item.dish.price} ₸</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={[styles.addToCartButton, { backgroundColor: c.primary }]}
+                        onPress={() => handleAddToCart(item)}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="cart-outline" size={20} color="#fff" />
+                        <Text style={styles.addToCartText}>В корзину</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
           </View>
-
-          {/* Bottom Info - New Design */}
-          {item.dish && (
-            <View style={[styles.newBottomInfo, { bottom: bottomLift - 26 }]}>
-              {/* Chef Name */}
-              <Text style={styles.newChefName}>{item.author.name || t('feed.chefLabel')}</Text>
-              
-              {/* Dish Name */}
-              <Text style={styles.newDishName} numberOfLines={1}>
-                {item.dish.name}
-              </Text>
-              
-              {/* Dish Price in Orange */}
-              <Text style={styles.newDishPrice}>{Number(item.dish.price)} ₸</Text>
-              
-              {/* Large Orange Order Button */}
-              <TouchableOpacity
-                style={styles.orderButton}
-                onPress={() => handleAddToCart(item)}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="cart-outline" size={20} color="#fff" />
-                <Text style={styles.orderButtonText}>{t('feed.order')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -238,19 +324,16 @@ export default function FeedScreen() {
     );
   }
 
-  if (!videos.length) {
+  if (!videos.length && !isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Ionicons name="videocam-outline" size={64} color={c.textMuted} />
-        <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          {t('feed.noVideos')}
-        </Text>
+         <Text style={{color: 'white'}}>No videos</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <FlatList
         ref={flatListRef}
         data={videos}
@@ -272,13 +355,6 @@ export default function FeedScreen() {
           if (hasNextPage && !isFetchingNextPage) fetchNextPage();
         }}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <View style={[styles.footer, { height: PAGE_HEIGHT }]}>
-              <ActivityIndicator size="small" color={c.primary} />
-            </View>
-          ) : null
-        }
       />
     </SafeAreaView>
   );
@@ -287,198 +363,175 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   centered: { justifyContent: "center", alignItems: "center" },
-  emptyText: { fontSize: 16, marginTop: 16 },
+  
+  videoContainer: { width: "100%", position: 'relative' },
+  overlay: { ...StyleSheet.absoluteFillObject },
 
-  videoContainer: { width: "100%" },
-
-  overlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-  },
-
-  actions: {
-    position: "absolute",
-    right: 12,
-    gap: 24,
-  },
-  actionButton: { alignItems: "center", gap: 4 },
-  cartButton: {
-    padding: 12,
-    borderRadius: 50,
-  },
-  actionText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-
-  bottomInfo: {
+  // Top Tabs
+  topTabsContainer: {
     position: "absolute",
     left: 0,
     right: 0,
-    padding: 16,
-    gap: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   },
-
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    borderWidth: 2, borderColor: "#fff",
-    alignItems: "center", justifyContent: "center",
-  },
-  authorName: {
-    color: "#fff",
+  tabText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.6)",
     textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 4,
   },
-  description: {
-    color: "#fff",
-    fontSize: 14,
-    lineHeight: 20,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+  activeTab: { color: "#fff", fontWeight: "700" },
+  inactiveTab: { color: "rgba(255,255,255,0.6)" },
+  activeIndicator: {
+    width: 20,
+    height: 2,
+    backgroundColor: "#fff",
+    alignSelf: "center",
+    marginTop: 4,
+  },
+  tabDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    marginHorizontal: 12,
   },
 
-  dishBannerPinned: {
+  // Actions
+  actions: {
     position: "absolute",
-    left: 12,
     right: 12,
+    alignItems: "center",
+    gap: 20,
+    zIndex: 20,
   },
-  dishBanner: {
+  actionButton: { alignItems: "center", gap: 2 },
+  actionText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowRadius: 2,
+  },
+
+  // Bottom Info
+  bottomContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    /* Gradient protection could be added here as a background image or View */
+  },
+  userInfoRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(20,20,20,0.85)",
-    borderRadius: 16,
-    padding: 10,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
-  dishImage: { 
-    width: 56, 
-    height: 56, 
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-  },
-  dishInfo: { flex: 1 },
-  dishName: { 
-    color: "#fff", 
-    fontSize: 14, 
-    fontWeight: "700", 
-    marginBottom: 4,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  dishPrice: { 
-    color: "#4CAF50", 
-    fontSize: 15, 
-    fontWeight: "800",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  addButton: {
-    width: 40, 
-    height: 40, 
+  userAvatar: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    backgroundColor: "#FF4458",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#FF4458",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-
-  // Chef Avatar in Actions
-  chefAvatarButton: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  chefAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
-  chefAvatarText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-
-  // New Bottom Info Section
-  newBottomInfo: {
-    position: "absolute",
-    left: 16,
-    right: 80, // Leave space for right actions
-    paddingVertical: 16,
-  },
-  newChefName: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 6,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  newDishName: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 6,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  newDishPrice: {
-    color: "#FF8C42",
-    fontSize: 22,
-    fontWeight: "800",
-    marginBottom: 12,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  orderButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FF8C42",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    gap: 8,
-    shadowColor: "#FF8C42",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  orderButtonText: {
+  userName: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowRadius: 2,
   },
-
-  footer: { justifyContent: "center", alignItems: "center" },
+  userRating: {
+    color: "#fff", // or star color
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  userDot: {
+    color: "#fff",
+    marginHorizontal: 4,
+  },
+  userTime: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+  },
+  subscribeButton: {
+    borderWidth: 1.5, // Slightly thicker border for better visibility
+    borderColor: "rgba(255,255,255,0.6)",
+    paddingVertical: 8, // Increased vertical padding
+    paddingHorizontal: 16,
+    borderRadius: 24, // More rounded
+    backgroundColor: "rgba(0,0,0,0.3)", // Slightly darker background for contrast
+    alignItems: "center", // Critical fix for 'crooked' text
+    justifyContent: "center",
+    marginRight: 70,
+  },
+  subscribeText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    includeFontPadding: false, // Prevents Android vertical alignment quirks
+  },
+  descriptionText: {
+    color: "#fff",
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 16,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowRadius: 2,
+  },
+  
+  // Action Bar
+  actionBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  dishMiniCard: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "rgba(30,30,30,0.9)",
+    borderRadius: 16,
+    padding: 8,
+    alignItems: "center",
+    gap: 10,
+  },
+  dishMiniImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#333",
+  },
+  dishMiniName: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  dishMiniPrice: {
+    color: "#fff", // White price on dark card looks clean
+    fontSize: 13,
+    fontWeight: "400",
+    opacity: 0.8,
+  },
+  addToCartButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    gap: 8,
+  },
+  addToCartText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
 });

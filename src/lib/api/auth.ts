@@ -1,6 +1,6 @@
 // src/lib/api/auth.ts
 import { apiClient } from "./client";
-import type { LoginDto, RegisterDto, User } from "../types";
+import type { LoginDto, LoginEmailDto, RegisterDto, User } from "../types";
 
 export type AuthResponse = { token: string; user: User };
 
@@ -9,8 +9,13 @@ export const login = async (data: LoginDto): Promise<AuthResponse> => {
   return res.data;
 };
 
-export const registration = async (data: RegisterDto): Promise<AuthResponse> => {
-  const res = await apiClient.post<AuthResponse>("/auth/registration", data);
+export const loginEmail = async (data: LoginEmailDto): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/login-email", data);
+  return res.data;
+};
+
+export const registration = async (data: RegisterDto): Promise<{ user: User }> => {
+  const res = await apiClient.post<{ user: User }>("/auth/registration", data);
   return res.data;
 };
 

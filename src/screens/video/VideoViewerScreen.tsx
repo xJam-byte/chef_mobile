@@ -1,21 +1,34 @@
 /**
- * Video Viewer Screen - Full-screen single video player
- * Similar to FeedScreen but for viewing a single video
+ * Video Viewer Screen - Full-screen video player with feed-style UI
+ * Supports swiping through a list of videos (e.g. from Chef Profile)
  */
 
-import React from "react";
+import React, { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
+  FlatList,
   Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
   Image,
+  Share,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
-import { useLikeVideo, useUnlikeVideo, useCart } from "../../lib/hooks";
+import {
+  useLikeVideo,
+  useUnlikeVideo,
+  useCart,
+  useFollowUser,
+  useIsFollowing,
+} from "../../lib/hooks";
 import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
 import type { VideoFeedItem } from "../../lib/api/videos";
@@ -23,38 +36,88 @@ import type { Dish } from "../../lib/types";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
+const SubscribeButton = ({ authorId }: { authorId: number }) => {
+    const { follow, unfollow } = useFollowUser();
+    const { data: isFollowingData } = useIsFollowing(authorId);
+    const isFollowing = isFollowingData?.data?.isFollowing;
+    const { t } = useTranslation();
+
+    if (isFollowing) return null;
+
+    return (
+        <TouchableOpacity 
+            style={styles.subscribeButton}
+            onPress={() => follow(authorId)}
+        >
+            <Text style={styles.subscribeText}>{t('profile.follow') || 'Follow'}</Text>
+        </TouchableOpacity>
+    );
+};
+
 export default function VideoViewerScreen({ route, navigation }: any) {
   const c = useColors();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { video }: { video: VideoFeedItem } = route.params;
-  const tabBarHeight = 80;
+  const isFocused = useIsFocused();
+
+  // Route params: either single 'video' or list 'videos' + 'initialIndex'
+  const { video, videos: videosList, initialIndex = 0 } = route.params;
+
+  // Normalize to list
+  const videos = useMemo(() => {
+    if (videosList && Array.isArray(videosList)) return videosList;
+    if (video) return [video];
+    return [];
+  }, [video, videosList]);
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const flatListRef = useRef<FlatList>(null);
+
+  const PAGE_HEIGHT = WINDOW_HEIGHT;
+  const bottomLift = insets.bottom + 20; // Adjusted since no tab bar
 
   const likeMutation = useLikeVideo();
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
 
-  const PAGE_HEIGHT = WINDOW_HEIGHT;
-  const bottomLift = tabBarHeight + insets.bottom;
-  
+  // Scroll to initial index on mount
+  useEffect(() => {
+    if (initialIndex > 0 && videos.length > initialIndex && flatListRef.current) {
+        // Use a small timeout to ensure layout is ready
+        setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index: initialIndex, animated: false });
+        }, 100);
+    }
+  }, [initialIndex, videos.length]);
 
-  const handleLike = () => {
-    if (video.likedByMe) {
-      unlikeMutation.mutate(video.id);
+  const handleViewableItemChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setActiveIndex(viewableItems[0].index ?? 0);
+    }
+  }, []);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 80,
+  };
+
+  const handleLike = (videoItem: VideoFeedItem) => {
+    if (videoItem.likedByMe) {
+      unlikeMutation.mutate(videoItem.id);
     } else {
-      likeMutation.mutate(video.id);
+      likeMutation.mutate(videoItem.id);
     }
   };
 
-  const handleAddToCart = () => {
-    if (!video.dish) return;
+  const handleAddToCart = (videoItem: VideoFeedItem) => {
+    if (!videoItem.dish) return;
 
     const dish: Dish = {
-      dish_id: video.dish.id,
-      name: video.dish.name,
-      price: video.dish.price,
-      picture: video.dish.picture,
-      chefId: video.author.id,
-      description: video.dish.description,
+      dish_id: videoItem.dish.id,
+      name: videoItem.dish.name,
+      price: videoItem.dish.price,
+      picture: videoItem.dish.picture,
+      chefId: videoItem.author.id,
+      description: videoItem.dish.description,
       type: "main",
       ingredients: "",
       availability_status: "available",
@@ -66,309 +129,325 @@ export default function VideoViewerScreen({ route, navigation }: any) {
 
     if (result.alreadyExists) {
       showMessage({
-        message: `${video.dish.name} уже в корзине`,
-        description: "Измените количество в корзине",
+        message: t("feed.alreadyInCart", { dishName: videoItem.dish.name }),
+        description: t("feed.changeQuantityInCart"),
         type: "info",
         icon: "info",
       });
     } else {
       showMessage({
-        message: `${video.dish.name} добавлено в корзину!`,
+        message: t("feed.addedToCart", { dishName: videoItem.dish.name }),
         type: "success",
         icon: "success",
       });
     }
   };
 
-  const handleChefPress = () => {
-    if (video.author.chefId) {
-      navigation.navigate("ChefDetail", { chefId: video.author.chefId });
+  const handleChefPress = (chefId?: number | null) => {
+    if (!chefId) {
+      showMessage({
+        message: t("feed.profileUnavailable"),
+        description: t("feed.notAChef"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
     }
+    // If we are already on a screen that pushed this viewer, we might be creating a loop or duplicate screen
+    // But usually fine to push ChefDetail again
+    navigation.push("ChefDetail", { chefId });
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={[]}>
+  const renderVideo = ({
+    item,
+    index,
+  }: {
+    item: VideoFeedItem;
+    index: number;
+  }) => {
+    const isActive = isFocused && index === activeIndex;
+
+    return (
       <View style={[styles.videoContainer, { height: PAGE_HEIGHT }]}>
-        <VideoPlayer uri={video.url} isActive={true} />
+        <VideoPlayer uri={item.url} isActive={isActive} />
 
         {/* Close Button */}
         <TouchableOpacity
-          style={styles.closeButton}
+          style={[styles.closeButton, { top: insets.top + 10 }]}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={32} color="#fff" />
+          <Ionicons name="arrow-back" size={28} color="#fff" />
         </TouchableOpacity>
 
         <View style={styles.overlay}>
           {/* Right Side Actions */}
-          <View style={[styles.actions, { bottom: bottomLift - 6 }]}>
-            {/* Chef Avatar - Top */}
-            <TouchableOpacity
-              style={styles.chefAvatarButton}
-              onPress={handleChefPress}
-              activeOpacity={0.8}
-            >
-              {video.author.avatar ? (
-                <Image source={{ uri: video.author.avatar }} style={styles.chefAvatar} />
-              ) : (
-                <View style={[styles.chefAvatar, { backgroundColor: "#FF8C42" }]}>
-                  <Text style={styles.chefAvatarText}>
-                    {video.author.name?.charAt(0).toUpperCase() || "A"}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
+          <View style={[styles.actions, { bottom: bottomLift + 50 }]}>
+            
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={handleLike}
+              onPress={() => handleLike(item)}
               activeOpacity={0.7}
             >
               <Ionicons
-                name={video.likedByMe ? "heart" : "heart-outline"}
-                size={32}
-                color={video.likedByMe ? "#FF4458" : "#fff"}
+                name={item.likedByMe ? "heart" : "heart-outline"}
+                size={34}
+                color={item.likedByMe ? "#EF4444" : "#fff"}
               />
               <Text style={styles.actionText}>
-                {video.stats.likes >= 1000 
-                  ? `${(video.stats.likes / 1000).toFixed(1)}k`
-                  : video.stats.likes}
+                {item.stats.likes >= 1000
+                  ? `${(item.stats.likes / 1000).toFixed(1)}k`
+                  : item.stats.likes}
               </Text>
             </TouchableOpacity>
 
-            {/* Share Button */}
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => {
-                showMessage({
-                  message: "Поделиться",
-                  description: "Функция скоро будет доступна",
-                  type: "info",
-                  icon: "info",
-                });
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="share-outline" size={30} color="#fff" />
-              <Text style={styles.actionText}>Поделиться</Text>
-            </TouchableOpacity>
+                  onPress={() => {
+                    Share.share({
+                      message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
+                      url: `chefmobile://video/${item.id}`, // for iOS
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+                </TouchableOpacity>
+                
+              </View>
+    
+              {/* Bottom Info Area */}
+              <View style={[styles.bottomContainer, { bottom: bottomLift }]}>
+                
+                {/* User Info Row */}
+                <View style={styles.userInfoRow}>
+                  <TouchableOpacity onPress={() => handleChefPress(item.author.chefId)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    {item.author.avatar ? (
+                        <Image source={{ uri: item.author.avatar }} style={styles.userAvatar} />
+                    ) : (
+                        <View style={[styles.userAvatar, { backgroundColor: c.primary }]}>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.author.name?.[0]}</Text>
+                        </View>
+                    )}
+                    <View style={{ marginLeft: 8 }}>
+                        <Text style={styles.userName}>{item.author.name}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="star" size={12} color={c.warning} />
+                            <Text style={styles.userRating}>4.9</Text>
+                            <Text style={styles.userDot}>•</Text>
+                            <Text style={styles.userTime}>~25 мин</Text>
+                        </View>
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <SubscribeButton authorId={item.author.id} />
+                </View>
 
-            {/* Mute/Unmute Button */}
-            <TouchableOpacity
-              style={styles.actionButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="volume-mute-outline" size={30} color="#fff" />
-            </TouchableOpacity>
+            {/* Description */}
+            <Text style={styles.descriptionText} numberOfLines={2}>
+                {item.description || item.dish?.description || "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
+            </Text>
+
+            {/* Action Bar */}
+            {item.dish && (
+                <View style={styles.actionBar}>
+                    <TouchableOpacity style={styles.dishMiniCard} activeOpacity={0.9} onPress={() => navigation.navigate("DishDetail", { dishId: item.dish!.id })}>
+                        <Image source={{ uri: item.dish.picture }} style={styles.dishMiniImage} />
+                        <View style={{ flex: 1, justifyContent: 'center' }}>
+                            <Text style={styles.dishMiniName} numberOfLines={1}>{item.dish.name}</Text>
+                            <Text style={styles.dishMiniPrice}>{item.dish.price} ₸</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={[styles.addToCartButton, { backgroundColor: c.primary }]}
+                        onPress={() => handleAddToCart(item)}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="cart-outline" size={20} color="#fff" />
+                        <Text style={styles.addToCartText}>В корзину</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
           </View>
-
-          {/* Bottom Info - New Design */}
-          {video.dish && (
-            <View style={[styles.newBottomInfo, { bottom: bottomLift - 26 }]}>
-              {/* Chef Name */}
-              <Text style={styles.newChefName}>{video.author.name || "Повар"}</Text>
-              
-              {/* Dish Name */}
-              <Text style={styles.newDishName} numberOfLines={1}>
-                {video.dish.name}
-              </Text>
-              
-              {/* Dish Price in Orange */}
-              <Text style={styles.newDishPrice}>{Number(video.dish.price)} ₸</Text>
-              
-              {/* Large Orange Order Button */}
-              <TouchableOpacity
-                style={styles.orderButton}
-                onPress={handleAddToCart}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="cart-outline" size={20} color="#fff" />
-                <Text style={styles.orderButtonText}>Заказать</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={[]}>
+      <FlatList
+        ref={flatListRef}
+        data={videos}
+        renderItem={renderVideo}
+        keyExtractor={(item) => item.id}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        snapToInterval={PAGE_HEIGHT}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        onViewableItemsChanged={handleViewableItemChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={(_, index) => ({
+          length: PAGE_HEIGHT,
+          offset: PAGE_HEIGHT * index,
+          index,
+        })}
+        initialScrollIndex={initialIndex}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-  videoContainer: { width: "100%" },
+  
+  videoContainer: { width: "100%", position: 'relative' },
+  overlay: { ...StyleSheet.absoluteFillObject },
 
   closeButton: {
     position: "absolute",
-    top: 12,
-    left: 12,
-    zIndex: 10,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    left: 20,
+    zIndex: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 20,
-    padding: 4,
+    padding: 8,
   },
 
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-
+  // Actions
   actions: {
     position: "absolute",
     right: 12,
-    gap: 24,
+    alignItems: "center",
+    gap: 20,
+    zIndex: 20,
   },
-  actionButton: { alignItems: "center", gap: 4 },
-  cartButton: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 12,
-    borderRadius: 50,
-  },
+  actionButton: { alignItems: "center", gap: 2 },
   actionText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 2,
   },
 
-  bottomInfo: {
+  // Bottom Info
+  bottomContainer: {
     position: "absolute",
     left: 0,
     right: 0,
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
-
-  authorRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  avatar: {
+  userInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  userAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
-  authorName: {
+  userName: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowRadius: 2,
   },
-  description: {
+  userRating: {
+    color: "#fff", 
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  userDot: {
     color: "#fff",
-    fontSize: 14,
-    lineHeight: 20,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    marginHorizontal: 4,
   },
-
-  dishBannerPinned: {
-    position: "absolute",
-    left: 16,
-    right: 16,
+  userTime: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
   },
-  dishBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.75)",
-    borderRadius: 12,
-    padding: 12,
-    gap: 12,
-  },
-  dishImage: { width: 50, height: 50, borderRadius: 8 },
-  dishInfo: { flex: 1 },
-  dishName: { color: "#fff", fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  dishPrice: { color: "#4CAF50", fontSize: 16, fontWeight: "700" },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FF4458",
+  subscribeButton: {
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 10,
+  },
+  subscribeText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    includeFontPadding: false,
+  },
+  descriptionText: {
+    color: "#fff",
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 16,
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowRadius: 2,
   },
   
-    chefAvatarButton: {
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    chefAvatar: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      borderWidth: 2,
-      borderColor: "#fff",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    chefAvatarText: {
-      color: "#fff",
-      fontSize: 20,
-      fontWeight: "700",
-    },
-  
-    // New Bottom Info Section
-    newBottomInfo: {
-      position: "absolute",
-      left: 16,
-      right: 80,
-      paddingVertical: 16,
-    },
-    newChefName: {
-      color: "#fff",
-      fontSize: 15,
-      fontWeight: "600",
-      marginBottom: 6,
-      textShadowColor: "rgba(0,0,0,0.8)",
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 4,
-    },
-    newDishName: {
-      color: "#fff",
-      fontSize: 18,
-      fontWeight: "700",
-      marginBottom: 6,
-      textShadowColor: "rgba(0,0,0,0.8)",
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 4,
-    },
-    newDishPrice: {
-      color: "#FF8C42",
-      fontSize: 22,
-      fontWeight: "800",
-      marginBottom: 12,
-      textShadowColor: "rgba(0,0,0,0.8)",
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 4,
-    },
-    orderButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#FF8C42",
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 16,
-      gap: 8,
-      shadowColor: "#FF8C42",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    orderButtonText: {
-      color: "#fff",
-      fontSize: 16,
-      fontWeight: "700",
-    },
-
+  // Action Bar
+  actionBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  dishMiniCard: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "rgba(30,30,30,0.9)",
+    borderRadius: 16,
+    padding: 8,
+    alignItems: "center",
+    gap: 10,
+  },
+  dishMiniImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#333",
+  },
+  dishMiniName: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  dishMiniPrice: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "400",
+    opacity: 0.8,
+  },
+  addToCartButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    gap: 8,
+  },
+  addToCartText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
 });  

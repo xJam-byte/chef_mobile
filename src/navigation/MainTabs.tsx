@@ -8,6 +8,7 @@ import { useColors } from "../lib/theme";
 import FeedScreen from "../screens/main/FeedScreen";
 import SearchScreen from "../screens/main/SearchScreen";
 import CartScreen from "../screens/main/CartScreen";
+import OrdersScreen from "../screens/orders/OrdersScreen";
 import ProfileScreen from "../screens/main/ProfileScreen";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -20,12 +21,13 @@ export const MainTabs = () => {
       screenOptions={{
         tabBarActiveTintColor: c.primary,
         tabBarInactiveTintColor: c.textMuted,
+        tabBarShowLabel: false,
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: c.border,
           paddingBottom: 8,
           paddingTop: 8,
-          height: 78,
+          height: 64, // Reduced height since no labels
           backgroundColor: c.surface,
         },
         headerStyle: {
@@ -38,6 +40,7 @@ export const MainTabs = () => {
           fontSize: 18,
           color: c.text,
         },
+        headerShown: false, // Premium design: we use custom headers inside screens
       }}
     >
       {/* Feed - Video feed */}
@@ -59,7 +62,7 @@ export const MainTabs = () => {
         component={SearchScreen}
         options={{
           title: "Поиск",
-          headerShown: true,
+          // headerShown: true,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="search-outline" color={color} size={size} />
           ),
@@ -78,13 +81,26 @@ export const MainTabs = () => {
         }}
       />
 
+      {/* Orders */}
+      <Tab.Screen
+        name="Orders"
+        component={OrdersScreen}
+        options={{
+          title: "Orders",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" color={color} size={size} />
+          ),
+        }}
+      />
+
       {/* Profile */}
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={({ navigation }) => ({
           title: "Профиль",
-          headerShown: true,
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" color={color} size={size} />
           ),

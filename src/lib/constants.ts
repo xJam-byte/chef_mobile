@@ -72,6 +72,7 @@ export const QUERY_KEYS = {
 
   // ORDERS
   ORDERS: (params: Record<string, any> = {}) => ["orders", params] as const,
+  CHEF_ORDERS: (userId?: number) => ["chef-orders", userId] as const,
   ORDER: (id?: number) => ["order", id] as const,
 
   // CART (если нужно)

@@ -2,11 +2,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { apiClient } from "../api/client";
-import { login, registration, me, sendSms, verifySms } from "../api/auth";
-import { setUserProfile, getAccessToken } from "../utils/storage";
-import type { LoginDto, RegisterDto, User } from "../types";
+import { login, registration, me, sendSms, verifySms, loginEmail } from "../api/auth";
+import { setUserProfile, getAccessToken, setAccessToken, removeAccessToken } from "../utils/storage";
+import type { LoginDto, RegisterDto, User, LoginEmailDto } from "../types";
 
-const TOKEN_KEY = "auth_token";
+
 
 export function useAuthStatus() {
   return useQuery<User | null>({
@@ -19,7 +19,7 @@ export function useAuthStatus() {
         if (!token) return null; // No token locally = definitely not logged in
 
         const user = await me();
-        // console.log('👤 Auth Check - User fetched:', !!user, user?.user_id);
+        console.log('👤 useAuthStatus: User fetched from API', !!user);
         
         // ✅ Save profile to storage so useProfile() can access it
         if (user) {
@@ -59,34 +59,47 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (payload: LoginDto) => {
-      const data = await login(payload); // { token, user }
-      await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+      // Compatibility wrapper if old login is still used somewhere
+      const data = await login(payload); 
+      await setAccessToken(data.token);
       apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
       return data;
     },
     onSuccess: async (data) => {
       qc.setQueryData(["profile"], data.user);
+      await qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useLoginEmail() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: LoginEmailDto) => {
+      const data = await loginEmail(payload);
+      await setAccessToken(data.token);
+      apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
+      return data;
+    },
+    onSuccess: async (data) => {
+      qc.setQueryData(["profile"], data.user);
+      await qc.invalidateQueries({ queryKey: ["profile"] });
     },
   });
 }
 
 export function useRegister() {
-  const qc = useQueryClient();
+  // const qc = useQueryClient(); // Removed as we don't set profile on register anymore
 
   return useMutation({
     mutationFn: async (payload: RegisterDto) => {
-      const data = await registration(payload); // { token, user }
-      await SecureStore.setItemAsync(TOKEN_KEY, data.token);
-
-      apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
+      const data = await registration(payload); // { user }
+      // NOTE: We do NOT set access token here anymore. 
+      // User must verify SMS to get token.
       return data;
     },
-    onSuccess: async (data) => {
-      // Set the profile data immediately so it's available in RoleSelectionScreen
-      qc.setQueryData(["profile"], data.user);
-      // Save to storage
-      await setUserProfile(data.user);
-    },
+    // onSuccess removed because we don't have token/profile ready yet
   });
 }
 
@@ -95,7 +108,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await removeAccessToken();
       delete apiClient.defaults.headers.Authorization;
     },
     onSuccess: () => {
@@ -118,13 +131,17 @@ export function useVerifySms() {
   return useMutation({
     mutationFn: async (payload: { phone_number: string; code: string }) => {
       const data = await verifySms(payload);
-      await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+      await setAccessToken(data.token);
       apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
       return data;
     },
     onSuccess: async (data) => {
+      console.log('✅ useVerifySms: Login success, updating cache...');
+      // Update cache immediately
       qc.setQueryData(["profile"], data.user);
       await setUserProfile(data.user);
+      // Force refetch to ensure consistency
+      await qc.invalidateQueries({ queryKey: ["profile"] });
     },
   });
 }

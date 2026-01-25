@@ -12,7 +12,7 @@ export {
 export { useChefs, useChef, useBecomeChef } from "./useChefs";
 export { useChefStats } from "./useChefStats";
 export { useDishes, useChefDishes, useCreateDish, useDish } from "./useDishes";
-export { useOrders, useCreateOrder } from "./useOrders";
+export { useOrders, useChefOrders, useCreateOrder, useOrder, useUpdateOrderStatus } from "./useOrders";
 export { useChefReviews, useCreateReview } from "./useReviews";
 export { useCart } from "./useCart";
 export {
@@ -22,7 +22,10 @@ export {
   useAuthStatus,
   useSendSms,
   useVerifySms,
+  useLoginEmail,
 } from "./useAuth";
 export { useMyAddresses, useCreateAddress } from "./useAddresses";
 export { useVideoFeed, useVideosByAuthor, useLikeVideo, useUnlikeVideo, useRecordView, useCreateVideo } from "./useVideos";
-export { useFollowUser, useFollowStats, useIsFollowing } from "./useFollows";
+export { useFollowUser, useFollowStats, useIsFollowing, useFollowing } from "./useFollows";
+export { useCreatePaymentIntent, useConfirmPayment, usePaymentStatus } from "./usePayment";
+export { useOrderHistory } from "./useOrders";

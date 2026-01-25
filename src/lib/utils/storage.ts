@@ -1,18 +1,11 @@
 import * as SecureStore from "expo-secure-store";
 import type { User } from "../types";
 
-/**
- * IMPORTANT:
- * Expo Go (SDK 54) always runs with New Architecture.
- * If AsyncStorage TurboModule is missing/mismatched, static import may crash the app on startup.
- * Поэтому грузим AsyncStorage лениво и безопасно.
- */
-
 const ACCESS_TOKEN_KEY = "auth:access_token";
 const USER_PROFILE_KEY = "user:profile";
 const THEME_KEY = "app:theme";
 
-let cachedToken: string | null | undefined = undefined; // undefined = ещё не грузили
+let cachedToken: string | null | undefined = undefined;
 const listeners = new Set<(token: string | null) => void>();
 
 function emit(token: string | null) {
@@ -191,7 +184,9 @@ export async function getThemePreference(): Promise<"light" | "dark" | null> {
 /**
  * Save theme preference to storage
  */
-export async function setThemePreference(theme: "light" | "dark"): Promise<void> {
+export async function setThemePreference(
+  theme: "light" | "dark",
+): Promise<void> {
   const AS = await getAsyncStorage();
   if (AS) {
     try {

@@ -7,19 +7,14 @@ import { updateContacts, uploadAvatar, updateEmail, updatePassword } from "../ap
 import { getUserProfile, setUserProfile } from "../utils/storage";
 import { QUERY_KEYS } from "../constants";
 import type { User, UpdateContactsDto, UploadAvatarDto, UpdateEmailDto, UpdatePasswordDto } from "../types";
+import { useAuthStatus } from "./useAuth";
 
 /**
  * Get current user profile from the same query cache as useAuthStatus
  * This ensures we always have the latest data including chef information
  */
 export const useProfile = () => {
-    return useQuery<User | null>({
-        queryKey: ["profile"], // Same key as useAuthStatus
-        queryFn: () => null as User | null, // Required by React Query, but won't be called
-        enabled: false, // Don't refetch, just read from cache
-        staleTime: Infinity, // Always use cached data
-        gcTime: Infinity,
-    });
+    return useAuthStatus();
 };
 
 /**

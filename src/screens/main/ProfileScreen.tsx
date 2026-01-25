@@ -1,5 +1,4 @@
-
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo,useState } from "react";
 import {
   View,
   Text,
@@ -8,31 +7,32 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
-  Animated,
+  Platform,
 } from "react-native";
+import { Video, ResizeMode } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { Avatar, StarRating } from "../../components/ui";
+import { Avatar, StarRating, Spinner } from "../../components/ui";
 import {
   useProfile,
   useChefDishes,
   useVideosByAuthor,
   useChefReviews,
   useChefStats,
+  useOrders,
+  useFollowStats,
+  useFollowing
 } from "../../lib/hooks";
 import { useChefByUserId } from "../../lib/hooks/useChefs";
 import { API_BASE_URL } from "../../lib/constants";
 import { useColors } from "../../lib/theme";
 
 const { width } = Dimensions.get("window");
-const VIDEO_SIZE = (width - 4) / 3; // 3 columns with 1px gaps
-const VIDEO_HEIGHT = VIDEO_SIZE * 1.33; // 4:5 aspect ratio
 
 type ChefTabType = "dishes" | "videos" | "reviews";
-type CustomerTabType = "orders" | "favorites";
-type ViewMode = "info" | "statistics";
+type CustomerTabType = "favorites" | "recent";
 
 export default function ProfileScreen({ navigation }: any) {
   const c = useColors();
@@ -41,85 +41,8 @@ export default function ProfileScreen({ navigation }: any) {
   const { data: profile } = useProfile();
 
   const [chefActiveTab, setChefActiveTab] = useState<ChefTabType>("dishes");
-  const [customerActiveTab, setCustomerActiveTab] =
-    useState<CustomerTabType>("orders");
-  const [viewMode, setViewMode] = useState<ViewMode>("info");
-  const [fabMenuOpen, setFabMenuOpen] = useState(false);
-
-  // Animated values for FAB menu
-  const fabRotation = useRef(new Animated.Value(0)).current;
-  const menuItem1Anim = useRef(new Animated.Value(0)).current;
-  const menuItem2Anim = useRef(new Animated.Value(0)).current;
-  const menuItem3Anim = useRef(new Animated.Value(0)).current;
-
-  // Animate FAB menu
-useEffect(() => {
-  if (fabMenuOpen) {
-    // IMPORTANT: reset values so stagger always plays
-    menuItem1Anim.stopAnimation();
-    menuItem2Anim.stopAnimation();
-    menuItem3Anim.stopAnimation();
-    fabRotation.stopAnimation();
-
-    menuItem1Anim.setValue(0);
-    menuItem2Anim.setValue(0);
-    menuItem3Anim.setValue(0);
-    fabRotation.setValue(0);
-
-    Animated.spring(fabRotation, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 50,
-      friction: 7,
-    }).start();
-
-    Animated.stagger(90, [
-      Animated.spring(menuItem1Anim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 55,
-        friction: 8,
-      }),
-      Animated.spring(menuItem2Anim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 55,
-        friction: 8,
-      }),
-      Animated.spring(menuItem3Anim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 55,
-        friction: 8,
-      }),
-    ]).start();
-  } else {
-    // close animation (values still animate even if unmounted)
-    Animated.parallel([
-      Animated.timing(fabRotation, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-      Animated.timing(menuItem1Anim, {
-        toValue: 0,
-        duration: 140,
-        useNativeDriver: true,
-      }),
-      Animated.timing(menuItem2Anim, {
-        toValue: 0,
-        duration: 140,
-        useNativeDriver: true,
-      }),
-      Animated.timing(menuItem3Anim, {
-        toValue: 0,
-        duration: 140,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }
-}, [fabMenuOpen, fabRotation, menuItem1Anim, menuItem2Anim, menuItem3Anim]);
-
+  const [customerActiveTab, setCustomerActiveTab] = useState<CustomerTabType>("recent");
+  
   const avatarUri = profile?.profile_pic
     ? profile.profile_pic.startsWith("http")
       ? profile.profile_pic
@@ -137,6 +60,16 @@ useEffect(() => {
   const { data: dishesData } = useChefDishes(chefId);
   const { data: reviews = [] } = useChefReviews(chefId ?? 0);
   const { data: chefStats } = useChefStats(chefId);
+  
+  // Follow stats
+  const { data: followStatsData } = useFollowStats(profile?.user_id);
+  const { data: followingList } = useFollowing(profile?.user_id || 0);
+  
+  const followStats = followStatsData?.data;
+  const followingCount = followingList?.data?.length || 0;
+  
+  // Customer Orders
+  const { data: customerOrders } = useOrders(profile?.user_id);
 
   const videos = useMemo(
     () => videosData?.pages.flatMap((page) => page.items) ?? [],
@@ -147,1290 +80,579 @@ useEffect(() => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("ru-RU").format(Math.round(value));
 
-  return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View style={[styles.profileHeader, { backgroundColor: c.card }]}>
-          <View style={styles.centeredAvatarContainer}>
-            <Avatar uri={avatarUri} name={profile?.name} size="xl" />
-          </View>
-
-          <Text style={[styles.centeredName, { color: c.text }]}>
-            {profile?.name || t("common.user")}
-          </Text>
-
-          {!!profile?.email && (
-            <Text style={[styles.centeredEmail, { color: c.textSecondary }]}>
-              {profile.email}
-            </Text>
-          )}
-
-          <View
-            style={[
-              styles.roleBadge,
-              {
-                backgroundColor: c.primary + "15",
-                borderColor: c.primary + "30",
-              },
-            ]}
-          >
-            <Ionicons
-              name={roleIsChef ? "restaurant" : "person"}
-              size={14}
-              color={c.primary}
-            />
-            <Text style={[styles.roleText, { color: c.primary }]}>
-              {roleIsChef ? t("profile.chef") : t("profile.customer")}
-            </Text>
-          </View>
-        </View>
-
-        {/* Top Stats Cards (single time only) */}
-        <View style={styles.statsCards}>
-          {roleIsChef ? (
-            <>
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#FF8C42" + "20" },
-                  ]}
-                >
-                  <Ionicons name="restaurant" size={24} color="#FF8C42" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>
-                  {dishes.length}
-                </Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("profile.dishes")}
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#9C27B0" + "20" },
-                  ]}
-                >
-                  <Ionicons name="videocam" size={24} color="#9C27B0" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>
-                  {videos.length}
-                </Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("profile.videos")}
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#FFD700" + "20" },
-                  ]}
-                >
-                  <Ionicons name="star" size={24} color="#FFD700" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>
-                  {chef?.rating ? Number(chef.rating).toFixed(1) : "0.0"}
-                </Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("chef.rating")}
-                </Text>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#4CAF50" + "20" },
-                  ]}
-                >
-                  <Ionicons name="receipt" size={24} color="#4CAF50" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>0</Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("common.orders")}
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#FF4458" + "20" },
-                  ]}
-                >
-                  <Ionicons name="heart" size={24} color="#FF4458" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>0</Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("common.favorites")}
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: c.card }]}>
-                <View
-                  style={[
-                    styles.statIconContainer,
-                    { backgroundColor: "#2196F3" + "20" },
-                  ]}
-                >
-                  <Ionicons name="location" size={24} color="#2196F3" />
-                </View>
-                <Text style={[styles.statCardCount, { color: c.text }]}>0</Text>
-                <Text style={[styles.statCardLabel, { color: c.textSecondary }]}>
-                  {t("common.addresses")}
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Chef Content */}
-        {roleIsChef && (
-          <View style={styles.chefContent}>
-            {viewMode === "info" ? (
-              <>
-                {/* Tab Switcher */}
-                <View style={styles.tabSwitcher}>
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      chefActiveTab === "dishes" && {
-                        borderBottomColor: c.primary,
-                        borderBottomWidth: 3,
-                      },
-                    ]}
-                    onPress={() => setChefActiveTab("dishes")}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name="grid"
-                      size={24}
-                      color={chefActiveTab === "dishes" ? c.primary : c.textMuted}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      chefActiveTab === "videos" && {
-                        borderBottomColor: c.primary,
-                        borderBottomWidth: 3,
-                      },
-                    ]}
-                    onPress={() => setChefActiveTab("videos")}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name="play-circle"
-                      size={24}
-                      color={chefActiveTab === "videos" ? c.primary : c.textMuted}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.tab,
-                      chefActiveTab === "reviews" && {
-                        borderBottomColor: c.primary,
-                        borderBottomWidth: 3,
-                      },
-                    ]}
-                    onPress={() => setChefActiveTab("reviews")}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name="star"
-                      size={24}
-                      color={chefActiveTab === "reviews" ? c.primary : c.textMuted}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {chefActiveTab === "dishes" ? (
-                  <View style={styles.dishesGrid}>
-                    {dishes.length > 0 ? (
-                      dishes.map((dish: any) => (
-                        <TouchableOpacity
-                          key={dish.dish_id}
-                          style={[
-                            styles.dishCard,
-                            {
-                              backgroundColor: c.card,
-                              borderColor: c.border,
-                            },
-                          ]}
-                          activeOpacity={0.8}
-                          onPress={() =>
-                            navigation.navigate("DishDetail", {
-                              dishId: dish.dish_id,
-                            })
-                          }
-                        >
-                          {dish.picture ? (
-                            <Image
-                              source={{ uri: dish.picture }}
-                              style={styles.dishImage}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View
-                              style={[
-                                styles.dishImage,
-                                {
-                                  backgroundColor: c.surface,
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                },
-                              ]}
-                            >
-                              <Ionicons
-                                name="restaurant"
-                                size={28}
-                                color={c.textMuted}
-                              />
-                            </View>
-                          )}
-
-                          <View style={styles.dishInfo}>
-                            <Text
-                              style={[styles.dishName, { color: c.text }]}
-                              numberOfLines={1}
-                            >
-                              {dish.name}
-                            </Text>
-                            <Text style={[styles.dishPrice, { color: c.primary }]}>
-                              {dish.price} ₸
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      <View style={styles.emptyState}>
-                        <Ionicons
-                          name="restaurant-outline"
-                          size={48}
-                          color={c.textMuted}
-                        />
-                        <Text
-                          style={[
-                            styles.emptyText,
-                            { color: c.textSecondary },
-                          ]}
-                        >
-                          {t("chef.noDishes")}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ) : chefActiveTab === "videos" ? (
-                  <View style={styles.videoGrid}>
-                    {videos.length > 0 ? (
-                      videos.map((video: any) => (
-                        <TouchableOpacity
-                          key={video.id}
-                          style={styles.videoItem}
-                          activeOpacity={0.8}
-                          onPress={() =>
-                            navigation.navigate("VideoViewer", { video })
-                          }
-                        >
-                          <Image
-                            source={{ uri: video.posterUrl || video.url }}
-                            style={styles.videoThumbnail}
-                            resizeMode="cover"
-                          />
-                          <View style={styles.playOverlay}>
-                            <Ionicons
-                              name="play-circle"
-                              size={32}
-                              color="#fff"
-                              style={{ opacity: 0.9 }}
-                            />
-                          </View>
-                          <View style={styles.videoStatsOverlay}>
-                            <Ionicons name="play" size={12} color="#fff" />
-                            <Text style={styles.videoViewCount}>
-                              {video.stats?.views >= 1000
-                                ? `${(video.stats.views / 1000).toFixed(0)}k`
-                                : video.stats?.views || 0}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      <View style={styles.emptyState}>
-                        <Ionicons
-                          name="videocam-outline"
-                          size={48}
-                          color={c.textMuted}
-                        />
-                        <Text
-                          style={[
-                            styles.emptyText,
-                            { color: c.textSecondary },
-                          ]}
-                        >
-                          {t("chef.noVideos")}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ) : (
-                  <View style={[styles.reviewsContainer, { paddingHorizontal: 16 }]}>
-                    {reviews.length > 0 ? (
-                      reviews.map((review: any) => (
-                        <View
-                          key={review.review_id}
-                          style={[
-                            styles.reviewCard,
-                            { backgroundColor: c.card, borderColor: c.border },
-                          ]}
-                        >
-                          <View style={styles.reviewHeader}>
-                            <Avatar
-                              uri={review.users?.profile_pic}
-                              name={review.users?.name}
-                              size="sm"
-                            />
-                            <View style={styles.reviewHeaderInfo}>
-                              <Text style={[styles.reviewName, { color: c.text }]}>
-                                {review.users?.name || t("common.user")}
-                              </Text>
-                              <StarRating rating={Number(review.rating)} size={14} />
-                            </View>
-                            <Text style={[styles.reviewDate, { color: c.textMuted }]}>
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </Text>
-                          </View>
-                          {!!review.comment && (
-                            <Text
-                              style={[
-                                styles.reviewComment,
-                                { color: c.textSecondary },
-                              ]}
-                            >
-                              {review.comment}
-                            </Text>
-                          )}
+  const totalOrders = roleIsChef ? (chefStats?.totalOrders || 0) : (customerOrders?.length || 0);
+  const subscribers = followStats?.followersCount || 0;
+  
+  // Render functions
+  const renderChefContent = () => (
+    <>
+      {/* Premium Header */}
+        <View style={styles.headerContainer}>
+             <LinearGradient
+                colors={c.name === 'dark' ? ['#1A1512', '#2D241C'] : ['#FFF', '#FFF5EB']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={[styles.headerGradient, { borderBottomColor: c.border, borderBottomWidth: 1 }]}
+             >
+                 <View style={styles.profileInfoRow}>
+                    <View style={styles.avatarContainer}>
+                         <View style={[styles.avatarRing, { borderColor: c.primary }]}>
+                            <Avatar uri={avatarUri} name={profile?.name} size="lg" />
+                         </View>
+                        <View style={[styles.chefBadge, { backgroundColor: c.primary, borderColor: c.surface }]}>
+                            <Ionicons name="star" size={12} color="#fff" />
                         </View>
-                      ))
-                    ) : (
-                      <View style={styles.emptyState}>
-                        <Ionicons name="star-outline" size={48} color={c.textMuted} />
-                        <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                          {t("profile.noReviews")}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </>
-            ) : (
-              /* Statistics Mode */
-              <View style={styles.premiumStatsSection}>
-                {chefStats ? (
-                  <>
-                    <LinearGradient
-                      colors={["#FF6B6B", "#FF8E53"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.earningsCard}
-                    >
-                      <View style={styles.earningsHeader}>
-                        <Ionicons name="wallet" size={28} color="#fff" />
-                        <Text style={styles.earningsLabel}>
-                          {t("chef.stats.monthlyEarnings")}
-                        </Text>
-                      </View>
-
-                      <Text style={styles.earningsValue}>
-                        {formatCurrency(chefStats.monthlyEarnings)} ₸
-                      </Text>
-
-                      <View style={styles.earningsDivider} />
-
-                      <View style={styles.earningsFooter}>
-                        <View style={styles.earningsSubStat}>
-                          <Ionicons
-                            name="trending-up"
-                            size={16}
-                            color="rgba(255,255,255,0.9)"
-                          />
-                          <Text style={styles.earningsSubLabel}>
-                            {formatCurrency(chefStats.totalRevenue)} ₸{" "}
-                            {t("chef.stats.totalRevenue")}
-                          </Text>
-                        </View>
-                      </View>
-                    </LinearGradient>
-
-                    {/* Stats Grid */}
-                    <View style={styles.statsGrid}>
-                      <View style={[styles.miniStatCard, { backgroundColor: c.card }]}>
-                        <View
-                          style={[
-                            styles.miniStatIconBox,
-                            { backgroundColor: "#9C27B0" + "15" },
-                          ]}
-                        >
-                          <Ionicons name="play-circle" size={20} color="#9C27B0" />
-                        </View>
-                        <Text style={[styles.miniStatValue, { color: c.text }]}>
-                          {chefStats.videoOrdersCount}
-                        </Text>
-                        <Text style={[styles.miniStatLabel, { color: c.textSecondary }]}>
-                          {t("chef.stats.videoOrders")}
-                        </Text>
-                      </View>
-
-                      <View style={[styles.miniStatCard, { backgroundColor: c.card }]}>
-                        <View
-                          style={[
-                            styles.miniStatIconBox,
-                            { backgroundColor: "#4CAF50" + "15" },
-                          ]}
-                        >
-                          <Ionicons name="receipt" size={20} color="#4CAF50" />
-                        </View>
-                        <Text style={[styles.miniStatValue, { color: c.text }]}>
-                          {chefStats.totalOrders}
-                        </Text>
-                        <Text style={[styles.miniStatLabel, { color: c.textSecondary }]}>
-                          {t("chef.stats.totalOrders")}
-                        </Text>
-                      </View>
-
-                      <View style={[styles.miniStatCard, { backgroundColor: c.card }]}>
-                        <View
-                          style={[
-                            styles.miniStatIconBox,
-                            { backgroundColor: "#FFD700" + "15" },
-                          ]}
-                        >
-                          <Ionicons name="star" size={20} color="#FFD700" />
-                        </View>
-                        <Text style={[styles.miniStatValue, { color: c.text }]}>
-                          {chef?.rating ? Number(chef.rating).toFixed(1) : "0.0"}
-                        </Text>
-                        <Text style={[styles.miniStatLabel, { color: c.textSecondary }]}>
-                          {t("chef.rating")}
-                        </Text>
-                      </View>
-
-                      <View style={[styles.miniStatCard, { backgroundColor: c.card }]}>
-                        <View
-                          style={[
-                            styles.miniStatIconBox,
-                            { backgroundColor: "#2196F3" + "15" },
-                          ]}
-                        >
-                          <Ionicons name="cash" size={20} color="#2196F3" />
-                        </View>
-                        <Text style={[styles.miniStatValue, { color: c.text }]}>
-                          {formatCurrency(chefStats.averageOrderValue)} ₸
-                        </Text>
-                        <Text style={[styles.miniStatLabel, { color: c.textSecondary }]}>
-                          {t("chef.stats.avgOrderValue")}
-                        </Text>
-                      </View>
                     </View>
 
-                    {/* Top Dishes */}
-                    {chefStats.topDishesThisWeek?.length > 0 && (
-                      <View style={styles.topDishesSection}>
-                        <View style={[styles.topDishesHeader, { paddingHorizontal: 16 }]}>
-                          <Ionicons name="flame" size={24} color="#FF6B6B" />
-                          <Text style={[styles.topDishesTitle, { color: c.text }]}>
-                            {t("chef.stats.topDishes")}
-                          </Text>
+                    <View style={styles.profileTexts}>
+                        <Text style={[styles.name, { color: c.text }]}>{profile?.name}</Text>
+                        <Text style={[styles.handle, { color: c.primary }]}>
+                          @{profile?.name?.toLowerCase().replace(/\s/g, "")}
+                        </Text>
+                        <View style={styles.ratingRow}>
+                           <View style={[styles.ratingPill, { backgroundColor: c.primary + '15' }]}>
+                               <Ionicons name="star" size={14} color={c.primary} />
+                               <Text style={[styles.ratingText, { color: c.primary }]}>{chef?.rating || '5.0'}</Text>
+                           </View>
+                           <Text style={[styles.dotSep, { color: c.textMuted }]}>•</Text>
+                           <Text style={[styles.ordersText, { color: c.textSecondary }]}>{totalOrders} {t('orders.title')}</Text>
                         </View>
+                    </View>
+                 </View>
+             </LinearGradient>
+        </View>
 
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={styles.topDishesScroll}
-                        >
-                          {chefStats.topDishesThisWeek.map((dish: any, index: number) => (
-                            <TouchableOpacity
-                              key={dish.dish_id}
-                              style={[styles.topDishCard, { backgroundColor: c.card }]}
-                              activeOpacity={0.8}
-                              onPress={() =>
-                                navigation.navigate("DishDetail", { dishId: dish.dish_id })
-                              }
-                            >
-                              <View
-                                style={[
-                                  styles.rankBadge,
-                                  {
-                                    backgroundColor:
-                                      index === 0
-                                        ? "#FFD700"
-                                        : index === 1
-                                        ? "#C0C0C0"
-                                        : "#CD7F32",
-                                  },
-                                ]}
-                              >
-                                <Text style={styles.rankText}>{index + 1}</Text>
-                              </View>
+      {/* Floating Stats Cards */}
+      <View style={styles.statsContainer}>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: c.card, shadowColor: c.text }]}>
+              <View style={[styles.statIcon, { backgroundColor: c.text + '08' }]}>
+                   <Ionicons name="wallet-outline" size={20} color={c.text} />
+              </View>
+              <Text style={[styles.statValue, { color: c.text }]}>{formatCurrency(chefStats?.totalEarnings || 0)}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>{t('chef.earnings')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: c.card, shadowColor: c.text }]}>
+              <View style={[styles.statIcon, { backgroundColor: c.primary + '15' }]}>
+                   <Ionicons name="people-outline" size={20} color={c.primary} />
+              </View>
+              <Text style={[styles.statValue, { color: c.primary }]}>{subscribers}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>{t('chef.subscribers')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: c.card, shadowColor: c.text }]}>
+               <View style={[styles.statIcon, { backgroundColor: c.text + '08' }]}>
+                   <Ionicons name="heart-outline" size={20} color={c.text} />
+              </View>
+              <Text style={[styles.statValue, { color: c.text }]}>{followingCount}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>{t('chef.following')}</Text>
+          </TouchableOpacity>
+      </View>
 
-                              {dish.picture ? (
-                                <Image
-                                  source={{ uri: dish.picture }}
-                                  style={styles.topDishImage}
-                                  resizeMode="cover"
-                                />
-                              ) : (
-                                <View
-                                  style={[
-                                    styles.topDishImage,
-                                    {
-                                      backgroundColor: c.surface,
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                    },
-                                  ]}
-                                >
-                                  <Ionicons name="restaurant" size={32} color={c.textMuted} />
-                                </View>
-                              )}
-
-                              <View style={styles.topDishInfo}>
-                                <Text
-                                  style={[styles.topDishName, { color: c.text }]}
-                                  numberOfLines={1}
-                                >
-                                  {dish.name}
-                                </Text>
-
-                                <View style={styles.topDishStats}>
-                                  <View style={styles.topDishStatItem}>
-                                    <Ionicons name="cart" size={14} color="#4CAF50" />
-                                    <Text
-                                      style={[
-                                        styles.topDishStatText,
-                                        { color: c.textSecondary },
-                                      ]}
-                                    >
-                                      {dish.ordersThisWeek} {t("chef.stats.ordersThisWeek")}
-                                    </Text>
-                                  </View>
-
-                                  <View style={styles.topDishStatItem}>
-                                    <Ionicons name="cash" size={14} color="#2196F3" />
-                                    <Text
-                                      style={[
-                                        styles.topDishStatText,
-                                        { color: c.textSecondary },
-                                      ]}
-                                    >
-                                      {formatCurrency(dish.revenueThisWeek)} ₸
-                                    </Text>
-                                  </View>
-                                </View>
-                              </View>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-                  </>
-                ) : (
-                  <View style={styles.emptyState}>
-                    <Ionicons name="stats-chart-outline" size={48} color={c.textMuted} />
-                    <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                      {t("profile.statsUnavailable")}
-                    </Text>
+      {/* Dashboard Section */}
+      <View style={styles.dashboardSection}>
+          {/* Earnings Card with Noise/Gradient */}
+          <LinearGradient
+              colors={c.authGradient} // Use premium gradient
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.earningsCard, { shadowColor: c.primary }]}
+          >
+              <View style={styles.earningsHeader}>
+                  <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <Ionicons name="card" size={20} color="#fff" />
                   </View>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Customer Content */}
-        {!roleIsChef && (
-          <View style={styles.customerContent}>
-            <View style={styles.tabSwitcher}>
-              <TouchableOpacity
-                style={[
-                  styles.tab,
-                  customerActiveTab === "orders" && {
-                    borderBottomColor: c.primary,
-                    borderBottomWidth: 3,
-                  },
-                ]}
-                onPress={() => setCustomerActiveTab("orders")}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="receipt"
-                  size={24}
-                  color={customerActiveTab === "orders" ? c.primary : c.textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.tab,
-                  customerActiveTab === "favorites" && {
-                    borderBottomColor: c.primary,
-                    borderBottomWidth: 3,
-                  },
-                ]}
-                onPress={() => setCustomerActiveTab("favorites")}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="heart"
-                  size={24}
-                  color={
-                    customerActiveTab === "favorites" ? c.primary : c.textMuted
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-
-            {customerActiveTab === "orders" ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="receipt-outline" size={64} color={c.textMuted} />
-                <Text style={[styles.emptyTitle, { color: c.text }]}>
-                  {t("profile.ordersEmpty")}
-                </Text>
-                <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                  {t("profile.startOrdering")}
-                </Text>
-                <TouchableOpacity
-                  style={[styles.ctaButton, { backgroundColor: c.primary }]}
-                  onPress={() => navigation.navigate("Search")}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.ctaButtonText}>
-                    {t("profile.findDishes")}
+                  <Text style={[styles.earningsTitle, { color: 'rgba(255,255,255,0.9)' }]}>
+                      {t('chef.totalEarnings')}
                   </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity style={{ marginLeft: 'auto' }}>
+                      <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
+                  </TouchableOpacity>
               </View>
-            ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="heart-outline" size={64} color={c.textMuted} />
-                <Text style={[styles.emptyTitle, { color: c.text }]}>
-                  {t("profile.noFavorites")}
-                </Text>
-                <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                  {t("profile.addFavorites")}
-                </Text>
+              <Text style={styles.earningsAmount}>{formatCurrency(chefStats?.totalEarnings || 0)} ₸</Text>
+              <View style={styles.earningsFooter}>
+                  <View style={styles.trendBadge}>
+                      <Ionicons name="trending-up" size={14} color="#fff" />
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>+12%</Text>
+                  </View>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
+                      {t('chef.thisMonth')}: <Text style={{ color: '#fff', fontWeight: '700' }}>+{formatCurrency(chefStats?.monthlyEarnings || 0)} ₸</Text>
+                  </Text>
               </View>
-            )}
+              
+              {/* Decorative Circles */}
+              <View style={[styles.decoCircle, { right: -30, top: -20, width: 100, height: 100 }]} />
+              <View style={[styles.decoCircle, { left: -20, bottom: -40, width: 80, height: 80 }]} />
+          </LinearGradient>
+
+          {/* Action Buttons */}
+          <View style={styles.actionsRow}>
+              <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+                  onPress={() => navigation.navigate("AddDish")}
+              >
+                  <LinearGradient
+                    colors={[c.primary + '20', c.primary + '05']}
+                    style={styles.actionBtnGradient}
+                  >
+                      <View style={[styles.actionIcon, { backgroundColor: c.primary }]}>
+                          <Ionicons name="add" size={24} color="#fff" />
+                      </View>
+                      <Text style={[styles.actionBtnTitle, { color: c.text }]}>{t('chef.addDish')}</Text>
+                  </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+                  onPress={() => navigation.navigate("AddVideo")}
+              >
+                  <LinearGradient
+                    colors={[c.secondary + '20', c.secondary + '05']}
+                    style={styles.actionBtnGradient}
+                  >
+                        <View style={[styles.actionIcon, { backgroundColor: c.text }]}>
+                            <Ionicons name="videocam" size={24} color={c.background} />
+                        </View>
+                        <Text style={[styles.actionBtnTitle, { color: c.text }]}>{t('chef.addVideo')}</Text>
+                  </LinearGradient>
+              </TouchableOpacity>
           </View>
-        )}
+      </View>
 
-        <View style={styles.bottomPadding} />
-      </ScrollView>
+      {/* Premium Tabs */}
+      <View style={styles.tabsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+              {[
+                { key: 'dishes', icon: 'restaurant', label: t('chef.dishes') },
+                { key: 'videos', icon: 'play-circle', label: t('chef.videos') },
+                { key: 'reviews', icon: 'star', label: t('chef.reviews') },
+              ].map((tab: any) => {
+                  const isActive = chefActiveTab === tab.key;
+                  return (
+                      <TouchableOpacity
+                          key={tab.key}
+                          style={[
+                              styles.pillTab, 
+                              isActive ? { backgroundColor: c.text } : { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border }
+                          ]}
+                          onPress={() => setChefActiveTab(tab.key)}
+                      >
+                          <Ionicons 
+                              name={tab.icon} 
+                              size={16} 
+                              color={isActive ? c.background : c.textSecondary} 
+                          />
+                          <Text style={[
+                              styles.pillTabText, 
+                              { color: isActive ? c.background : c.textSecondary }
+                          ]}>
+                              {tab.label}
+                          </Text>
+                      </TouchableOpacity>
+                  )
+              })}
+          </ScrollView>
+      </View>
 
-      {/* Floating Action Button for Chefs */}
-      {/* FAB Arc Menu for Chef */}
-      {roleIsChef && (
-        <>
-          {/* Backdrop */}
-          {fabMenuOpen && (
-            <TouchableOpacity
-              style={styles.fabBackdrop}
-              activeOpacity={1}
-              onPress={() => setFabMenuOpen(false)}
-            />
+      {/* Tab Content */}
+      <View style={styles.contentContainer}>
+          {chefActiveTab === "videos" && (
+              <View style={styles.videoGrid}>
+                  {videos.length > 0 ? (
+                      videos.slice(0, 9).map((video) => (
+                          <TouchableOpacity
+                              key={video.videoId}
+                              style={styles.videoItem}
+                              onPress={() => navigation.navigate("VideoViewer", { video })}
+                          >
+                              {/* IMPORTANT: Ensure video preview is visible */}
+                              <Video
+                                  source={{ uri: `${API_BASE_URL}${video.videoUrl}` }}
+                                  style={styles.videoThumbnail}
+                                  resizeMode={ResizeMode.COVER}
+                                  shouldPlay={false}
+                                  isMuted={true}
+                              />
+                              <LinearGradient
+                                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                                  style={styles.videoGradient}
+                              />
+                              <View style={styles.playIcon}>
+                                  <Ionicons name="play" size={20} color="#fff" />
+                              </View>
+                              <View style={styles.videoStats}>
+                                  <Ionicons name="heart" size={12} color="#fff" />
+                                  <Text style={styles.videoStatText}>{video.likesCount || 0}</Text>
+                              </View>
+                          </TouchableOpacity>
+                      ))
+                  ) : (
+                      <View style={styles.emptyState}>
+                          <View style={[styles.emptyIconCircle, { backgroundColor: c.input }]}>
+                              <Ionicons name="videocam-off" size={32} color={c.textMuted} />
+                          </View>
+                          <Text style={[styles.emptyText, { color: c.textMuted }]}>{t('chef.noVideos')}</Text>
+                      </View>
+                  )}
+              </View>
           )}
 
-          {/* Arc Menu Options */}
-{/* Arc Menu Options */}
-{fabMenuOpen && (
-  <View style={styles.arcMenuContainer} pointerEvents="box-none">
-    {/* Item 1 */}
-    <Animated.View
-      style={[
-        styles.arcMenuItemWrapper,
-        {
-          transform: [
-            {
-              translateX: menuItem1Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -132],
-              }),
-            },
-            {
-              translateY: menuItem1Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -18],
-              }),
-            },
-            {
-              scale: menuItem1Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.65, 1],
-              }),
-            },
-          ],
-          opacity: menuItem1Anim,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={[
-          styles.arcMenuPill,
-          {
-            backgroundColor: c.name === "dark" ? "rgba(255,255,255,0.08)" : "#FFFFFF",
-            borderColor: c.border,
-          },
-        ]}
-        onPress={() => {
-          setViewMode(viewMode === "info" ? "statistics" : "info");
-          setFabMenuOpen(false);
-        }}
-        activeOpacity={0.86}
+          {chefActiveTab === "dishes" && (
+              <View style={styles.dishesGrid}>
+                  {dishes.length > 0 ? (
+                      dishes.map((dish) => (
+                          <TouchableOpacity
+                              key={dish.dish_id}
+                              style={[styles.dishCard, { backgroundColor: c.card, shadowColor: c.text }]}
+                              onPress={() => navigation.navigate("DishDetail", { dishId: dish.dish_id })}
+                          >
+                              {dish.picture ? (
+                                  <Image source={{ uri: dish.picture }} style={styles.dishImage} />
+                              ) : (
+                                  <View style={[styles.dishImage, { backgroundColor: c.input, alignItems: 'center', justifyContent: 'center' }]}>
+                                      <Ionicons name="restaurant" size={40} color={c.textMuted} />
+                                  </View>
+                              )}
+                              <LinearGradient
+                                  colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                  style={styles.dishOverlay}
+                              >
+                                  <Text style={styles.dishPriceText}>{formatCurrency(dish.price)} ₸</Text>
+                                  <Text style={styles.dishNameText} numberOfLines={1}>{dish.name}</Text>
+                              </LinearGradient>
+                          </TouchableOpacity>
+                      ))
+                  ) : (
+                      <View style={styles.emptyState}>
+                           <View style={[styles.emptyIconCircle, { backgroundColor: c.input }]}>
+                              <Ionicons name="restaurant" size={32} color={c.textMuted} />
+                          </View>
+                          <Text style={[styles.emptyText, { color: c.textMuted }]}>{t('chef.noDishes')}</Text>
+                      </View>
+                  )}
+              </View>
+          )}
+
+          {chefActiveTab === "reviews" && (
+              <View style={styles.reviewsContainer}>
+                  {reviews.length > 0 ? (
+                      reviews.map((review: any) => (
+                          <View key={review.review_id} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                              <View style={styles.reviewHeader}>
+                                  <View style={styles.reviewUser}>
+                                      <Avatar uri={review.reviewer?.profile_pic} name={review.reviewer?.name} size="sm" />
+                                      <View style={styles.reviewHeaderInfo}>
+                                          <Text style={[styles.reviewName, { color: c.text }]}>{review.reviewer?.name}</Text>
+                                          <StarRating rating={review.rating} size={12} />
+                                      </View>
+                                  </View>
+                                  <Text style={[styles.reviewDate, { color: c.textMuted }]}>
+                                      {new Date(review.createdAt || Date.now()).toLocaleDateString()}
+                                  </Text>
+                              </View>
+                              <Text style={[styles.reviewComment, { color: c.textSecondary }]}>{review.comment}</Text>
+                          </View>
+                      ))
+                  ) : (
+                      <View style={styles.emptyState}>
+                           <View style={[styles.emptyIconCircle, { backgroundColor: c.input }]}>
+                              <Ionicons name="chatbox" size={32} color={c.textMuted} />
+                          </View>
+                          <Text style={[styles.emptyText, { color: c.textMuted }]}>{t('chef.noReviews')}</Text>
+                      </View>
+                  )}
+              </View>
+          )}
+      </View>
+    </>
+  );
+
+  const renderCustomerContent = () => (
+    <>
+      <LinearGradient
+          colors={c.authGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.customerHeader}
       >
-        <View
-          style={[
-            styles.arcMenuIconBubble,
-            { backgroundColor: c.primary + "18", borderColor: c.primary + "30" },
-          ]}
-        >
-          <Ionicons
-            name={viewMode === "info" ? "stats-chart" : "information-circle"}
-            size={18}
-            color={c.primary}
-          />
-        </View>
+          {/* Header content similar to chef but larger */}
+          <View style={styles.customerProfile}>
+              <View style={[styles.avatarRing, { borderColor: 'rgba(255,255,255,0.5)', padding: 4 }]}>
+                    <Avatar uri={avatarUri} name={profile?.name} size="lg" />
+              </View>
+              <View style={styles.customerInfo}>
+                  <Text style={styles.customerName}>{profile?.name}</Text>
+                  <Text style={styles.customerPhone}>{profile?.phone_number}</Text>
+                  <View style={styles.customerMetaRow}>
+                      <View style={[styles.roleBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                          <Ionicons name="person" size={12} color="#fff" />
+                          <Text style={styles.roleBadgeText}>{t('common.customer')}</Text>
+                      </View>
+                  </View>
+              </View>
+          </View>
 
-        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-      </TouchableOpacity>
-    </Animated.View>
+          <View style={styles.customerStatsRow}>
+              <View style={[styles.customerStatCard, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                  <Text style={[styles.statValue, { color: '#fff' }]}>{totalOrders}</Text>
+                  <Text style={[styles.statLabel, { color: 'rgba(255,255,255,0.8)' }]}>{t('orders.title')}</Text>
+              </View>
+              <View style={[styles.customerStatCard, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                  <Text style={[styles.statValue, { color: '#fff' }]}>{followingCount}</Text>
+                  <Text style={[styles.statLabel, { color: 'rgba(255,255,255,0.8)' }]}>{t('chef.following')}</Text>
+              </View>
+          </View>
+          
+           {/* Decorative Circles */}
+          <View style={[styles.decoCircle, { right: -50, top: -50, width: 200, height: 200, opacity: 0.1 }]} />
+      </LinearGradient>
 
-    {/* Item 2 */}
-    <Animated.View
-      style={[
-        styles.arcMenuItemWrapper,
-        {
-          transform: [
-            {
-              translateX: menuItem2Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -96],
-              }),
-            },
-            {
-              translateY: menuItem2Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -88],
-              }),
-            },
-            {
-              scale: menuItem2Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.65, 1],
-              }),
-            },
-          ],
-          opacity: menuItem2Anim,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={[
-          styles.arcMenuPill,
-          {
-            backgroundColor: c.name === "dark" ? "rgba(255,255,255,0.08)" : "#FFFFFF",
-            borderColor: c.border,
-          },
-        ]}
-        onPress={() => {
-          setFabMenuOpen(false);
-          navigation.navigate("AddDish");
-        }}
-        activeOpacity={0.86}
-      >
-        <View
-          style={[
-            styles.arcMenuIconBubble,
-            { backgroundColor: "#22C55E" + "18", borderColor: "#22C55E" + "30" },
-          ]}
-        >
-          <Ionicons name="restaurant" size={18} color="#22C55E" />
-        </View>
+      <View style={{ marginTop: -30, paddingHorizontal: 20, paddingBottom: 100 }}>
+          {/* Tabs Floating */}
+          <View style={[styles.tabsPillContainer, { backgroundColor: c.card, shadowColor: c.text }]}>
+              <TouchableOpacity
+                  style={[styles.tabPill, customerActiveTab === "recent" && { backgroundColor: c.primary + '20' }]}
+                  onPress={() => setCustomerActiveTab("recent")}
+              >
+                  <Ionicons name="time" size={20} color={customerActiveTab === "recent" ? c.primary : c.textMuted} />
+                  <Text style={[styles.tabPillText, { color: customerActiveTab === "recent" ? c.primary : c.textMuted }]}>
+                      {t('profile.recent')}
+                  </Text>
+              </TouchableOpacity>
+              <View style={{ width: 1, height: 24, backgroundColor: c.border }} />
+              <TouchableOpacity
+                  style={[styles.tabPill, customerActiveTab === "favorites" && { backgroundColor: c.primary + '20' }]}
+                  onPress={() => setCustomerActiveTab("favorites")}
+              >
+                  <Ionicons name="heart" size={20} color={customerActiveTab === "favorites" ? c.primary : c.textMuted} />
+                  <Text style={[styles.tabPillText, { color: customerActiveTab === "favorites" ? c.primary : c.textMuted }]}>
+                      {t('profile.favorites')}
+                  </Text>
+              </TouchableOpacity>
+          </View>
 
-        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-      </TouchableOpacity>
-    </Animated.View>
+          {customerActiveTab === "recent" ? (
+              <View style={{ marginTop: 24 }}>
+                  {customerOrders && customerOrders.length > 0 ? (
+                      customerOrders.slice(0, 5).map((order: any) => (
+                          <TouchableOpacity
+                              key={order.order_id}
+                              style={[styles.customerListItem, { backgroundColor: c.card, shadowColor: c.text }]}
+                              onPress={() => navigation.navigate("OrderTracking", { orderId: order.order_id })}
+                          >
+                              {order.order_details?.[0]?.dishes?.picture ? (
+                                  <Image
+                                      source={{ uri: order.order_details[0].dishes.picture }}
+                                      style={styles.orderStartImage}
+                                  />
+                              ) : (
+                                  <View style={[styles.orderStartImage, { backgroundColor: c.input, alignItems: 'center', justifyContent: 'center' }]}>
+                                      <Ionicons name="receipt" size={24} color={c.textMuted} />
+                                  </View>
+                              )}
+                              <View style={{ flex: 1, paddingHorizontal: 12 }}>
+                                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                      <Text style={[styles.customerItemTitle, { color: c.text }]}>
+                                          Order #{order.order_id}
+                                      </Text>
+                                      <Text style={[styles.customerPrice, { color: c.primary }]}>
+                                          {formatCurrency(order.total_price)} ₸
+                                      </Text>
+                                  </View>
+                                  <Text style={[styles.customerItemSub, { color: c.textSecondary }]}>
+                                      {order.order_details?.length} items • {new Date(order.createdAt).toLocaleDateString()}
+                                  </Text>
+                                  <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                                      <View style={[styles.statusBadge, { backgroundColor: c.success + '20' }]}>
+                                          <Text style={[styles.statusText, { color: c.success }]}>{order.status}</Text>
+                                      </View>
+                                  </View>
+                              </View>
+                              <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
+                          </TouchableOpacity>
+                      ))
+                  ) : (
+                      <View style={styles.emptyState}>
+                          <Ionicons name="receipt-outline" size={48} color={c.textMuted} />
+                          <Text style={[styles.emptyText, { color: c.textMuted }]}>{t('orders.emptyState')}</Text>
+                      </View>
+                  )}
+              </View>
+          ) : (
+              <View style={{ marginTop: 24 }}>
+                  {(followingList?.data && followingList.data.length > 0) ? (
+                      followingList.data.map((user: any) => (
+                          <TouchableOpacity
+                              key={user.user_id}
+                              style={[styles.customerListItem, { backgroundColor: c.card, shadowColor: c.text }]}
+                              onPress={() => navigation.navigate("ChefDetail", { chefId: user.user_id })}
+                          >
+                              <Avatar uri={user.profile_pic} name={user.name} size="md" />
+                              <View style={{ flex: 1, paddingHorizontal: 16 }}>
+                                  <Text style={[styles.customerItemTitle, { color: c.text }]}>{user.name}</Text>
+                                  <View style={styles.customerDetailsRow}>
+                                      <Ionicons name="star" size={14} color={c.primary} />
+                                      <Text style={[styles.customerRating, { color: c.text }]}>5.0</Text>
+                                      <Text style={{ color: c.textMuted, fontSize: 12 }}>• Chef</Text>
+                                  </View>
+                              </View>
+                              <TouchableOpacity style={[styles.iconButton, { backgroundColor: c.input }]}>
+                                  <Ionicons name="heart" size={20} color="#FF3B30" />
+                              </TouchableOpacity>
+                          </TouchableOpacity>
+                      ))
+                  ) : (
+                      <View style={styles.emptyState}>
+                          <Ionicons name="heart-outline" size={48} color={c.textMuted} />
+                          <Text style={[styles.emptyText, { color: c.textMuted }]}>{t('profile.noFavorites')}</Text>
+                      </View>
+                  )}
+              </View>
+          )}
+      </View>
+    </>
+  );
 
-    {/* Item 3 */}
-    <Animated.View
-      style={[
-        styles.arcMenuItemWrapper,
-        {
-          transform: [
-            {
-              translateX: menuItem3Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -54],   // чуть левее
-              }),
-            },
-            {
-              translateY: menuItem3Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, -156],  // выше
-              }),
-            },
-            {
-              scale: menuItem3Anim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.65, 1],
-              }),
-            },
-          ],
-          opacity: menuItem3Anim,
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={[
-          styles.arcMenuPill,
-          {
-            backgroundColor: c.name === "dark" ? "rgba(255,255,255,0.08)" : "#FFFFFF",
-            borderColor: c.border,
-          },
-        ]}
-        onPress={() => {
-          setFabMenuOpen(false);
-          navigation.navigate("AddVideo");
-        }}
-        activeOpacity={0.86}
-      >
-        <View
-          style={[
-            styles.arcMenuIconBubble,
-            { backgroundColor: "#06B6D4" + "18", borderColor: "#06B6D4" + "30" },
-          ]}
-        >
-          <Ionicons name="videocam" size={18} color="#06B6D4" />
-        </View>
-
-
-        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-      </TouchableOpacity>
-    </Animated.View>
-  </View>
-)}
-
-          {/* Main FAB Button */}
-          <Animated.View
-            style={[
-              styles.fab,
-              { backgroundColor: c.primary },
-              {
-                transform: [
-                  {
-                    rotate: fabRotation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0deg", "45deg"],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.fabInner}
-              onPress={() => setFabMenuOpen(!fabMenuOpen)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={28} color="#fff" />
-            </TouchableOpacity>
-          </Animated.View>
-        </>
-      )}
-    </View>
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: c.background }]} showsVerticalScrollIndicator={false}>
+      {roleIsChef ? renderChefContent() : renderCustomerContent()}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  
+  // Header
+  headerContainer: { overflow: 'hidden' },
+  headerGradient: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 24 },
+  profileInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  avatarContainer: { position: 'relative' },
+  avatarRing: { padding: 3, borderRadius: 50, borderWidth: 2 },
+  chefBadge: {
+      position: 'absolute', bottom: -5, right: -5,
+      width: 28, height: 28,
+      borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+      borderWidth: 3,
+      shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 5
+  },
+  profileTexts: { flex: 1 },
+  name: { fontSize: 24, fontWeight: '800', marginBottom: 2, letterSpacing: -0.5 },
+  handle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ratingPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
+  ratingText: { fontWeight: '800', fontSize: 14 },
+  dotSep: { marginHorizontal: 4 },
+  ordersText: { fontSize: 14, fontWeight: '500' },
 
-  // Profile Header
-  profileHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  // Stats
+  statsContainer: { 
+      flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginTop: -20, marginBottom: 24
   },
-  centeredAvatarContainer: { alignItems: "center", marginBottom: 16 },
-  centeredName: {
-    fontSize: 24,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 6,
+  statCard: { 
+      flex: 1, padding: 16, borderRadius: 20, 
+      alignItems: 'center', justifyContent: 'center',
+      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 
   },
-  centeredEmail: { fontSize: 14, textAlign: "center", marginBottom: 24 },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    marginTop: 12,
-    gap: 6,
-  },
-  roleText: { fontSize: 13, fontWeight: "700" },
+  statIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  statValue: { fontSize: 18, fontWeight: '800', marginBottom: 2 },
+  statLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
 
-  // Stats Cards
-  statsCards: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  // Dashboard
+  dashboardSection: { paddingHorizontal: 20, marginBottom: 32 },
+  earningsCard: { 
+      padding: 24, borderRadius: 28, overflow: 'hidden', position: 'relative',
+      shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 10
   },
-  statCard: {
-    flex: 1,
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  statCardCount: { fontSize: 24, fontWeight: "800", marginBottom: 4 },
-  statCardLabel: { fontSize: 12, textAlign: "center" },
+  earningsHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
+  iconBox: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  earningsTitle: { fontSize: 16, fontWeight: '600' },
+  earningsAmount: { fontSize: 42, fontWeight: '900', color: '#fff', marginBottom: 24, letterSpacing: -1 },
+  earningsFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)', paddingTop: 16 },
+  trendBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  
+  decoCircle: { position: 'absolute', borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.1)' },
 
-  // Chef / Customer Content
-  chefContent: {},
-  customerContent: {},
+  // Actions
+  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  actionBtn: { flex: 1, borderRadius: 24, borderWidth: 1, overflow: 'hidden' },
+  actionBtnGradient: { padding: 16, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  actionIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  actionBtnTitle: { fontSize: 16, fontWeight: '700' },
 
-  // Main Section Switcher
-  mainSectionSwitcher: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 16,
-    marginHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  mainSection: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 12,
-    gap: 8,
-  },
-  mainSectionText: { fontSize: 16, fontWeight: "700" },
+  // Tabs
+  tabsContainer: { paddingHorizontal: 20, marginBottom: 20 },
+  tabsScroll: { gap: 12 },
+  pillTab: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 100 },
+  pillTabText: { fontWeight: '700', fontSize: 15 },
 
-  // Tabs (no ugly border frame)
-  tabSwitcher: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    gap: 6,
-  },
+  // Content
+  contentContainer: { paddingHorizontal: 20, paddingBottom: 100 },
+  
+  // Video Grid High Quality
+  videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  videoItem: { width: (width - 40 - 24) / 3, aspectRatio: 0.7, borderRadius: 16, overflow: 'hidden', position: 'relative', backgroundColor: '#000' },
+  videoThumbnail: { width: '100%', height: '100%' },
+  videoGradient: { ...StyleSheet.absoluteFillObject },
+  playIcon: { position: 'absolute', top: '50%', left: '50%', marginLeft: -12, marginTop: -12 },
+  videoStats: { position: 'absolute', bottom: 8, left: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  videoStatText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 
-  // Dishes
-  dishesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+  // Dishes Grid
+  dishesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  dishCard: { 
+      width: (width - 40 - 16) / 2, aspectRatio: 0.9, borderRadius: 24, overflow: 'hidden', 
+      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 4 
   },
-  dishCard: {
-    width: (width - 44) / 2,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dishImage: { width: "100%", height: 120 },
-  dishInfo: { padding: 10 },
-  dishName: { fontSize: 14, fontWeight: "700", marginBottom: 4 },
-  dishPrice: { fontSize: 15, fontWeight: "800" },
-
-  // Videos grid
-  videoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 1 },
-  videoItem: { width: VIDEO_SIZE, height: VIDEO_HEIGHT, position: "relative" },
-  videoThumbnail: { width: "100%", height: "100%" },
-  playOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-  videoStatsOverlay: {
-    position: "absolute",
-    bottom: 4,
-    left: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 4,
-  },
-  videoViewCount: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  dishImage: { width: '100%', height: '100%' },
+  dishOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 },
+  dishPriceText: { color: '#F97316', fontWeight: '900', fontSize: 18, marginBottom: 2 },
+  dishNameText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 
   // Reviews
   reviewsContainer: {},
-  reviewCard: {
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  reviewHeaderInfo: { flex: 1, marginLeft: 12 },
-  reviewName: { fontSize: 15, fontWeight: "700", marginBottom: 4 },
+  reviewCard: { padding: 20, borderRadius: 20, borderWidth: 1, marginBottom: 16 },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  reviewUser: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  reviewHeaderInfo: {},
+  reviewName: { fontWeight: '700', fontSize: 16 },
   reviewDate: { fontSize: 12 },
-  reviewComment: { fontSize: 14, lineHeight: 20 },
+  reviewComment: { lineHeight: 22, fontSize: 14 },
+  
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40 },
+  emptyIconCircle: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyText: { fontSize: 16, fontWeight: '500' },
+  
+  // Customer Styles
+  customerHeader: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 60, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, position: 'relative', overflow: 'hidden' },
+  customerProfile: { flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 30 },
+  customerInfo: { flex: 1 },
+  customerName: { color: '#fff', fontSize: 30, fontWeight: '900', marginBottom: 4, letterSpacing: -0.5 },
+  customerPhone: { color: 'rgba(255,255,255,0.8)', fontSize: 18, marginBottom: 12 },
+  customerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  roleBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  roleBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  
+  customerStatsRow: { flexDirection: 'row', gap: 12 },
+  customerStatCard: { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
 
-  // Empty / CTA
-  emptyState: { alignItems: "center", paddingVertical: 64, paddingHorizontal: 16 },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
+  tabsPillContainer: { 
+      flexDirection: 'row', marginHorizontal: 20, borderRadius: 20, padding: 6, 
+      alignItems: 'center', gap: 4,
+      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5
   },
-  emptyText: { fontSize: 14, marginTop: 8, textAlign: "center" },
-  ctaButton: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 14 },
-  ctaButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-
-  bottomPadding: { height: 32 },
-
-  // FAB
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  tabPill: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 8, borderRadius: 14 },
+  tabPillText: { fontSize: 15, fontWeight: '700' },
+  
+  customerListItem: { 
+      flexDirection: 'row', borderRadius: 24, padding: 12, marginBottom: 16, alignItems: 'center',
+      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3
   },
-
-  // Statistics Section
-  premiumStatsSection: { paddingTop: 8, paddingBottom: 8 },
-
-  earningsCard: {
-    borderRadius: 24,
-    padding: 24,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  earningsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 16,
-  },
-  earningsLabel: { color: "#fff", fontSize: 16, fontWeight: "600", opacity: 0.95 },
-  earningsValue: {
-    color: "#fff",
-    fontSize: 42,
-    fontWeight: "900",
-    letterSpacing: -1,
-    marginBottom: 16,
-  },
-  earningsDivider: {
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    marginBottom: 12,
-  },
-  earningsFooter: { flexDirection: "row", justifyContent: "space-between" },
-  earningsSubStat: { flexDirection: "row", alignItems: "center", gap: 6 },
-  earningsSubLabel: { color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "600" },
-
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 20,
-    paddingHorizontal: 16,
-  },
-  miniStatCard: {
-    width: (width - 44) / 2,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  miniStatIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  miniStatValue: { fontSize: 24, fontWeight: "800", marginBottom: 4 },
-  miniStatLabel: { fontSize: 11, textAlign: "center" },
-
-  topDishesSection: { marginBottom: 12 },
-  topDishesHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 16 },
-  topDishesTitle: { fontSize: 20, fontWeight: "800" },
-  topDishesScroll: { paddingLeft: 16, paddingRight: 16 },
-  topDishCard: {
-    width: 160,
-    borderRadius: 16,
-    marginRight: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  rankBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  rankText: { color: "#fff", fontSize: 14, fontWeight: "900" },
-  topDishImage: { width: "100%", height: 120 },
-  topDishInfo: { padding: 12 },
-  topDishName: { fontSize: 14, fontWeight: "700", marginBottom: 8 },
-  topDishStats: { gap: 6 },
-  topDishStatItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  topDishStatText: { fontSize: 11, fontWeight: "600" },
-
-  // FAB Arc Menu
-
-  // FAB Arc Menu
-fabBackdrop: {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0,0,0,0.35)",
-},
-arcMenuContainer: {
-  position: "absolute",
-  right: 20,
-  bottom: 24, // привязка к FAB, а не к "90"
-  width: 220,
-  height: 220,
-},
-arcMenuItemWrapper: {
-  position: "absolute",
-  right: 0,
-  bottom: 0,
-},
-arcMenuPill: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 10,
-  paddingVertical: 12,
-  paddingHorizontal: 12,
-  borderRadius: 999, // супер-изогнутая
-  borderWidth: 1,
-  minWidth: 60,
-
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.14,
-  shadowRadius: 18,
-  elevation: 10,
-},
-arcMenuIconBubble: {
-  width: 34,
-  height: 34,
-  borderRadius: 17,
-  alignItems: "center",
-  justifyContent: "center",
-  borderWidth: 1,
-},
-arcMenuText: {
-  flex: 1,
-  fontSize: 14,
-  fontWeight: "800",
-},
-fabInner: {
-  width: "100%",
-  height: "100%",
-  alignItems: "center",
-  justifyContent: "center",
-},
-
+  orderStartImage: { width: 70, height: 70, borderRadius: 18 },
+  customerItemTitle: { fontSize: 16, fontWeight: '700' },
+  customerItemSub: { fontSize: 13 },
+  customerDetailsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  customerRating: { fontWeight: '700', fontSize: 14 },
+  customerPrice: { fontWeight: '800', fontSize: 16 },
+  iconButton: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
 });
