@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Button } from "../../components/ui";
+import { Button, PremiumHeader } from "../../components/ui";
 import { useColors } from "../../lib/theme";
 import { useMyAddresses, useCart, useProfile } from "../../lib/hooks";
 
@@ -47,6 +47,10 @@ export default function CheckoutScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
+      <PremiumHeader 
+        title={t("checkout.title", "Checkout")}
+        backButton
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Order Summary */}
         <View style={[styles.section, { backgroundColor: c.card }]}>
@@ -166,7 +170,7 @@ export default function CheckoutScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 100 },
+  scrollContent: { padding: 16, paddingBottom: 100, paddingTop: 20 },
   section: {
     padding: 16,
     borderRadius: 16,

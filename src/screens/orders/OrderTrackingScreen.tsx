@@ -7,6 +7,7 @@ import { Svg, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "re
 import { useColors } from "../../lib/theme";
 import { useOrder, useProfile, useUpdateOrderStatus } from "../../lib/hooks"; 
 import { Avatar } from "../../components/ui";
+import { PremiumHeader } from "../../components/ui/PremiumHeader";
 import { API_BASE_URL } from "../../lib/constants";
 
 const { width } = Dimensions.get("window");
@@ -140,23 +141,11 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Premium Header */}
-      <View style={{ overflow: 'hidden', borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
-           <LinearGradient
-              colors={c.authGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.headerGradient}
-           >
-               <View style={styles.headerContent}>
-                   <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                       <Ionicons name="arrow-back" size={24} color="#fff" />
-                   </TouchableOpacity>
-                   <Text style={styles.headerTitle}>{t('orders.tracking.title')}</Text>
-                   <View style={{ width: 40 }} />
-               </View>
-               <Text style={styles.headerSubtitle}>Order #{orderId}</Text>
-           </LinearGradient>
-      </View>
+      <PremiumHeader 
+        title={t('orders.tracking.title')}
+        subtitle={`Order #${orderId}`}
+        backButton
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
@@ -303,12 +292,7 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  // Header
-  headerGradient: { paddingTop: 60, paddingBottom: 24, paddingHorizontal: 20 },
-  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 32, fontWeight: '800', textAlign: 'center' },
+  // Header styles removed as PremiumHeader is used
 
   // Timer
   timerContainer: { alignItems: 'center', marginTop: -40, marginBottom: 24 },

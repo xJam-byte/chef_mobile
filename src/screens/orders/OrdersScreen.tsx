@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useColors } from "../../lib/theme";
 import { useOrders, useProfile, useChefOrders } from "../../lib/hooks";
+import { PremiumHeader } from "../../components/ui/PremiumHeader";
 
 type TabType = 'my_orders' | 'incoming_orders';
 
@@ -48,12 +49,9 @@ export default function OrdersScreen({ navigation }: any) {
 
   const getStatusLabelKey = (status: string) => `orders.statuses.${status}`;
 
+
   const renderHeader = () => (
-      <View style={styles.header}>
-           <Text style={[styles.headerTitle, { color: c.text }]}>{t('orders.title')}</Text>
-           {/* Decorative blurred circle */}
-           <View style={[styles.decoCircle, { backgroundColor: c.primary, opacity: 0.1 }]} />
-      </View>
+      <PremiumHeader title={t('orders.title')} />
   );
 
   return (
@@ -181,11 +179,9 @@ export default function OrdersScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 10, position: 'relative', overflow: 'hidden' },
-  headerTitle: { fontSize: 34, fontWeight: '900', letterSpacing: -1 },
-  decoCircle: { position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: 100 },
+  // header: { ... } -> Removed
   
-  tabsWrapper: { paddingHorizontal: 20, marginBottom: 10 },
+  tabsWrapper: { paddingHorizontal: 20, marginBottom: 10, marginTop: 10 },
   tabContainer: { 
       flexDirection: 'row', padding: 6, borderRadius: 16, alignItems: 'center',
       shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3
@@ -214,7 +210,7 @@ const styles = StyleSheet.create({
   
   totalPrice: { fontSize: 18, fontWeight: '900' },
   
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopStyle: 'dashed' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, paddingHorizontal: 16, borderTopWidth: 1, borderStyle: 'dashed' },
   arrowBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingTop: 100, gap: 16 },

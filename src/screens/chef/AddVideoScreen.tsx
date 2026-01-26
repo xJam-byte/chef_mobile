@@ -22,6 +22,8 @@ import { useColors } from "../../lib/theme";
 import { useProfile, useChefDishes, useCreateVideo } from "../../lib/hooks";
 import { useChefByUserId } from "../../lib/hooks/useChefs";
 import { showMessage } from "react-native-flash-message";
+import { PremiumHeader } from "../../components/ui";
+import { t } from "i18next";
 
 export default function AddVideoScreen({ navigation }: any) {
   const c = useColors();
@@ -105,6 +107,10 @@ export default function AddVideoScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
+                  <PremiumHeader 
+                      title={t('addVideo.title', 'Add New Video')}
+                      backButton
+                  />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Video Upload Section */}
         <TouchableOpacity
@@ -314,6 +320,7 @@ export default function AddVideoScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      {/* <PremiumF /> */}
     </View>
   );
 }

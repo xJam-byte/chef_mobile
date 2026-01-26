@@ -2,6 +2,7 @@
 import { apiClient } from "./client";
 
 export interface Address {
+  [x: string]: unknown;
   address_id: number;
   user_id: number;
   street: string;
@@ -23,7 +24,9 @@ export const getMyAddresses = async (userId: number): Promise<Address[]> => {
   return res.data;
 };
 
-export const createAddress = async (data: CreateAddressDto): Promise<Address> => {
+export const createAddress = async (
+  data: CreateAddressDto,
+): Promise<Address> => {
   const res = await apiClient.post<Address>("/address/addOne", data);
   return res.data;
 };

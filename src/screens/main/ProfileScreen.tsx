@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { Avatar, StarRating, Spinner } from "../../components/ui";
+import { PremiumHeader } from "../../components/ui/PremiumHeader";
 import {
   useProfile,
   useChefDishes,
@@ -86,41 +87,39 @@ export default function ProfileScreen({ navigation }: any) {
   // Render functions
   const renderChefContent = () => (
     <>
-      {/* Premium Header */}
-        <View style={styles.headerContainer}>
-             <LinearGradient
-                colors={c.name === 'dark' ? ['#1A1512', '#2D241C'] : ['#FFF', '#FFF5EB']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={[styles.headerGradient, { borderBottomColor: c.border, borderBottomWidth: 1 }]}
-             >
-                 <View style={styles.profileInfoRow}>
-                    <View style={styles.avatarContainer}>
-                         <View style={[styles.avatarRing, { borderColor: c.primary }]}>
-                            <Avatar uri={avatarUri} name={profile?.name} size="lg" />
-                         </View>
-                        <View style={[styles.chefBadge, { backgroundColor: c.primary, borderColor: c.surface }]}>
-                            <Ionicons name="star" size={12} color="#fff" />
-                        </View>
-                    </View>
+      <PremiumHeader
+        // title={t('profile.title', 'My Profile')}
+        
+      >
+        <View style={styles.profileInfoRow}>
+          <View style={styles.avatarContainer}>
+            <View style={[styles.avatarRing, { borderColor: c.primary }]}>
+              <Avatar uri={avatarUri} name={profile?.name} size="lg" />
+            </View>
+            <View style={[styles.chefBadge, { backgroundColor: c.primary, borderColor: c.surface }]}>
+              <Ionicons name="star" size={12} color="#fff" />
+            </View>
+          </View>
 
-                    <View style={styles.profileTexts}>
-                        <Text style={[styles.name, { color: c.text }]}>{profile?.name}</Text>
-                        <Text style={[styles.handle, { color: c.primary }]}>
-                          @{profile?.name?.toLowerCase().replace(/\s/g, "")}
-                        </Text>
-                        <View style={styles.ratingRow}>
-                           <View style={[styles.ratingPill, { backgroundColor: c.primary + '15' }]}>
-                               <Ionicons name="star" size={14} color={c.primary} />
-                               <Text style={[styles.ratingText, { color: c.primary }]}>{chef?.rating || '5.0'}</Text>
-                           </View>
-                           <Text style={[styles.dotSep, { color: c.textMuted }]}>•</Text>
-                           <Text style={[styles.ordersText, { color: c.textSecondary }]}>{totalOrders} {t('orders.title')}</Text>
-                        </View>
-                    </View>
-                 </View>
-             </LinearGradient>
+          <View style={styles.profileTexts}>
+            <Text style={[styles.name, { color: '#FFF' }]}>{profile?.name}</Text>
+            {/* <Text style={[styles.handle, { color: c.text }]}>
+              @{profile?.name?.toLowerCase().replace(/\s/g, "")}
+            </Text> */}
+            <View style={styles.ratingRow}>
+              <View style={[styles.ratingPill, { backgroundColor: c.primary + '15' }]}>
+                <Ionicons name="star" size={14} color="#FFF" />
+                <Text style={[styles.ratingText, { color: '#FFF' }]}>{chef?.rating || '5.0'}</Text>
+              </View>
+              <Text style={[styles.dotSep, { color: c.textMuted }]}>•</Text>
+              <Text style={[styles.ordersText, { color: 'rgba(255,255,255,0.7)' }]}>{totalOrders} {t('orders.title')}</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={{ position: 'absolute', top: 10, right: 10 }} onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="settings-outline" size={24} color="#FFF" />
+          </TouchableOpacity>
         </View>
+      </PremiumHeader>
 
       {/* Floating Stats Cards */}
       <View style={styles.statsContainer}>
@@ -259,18 +258,28 @@ export default function ProfileScreen({ navigation }: any) {
                   {videos.length > 0 ? (
                       videos.slice(0, 9).map((video) => (
                           <TouchableOpacity
-                              key={video.videoId}
+                              key={video.id}
                               style={styles.videoItem}
                               onPress={() => navigation.navigate("VideoViewer", { video })}
                           >
-                              {/* IMPORTANT: Ensure video preview is visible */}
-                              <Video
-                                  source={{ uri: `${API_BASE_URL}${video.videoUrl}` }}
+                              {/* FIXED: Use Image with posterUrl for better performance, fallback to Video frame */}
+                              {video.posterUrl ? (
+                                <Image
+                                  source={{ uri: video.posterUrl }}
+                                  style={styles.videoThumbnail}
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <Video
+                                  source={{ uri: video.url }}
                                   style={styles.videoThumbnail}
                                   resizeMode={ResizeMode.COVER}
                                   shouldPlay={false}
                                   isMuted={true}
-                              />
+                                  status={{ positionMillis: 1500 }} // "Random" frame at 1.5s
+                                />
+                              )}
+                              
                               <LinearGradient
                                   colors={['transparent', 'rgba(0,0,0,0.7)']}
                                   style={styles.videoGradient}
@@ -280,7 +289,7 @@ export default function ProfileScreen({ navigation }: any) {
                               </View>
                               <View style={styles.videoStats}>
                                   <Ionicons name="heart" size={12} color="#fff" />
-                                  <Text style={styles.videoStatText}>{video.likesCount || 0}</Text>
+                                  <Text style={styles.videoStatText}>{video.stats?.likes || 0}</Text>
                               </View>
                           </TouchableOpacity>
                       ))
@@ -367,11 +376,9 @@ export default function ProfileScreen({ navigation }: any) {
 
   const renderCustomerContent = () => (
     <>
-      <LinearGradient
-          colors={c.authGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.customerHeader}
+      <PremiumHeader
+        // title={t('profile.title', 'My Profile')}
+        
       >
           {/* Header content similar to chef but larger */}
           <View style={styles.customerProfile}>
@@ -388,6 +395,9 @@ export default function ProfileScreen({ navigation }: any) {
                       </View>
                   </View>
               </View>
+                <TouchableOpacity style={{ position: 'absolute', top: 10, right: 10 }} onPress={() => navigation.navigate("Settings")}>
+                    <Ionicons name="settings-outline" size={24} color="#FFF" />
+                </TouchableOpacity>
           </View>
 
           <View style={styles.customerStatsRow}>
@@ -401,9 +411,8 @@ export default function ProfileScreen({ navigation }: any) {
               </View>
           </View>
           
-           {/* Decorative Circles */}
-          <View style={[styles.decoCircle, { right: -50, top: -50, width: 200, height: 200, opacity: 0.1 }]} />
-      </LinearGradient>
+           {/* Decorative Circles omitted as PremiumHeader has its own or we can add them if needed, but simple is better for now */}
+      </PremiumHeader>
 
       <View style={{ marginTop: -30, paddingHorizontal: 20, paddingBottom: 100 }}>
           {/* Tabs Floating */}
@@ -545,7 +554,7 @@ const styles = StyleSheet.create({
 
   // Stats
   statsContainer: { 
-      flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginTop: -20, marginBottom: 24
+      flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginTop: -10, marginBottom: 24
   },
   statCard: { 
       flex: 1, padding: 16, borderRadius: 20, 
@@ -631,13 +640,14 @@ const styles = StyleSheet.create({
   roleBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   roleBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   
-  customerStatsRow: { flexDirection: 'row', gap: 12 },
+  customerStatsRow: { flexDirection: 'row', gap: 12, marginTop: -20 },
   customerStatCard: { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
 
   tabsPillContainer: { 
       flexDirection: 'row', marginHorizontal: 20, borderRadius: 20, padding: 6, 
       alignItems: 'center', gap: 4,
-      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5
+      shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5,
+      marginTop: 70
   },
   tabPill: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 8, borderRadius: 14 },
   tabPillText: { fontSize: 15, fontWeight: '700' },

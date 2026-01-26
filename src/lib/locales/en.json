@@ -27,6 +27,7 @@
     "followError": "Failed to follow",
     "unfollowError": "Failed to unfollow",
     "month": "Month",
+    "customer": "Customer",
     "more": "More"
   },
   "auth": {
@@ -165,6 +166,8 @@
     "sectionSwitcherInfo": "Info",
     "sectionSwitcherStatistics": "Statistics",
     "noDishes": "No dishes yet",
+    "recent": "Recent",
+    "favorites": "Favorites",
     "noVideos": "No videos yet"
   },
   "home": {

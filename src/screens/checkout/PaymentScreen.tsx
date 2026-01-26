@@ -9,7 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Button } from "../../components/ui";
+import { Button, PremiumHeader } from "../../components/ui";
 import { useColors } from "../../lib/theme";
 import {
   useCreatePaymentIntent,
@@ -143,6 +143,10 @@ export default function PaymentScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
+      <PremiumHeader 
+        title={t("payment.title", "Payment")}
+        backButton
+      />
       <View style={styles.content}>
         {/* Amount Display */}
         <View style={[styles.amountCard, { backgroundColor: c.card }]}>
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: 16, fontSize: 16 },
-  content: { flex: 1, padding: 16 },
+  content: { flex: 1, padding: 16, paddingTop: 20 },
   amountCard: {
     padding: 24,
     borderRadius: 16,

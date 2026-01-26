@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
 import { useTranslation } from "react-i18next";
 import { Avatar, StarRating, Spinner } from "../../components/ui";
+import { PremiumHeader } from "../../components/ui/PremiumHeader";
 import { useChef, useChefDishes, useVideosByAuthor, useProfile } from "../../lib/hooks";
 import { useFollowStats, useIsFollowing, useFollowUser } from "../../lib/hooks/useFollows";
 import { useChefReviews, useCreateReview } from "../../lib/hooks/useReviews";
@@ -113,38 +114,37 @@ const ChefDetailScreen = ({
       contentContainerStyle={{ paddingBottom: 100 }}
     >
       {/* Header Section */}
-        <View style={styles.header}>
-             <View style={styles.headerTop}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={c.text} />
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <Ionicons name="ellipsis-horizontal" size={24} color={c.text} />
-                </TouchableOpacity>
+      {/* Premium Header */}
+      <PremiumHeader
+        title={t('chef.detailsTitle', 'Chef Profile')}
+        backButton
+        rightElement={
+          <TouchableOpacity>
+             <Ionicons name="ellipsis-horizontal" size={24} color="#FFF" />
+          </TouchableOpacity>
+        }
+      >
+        <View style={styles.profileInfoRow}>
+          <View style={styles.avatarContainer}>
+             <Avatar uri={avatarUri} name={chef.users?.name} size="lg" />
+             <View style={[styles.chefBadge, { backgroundColor: c.primary, borderColor: c.surface }]}>
+                 <Ionicons name="star" size={12} color="#fff" />
              </View>
+          </View>
 
-             <View style={styles.profileInfoRow}>
-                <View style={styles.avatarContainer}>
-                     <Avatar uri={avatarUri} name={chef.users?.name} size="lg" />
-                     <View style={styles.chefBadge}>
-                         <Ionicons name="star" size={12} color="#fff" />
-                     </View>
-                </View>
-
-                <View style={styles.profileTexts}>
-                    <Text style={[styles.name, { color: c.text }]}>{chef.users?.name || t('profile.chef')}</Text>
-                    <Text style={[styles.handle, { color: c.textSecondary }]}>@{(chef.users as any)?.username || chef.users?.name?.replace(/\s/g, '').toLowerCase()}</Text>
-                    
-                    <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={14} color="#F97316" />
-                        <Text style={[styles.ratingText, { color: c.text }]}>{chef.rating || "5.0"}</Text>
-                        <Text style={[styles.dotSep, { color: c.textSecondary }]}>•</Text>
-                        <Text style={[styles.ordersText, { color: c.textSecondary }]}>{dishes.length * 12} {t("chef.stats.totalOrders")}</Text> 
-                        {/* Mocking order count for other chefs as 'dishes * 12' as a placeholder since we don't have public stats hook here yet */}
-                    </View>
-                </View>
-             </View>
+          <View style={styles.profileTexts}>
+              <Text style={[styles.name, { color: '#FFF' }]}>{chef.users?.name || t('profile.chef')}</Text>
+              <Text style={[styles.handle, { color: 'rgba(255,255,255,0.7)' }]}>@{(chef.users as any)?.username || chef.users?.name?.replace(/\s/g, '').toLowerCase()}</Text>
+              
+              <View style={styles.ratingRow}>
+                  <Ionicons name="star" size={14} color="#F97316" />
+                  <Text style={[styles.ratingText, { color: '#FFF' }]}>{chef.rating || "5.0"}</Text>
+                  <Text style={[styles.dotSep, { color: 'rgba(255,255,255,0.5)' }]}>•</Text>
+                  <Text style={[styles.ordersText, { color: 'rgba(255,255,255,0.7)' }]}>{dishes.length * 12} {t("chef.stats.totalOrders")}</Text> 
+              </View>
+          </View>
         </View>
+      </PremiumHeader>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
@@ -296,7 +296,7 @@ const ChefDetailScreen = ({
                   style={styles.videoItem}
                   activeOpacity={0.8}
                   onPress={() => {
-                    navigation.navigate("VideoViewer", { videos, initialIndex: videos.findIndex(v => v.id === video.id) });
+                    navigation.navigate("VideoViewer", { video });
                   }}
                 >
                   {video.posterUrl ? (

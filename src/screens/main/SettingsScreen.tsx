@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useColors, useTheme } from "../../lib/theme";
 import { useLogout } from "../../lib/hooks";
 import { changeLanguage, getCurrentLanguage } from "../../lib/i18n";
+import { PremiumHeader } from "../../components/ui/PremiumHeader";
 
 export default function SettingsScreen({ navigation }: any) {
     const c = useColors();
@@ -86,10 +87,17 @@ export default function SettingsScreen({ navigation }: any) {
     };
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: c.background }]}
-            showsVerticalScrollIndicator={false}
-        >
+        <View style={[styles.container, { backgroundColor: c.background }]}>
+            <PremiumHeader 
+                title={t('settings.title', 'Settings')}
+                backButton
+            />
+            
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={{ paddingTop: 20 }}
+                showsVerticalScrollIndicator={false}
+            >
             {/* Appearance Section */}
             <View style={[styles.section, { backgroundColor: c.card }]}>
                 <Text style={[styles.sectionTitle, { color: c.text }]}>{t('settings.appearance')}</Text>
@@ -192,6 +200,7 @@ export default function SettingsScreen({ navigation }: any) {
 
             <View style={styles.bottomPadding} />
         </ScrollView>
+        </View>
     );
 }
 

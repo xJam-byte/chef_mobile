@@ -5,9 +5,13 @@
 import Constants from "expo-constants";
 
 const getApiUrl = () => {
-  // 1. Если задан явно через .env, используем его
+  // 1. Если задан явно через .env (EXPO_PUBLIC_... для клиента), используем его
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+    // console.log("✅ Using API_BASE_URL from env:", process.env.EXPO_PUBLIC_API_BASE_URL);
+    return process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
+  // Fallback для старого API_BASE_URL (если вдруг используется где-то еще)
   if (process.env.API_BASE_URL) {
-    // console.log("✅ Using API_BASE_URL from env:", process.env.API_BASE_URL);
     return process.env.API_BASE_URL;
   }
 

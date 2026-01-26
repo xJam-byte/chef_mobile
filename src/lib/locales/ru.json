@@ -27,6 +27,7 @@
     "followError": "Не удалось подписаться",
     "unfollowError": "Не удалось отписаться",
     "month": "Месяц",
+    "customer": "Клиент",
     "more": "Ещё"
   },
   "auth": {
@@ -160,6 +161,8 @@
     "info": "Инфо",
     "statistics": "Статистика",
     "noDishes": "Блюд пока нет",
+    "recent": "Недавние",
+    "favorites": "Избранное",
     "noVideos": "Видео пока нет"
   },
   "chef": {

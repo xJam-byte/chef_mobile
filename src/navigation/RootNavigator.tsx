@@ -84,7 +84,7 @@ export default function RootNavigator() {
               <Stack.Screen
                 name="ChefDetail"
                 component={ChefDetailScreen}
-                options={{ headerShown: true, title: "Профиль повара" }}
+                // options={{ headerShown: true, title: "Профиль повара" }}
               />
               <Stack.Screen
                 name="DishDetail"
