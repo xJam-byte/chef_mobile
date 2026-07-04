@@ -1,143 +1,97 @@
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ActivityIndicator, View, StatusBar, Text, Button } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
 import { useAuthStatus } from "../lib/hooks";
+import { RootStackParamList } from "./types";
 import { useTheme } from "../lib/theme";
+
+// Screens
 import AuthStack from "./AuthStack";
 import { MainTabs } from "./MainTabs";
-import { getNavTheme, API_BASE_URL } from "../lib/constants";
-import FlashMessage from "react-native-flash-message";
-import type { RootStackParamList } from "./types";
-
-// Detail screens
-import SettingsScreen from "../screens/main/SettingsScreen";
-import ChefDetailScreen from "../screens/detail/ChefDetailScreen";
 import DishDetailScreen from "../screens/detail/DishDetailScreen";
-import OrderTrackingScreen from "../screens/orders/OrderTrackingScreen";
+import ChefDetailScreen from "../screens/detail/ChefDetailScreen";
 import AddDishScreen from "../screens/chef/AddDishScreen";
 import AddVideoScreen from "../screens/chef/AddVideoScreen";
-import AddressManagementScreen from "../screens/settings/AddressManagementScreen";
-import VideoViewerScreen from "../screens/video/VideoViewerScreen";
+import SettingsScreen from "../screens/main/SettingsScreen";
 import CheckoutScreen from "../screens/checkout/CheckoutScreen";
 import PaymentScreen from "../screens/checkout/PaymentScreen";
+import SuccessScreen from "../screens/checkout/SuccessScreen";
+import AddressManagementScreen from "../screens/settings/AddressManagementScreen";
+import OrderTrackingScreen from "../screens/orders/OrderTrackingScreen";
 import OrderDetailScreen from "../screens/detail/OrderDetailScreen";
+import TermsScreen from "../screens/settings/TermsScreen";
+import PrivacyScreen from "../screens/settings/PrivacyScreen";
+import SupportScreen from "../screens/settings/SupportScreen";
+import VideoViewerScreen from "../screens/video/VideoViewerScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const { data: user, isLoading, isError, error, refetch } = useAuthStatus();
-  const { themeName } = useTheme();
-  const theme = getNavTheme(themeName);
+  const { data: user, isLoading } = useAuthStatus();
+  const { theme, themeName } = useTheme();
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🔄 RootNavigator: State updated', { 
-      hasUser: !!user, 
-      userId: user?.user_id,
-      isLoading, 
-      isError 
-    });
-  }, [user, isLoading, isError]);
-
-  console.log('🎨 RootNavigator: Render', { hasUser: !!user, isLoading });
-
+  const isAuthenticated = !!user;
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return null;
   }
 
-  // If there's an error (network, server 500), don't log out the user.
-  // Show a retry screen or keep loading.
-  if (isError) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <Text style={{ marginBottom: 10, fontSize: 18, textAlign: "center" }}>
-          Проблема с соединением
-        </Text>
-        <Text style={{ marginBottom: 20, color: "gray", textAlign: "center" }}>
-          Trying: {API_BASE_URL} {"\n"}
-          Error: {error?.message}
-        </Text>
-        <Button title="Повторить" onPress={() => refetch()} />
-      </View>
-    );
-  }
+  // Adapt theme for React Navigation
+  const navigationTheme = {
+    dark:
+      themeName === "dark" || (themeName === "system" && theme.name === "dark"),
+    fonts: {
+      regular: { fontFamily: 'System', fontWeight: '400' as const },
+      medium: { fontFamily: 'System', fontWeight: '500' as const },
+      bold: { fontFamily: 'System', fontWeight: '700' as const },
+      heavy: { fontFamily: 'System', fontWeight: '800' as const },
+    },
+    colors: {
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.card,
+      text: theme.text,
+      border: theme.border,
+      notification: theme.error,
+    },
+  };
 
   return (
-    <>
-      <StatusBar barStyle={themeName === "dark" ? "light-content" : "dark-content"} />
-      <NavigationContainer theme={theme}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {user ? (
-            <>
-              <Stack.Screen name="Main" component={MainTabs} />
-              <Stack.Screen
-                name="Settings"
-                component={SettingsScreen}
-                // options={{ headerShown: true, title: "Настройки" }}
-              />
-              <Stack.Screen
-                name="ChefDetail"
-                component={ChefDetailScreen}
-                // options={{ headerShown: true, title: "Профиль повара" }}
-              />
-              <Stack.Screen
-                name="DishDetail"
-                component={DishDetailScreen}
-                // options={{ headerShown: true, title: "Блюдо" }}
-              />
-              <Stack.Screen
-                name="AddDish"
-                component={AddDishScreen}
-                // options={{ headerShown: true, title: "Добавить блюдо" }}
-              />
-              <Stack.Screen
-                name="AddVideo"
-                component={AddVideoScreen}
-                // options={{ headerShown: true, title: "Добавить видео" }}
-              />
-              <Stack.Screen
-                name="AddressManagement"
-                component={AddressManagementScreen}
-                // options={{ headerShown: true, title: "Мои адреса" }}
-              />
-              <Stack.Screen
-                name="VideoViewer"
-                component={VideoViewerScreen}
-                options={{ headerShown: false, presentation: "modal" }}
-              />
-              <Stack.Screen
-                name="OrderDetail"
-                component={OrderDetailScreen}
-                // options={{ headerShown: true, title: "Детали заказа" }}
-              />
-              <Stack.Screen
-                name="Checkout"
-                component={CheckoutScreen}
-                // options={{ headerShown: true, title: "Оформление заказа" }}
-              />
-              <Stack.Screen
-                name="Payment"
-                component={PaymentScreen}
-                // options={{ headerShown: true, title: "Оплата" }}
-              />
-            </>
-          ) : (
-            <Stack.Screen name="Auth" component={AuthStack} />
-          )}
-          <Stack.Screen
-        name="OrderTracking"
-        component={OrderTrackingScreen}
-        options={{ headerShown: false }}
-      />
-    </Stack.Navigator>
-        <FlashMessage position="top" />
-      </NavigationContainer>
-    </>
+    <NavigationContainer theme={navigationTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          presentation: "card",
+        }}
+      >
+        {!isAuthenticated ? (
+          <Stack.Screen name="Auth" component={AuthStack} />
+        ) : (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="DishDetail" component={DishDetailScreen} />
+            <Stack.Screen name="ChefDetail" component={ChefDetailScreen} />
+            <Stack.Screen name="AddDish" component={AddDishScreen} />
+            <Stack.Screen name="AddVideo" component={AddVideoScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Checkout" component={CheckoutScreen} />
+            <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="Success" component={SuccessScreen} />
+            <Stack.Screen
+              name="AddressManagement"
+              component={AddressManagementScreen}
+            />
+            <Stack.Screen
+              name="OrderTracking"
+              component={OrderTrackingScreen}
+            />
+            <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+            <Stack.Screen name="VideoViewer" component={VideoViewerScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="Privacy" component={PrivacyScreen} />
+            <Stack.Screen name="Support" component={SupportScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

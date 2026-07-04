@@ -28,7 +28,8 @@
     "unfollowError": "Не удалось отписаться",
     "month": "Месяц",
     "customer": "Клиент",
-    "more": "Ещё"
+    "more": "Ещё",
+    "typeMessage": "Введите сообщение..."
   },
   "auth": {
     "welcome": "Добро пожаловать",
@@ -71,6 +72,7 @@
     "errorInvalidPhone": "Введите корректный номер телефона",
     "errorInvalidCode": "Введите 6-значный код",
     "successSmsSent": "SMS-код отправлен на ваш номер",
+    "smsCodeSentTo": "SMS-код отправлен на {{phone}}",
     "errorSmsSend": "Не удалось отправить SMS",
     "errorLogin": "Ошибка входа",
     "errorInvalidSmsCode": "Неверный код",
@@ -278,7 +280,15 @@
     "disabled": "Выключены",
     "comingSoon": "Coming soon...",
     "addresses": "Адреса",
-    "myAddresses": "Мои адреса"
+    "myAddresses": "Мои адреса",
+    "selectTheme": "Выберите тему",
+    "selectLanguage": "Выберите язык",
+    "system": "Системная",
+    "changePasswordSuccess": "Пароль успешно изменен",
+    "notificationsSaved": "Настройки уведомлений сохранены",
+    "termsText": "Текст условий использования...",
+    "privacyText": "Текст политики конфиденциальности...",
+    "support": "Поддержка"
   },
   "addressManagement": {
     "title": "Мои адреса",
@@ -324,7 +334,9 @@
       "ready": "Готов к выдаче",
       "delivering": "В пути",
       "completed": "Завершен",
-      "cancelled": "Отменен"
+      "delivered": "Доставлен",
+      "cancelled": "Отменен",
+      "selfDelivered": "Самовывоз"
     },
     "tracking": {
       "title": "Отслеживание",
@@ -342,8 +354,8 @@
       }
     },
     "tabs": {
-        "myOrders": "Мои заказы",
-        "incoming": "Входящие"
+      "myOrders": "Мои заказы",
+      "incoming": "Входящие"
     },
     "noOrders": "Заказов пока нет",
     "ordersWillAppear": "Ваши заказы появятся здесь",
@@ -411,5 +423,11 @@
     "notAChef": "Этот пользователь не является поваром",
     "following": "Подписки",
     "forYou": "Для вас"
+  },
+  "support": {
+    "noTickets": "Чем мы можем помочь?",
+    "subjectPlaceholder": "Тема обращения",
+    "messagePlaceholder": "Опишите вашу проблему...",
+    "startChat": "Начать чат"
   }
 }

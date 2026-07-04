@@ -7,19 +7,23 @@ import type { CreateOrderDto } from "../types";
    GET ORDERS
 ========================= */
 
-export function useOrders(userId?: number) {
+/**
+ * Get current user's order history (uses JWT token)
+ */
+export function useOrders() {
   return useQuery({
-    queryKey: QUERY_KEYS.ORDERS({userId}),
-    enabled: !!userId && userId > 0,
-    queryFn: () => orderApi.getOrderHistory(userId!), // Changed to use orderApi
+    queryKey: ["orders", "my", "history"],
+    queryFn: () => orderApi.getOrderHistory(),
   });
 }
 
-export function useChefOrders(userId?: number) {
+/**
+ * Get current chef's orders (uses JWT token)
+ */
+export function useChefOrders() {
   return useQuery({
-    queryKey: QUERY_KEYS.CHEF_ORDERS(userId),
-    enabled: !!userId && userId > 0,
-    queryFn: () => orderApi.getChefOrders(userId!),
+    queryKey: ["orders", "my", "chef"],
+    queryFn: () => orderApi.getChefOrders(),
   });
 }
 
@@ -31,32 +35,21 @@ export function useCreateOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: orderApi.createOrder, // Changed to use orderApi
-    onSuccess: (data, variables) => {
-      // console.log("[useCreateOrder] Order created successfully, invalidating caches");
-      
+    mutationFn: orderApi.createOrder,
+    onSuccess: () => {
       // Invalidate all order-related queries
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      
-      // Also invalidate user-specific order history
-      if (variables.userId) {
-        queryClient.invalidateQueries({ 
-          queryKey: ["orders", "history", variables.userId] 
-        });
-      }
-      
-      // console.log("[useCreateOrder] Cache invalidation complete");
     },
   });
 }
 
 /**
- * Fetch order history for a user
+ * @deprecated Use useOrders() instead - now uses JWT token automatically
  */
 export function useOrderHistory(userId: number | undefined) {
   return useQuery({
-    queryKey: ["orders", "history", userId],
-    queryFn: () => orderApi.getOrderHistory(userId!),
+    queryKey: ["orders", "my", "history"],
+    queryFn: () => orderApi.getOrderHistory(),
     enabled: !!userId,
   });
 }
@@ -85,7 +78,6 @@ export function useUpdateOrderStatus() {
       // Invalidate specific order and all order lists
       queryClient.invalidateQueries({ queryKey: ["order", variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["chef-orders"] });
     },
   });
 }

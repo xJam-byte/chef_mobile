@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { showMessage } from "react-native-flash-message";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { Button, Badge, Spinner } from "../../components/ui";
 import { useDish, useProfile } from "../../lib/hooks";
@@ -36,12 +37,13 @@ const DishDetailScreen = ({
   navigation,
 }: RootStackScreenProps<"DishDetail">) => {
   const c = useColors();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { dishId } = route.params;
   const { data: dish, isLoading, isError } = useDish(dishId);
   const { data: profile } = useProfile();
   const cartContext = useContext(CartContext);
-  
+
   const scrollY = useRef(new Animated.Value(0)).current;
 
   if (isLoading) return <Spinner fullScreen />;
@@ -64,18 +66,24 @@ const DishDetailScreen = ({
 
   const imageUri = dish.picture || null;
   const isAvailable = dish.availability_status === "available";
-  
+
   // Check if current user is the chef of this dish
   const isOwnDish = profile?.user_id === (dish as any).chefId;
 
   const handleAddToCart = () => {
     if (isOwnDish) {
-      Alert.alert("Недоступно", "Вы не можете заказать свои собственные блюда");
+      Alert.alert(
+        t("common.error"),
+        t("dish.cantOrderOwn", "You cannot order your own dishes"),
+      );
       return;
     }
 
     if (!isAvailable) {
-      Alert.alert("Недоступно", "Это блюдо сейчас недоступно");
+      Alert.alert(
+        t("common.error"),
+        t("dish.unavailable", "This dish is currently unavailable"),
+      );
       return;
     }
 
@@ -86,7 +94,7 @@ const DishDetailScreen = ({
         description: dish.name,
         type: "success",
         icon: "success",
-        backgroundColor: c.primary, 
+        backgroundColor: c.primary,
       });
     }
   };
@@ -113,7 +121,7 @@ const DishDetailScreen = ({
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Parallax Image Background */}
       <Animated.View
         style={[
@@ -132,7 +140,7 @@ const DishDetailScreen = ({
           />
         ) : (
           <View style={[styles.placeholder, { backgroundColor: c.surface }]}>
-             <Ionicons name="restaurant" size={80} color={c.textMuted} />
+            <Ionicons name="restaurant" size={80} color={c.textMuted} />
           </View>
         )}
         <LinearGradient
@@ -160,74 +168,123 @@ const DishDetailScreen = ({
 
       {/* Sticky Top Bar Background (appears on scroll) */}
       <Animated.View
-         style={[
-           styles.stickyHeaderDetails,
-           { 
-             height: insets.top + 60,
-             paddingTop: insets.top,
-             backgroundColor: c.background,
-             opacity: headerOpacity,
-             borderBottomWidth: 1,
-             borderBottomColor: c.border
-           }
-         ]}
+        style={[
+          styles.stickyHeaderDetails,
+          {
+            height: insets.top + 60,
+            paddingTop: insets.top,
+            backgroundColor: c.background,
+            opacity: headerOpacity,
+            borderBottomWidth: 1,
+            borderBottomColor: c.border,
+          },
+        ]}
       >
-        <Text style={[styles.stickyHeaderTitle, { color: c.text }]} numberOfLines={1}>
+        <Text
+          style={[styles.stickyHeaderTitle, { color: c.text }]}
+          numberOfLines={1}
+        >
           {dish.name}
         </Text>
       </Animated.View>
 
       <Animated.ScrollView
-        contentContainerStyle={{ paddingTop: IMG_HEIGHT - 30, paddingBottom: 100 }}
+        contentContainerStyle={{
+          paddingTop: IMG_HEIGHT - 30,
+          paddingBottom: 100,
+        }}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
         scrollEventThrottle={16}
       >
-        <View style={[styles.contentContainer, { backgroundColor: c.background }]}>
+        <View
+          style={[styles.contentContainer, { backgroundColor: c.background }]}
+        >
           {/* Handle Indicator */}
           <View style={[styles.indicator, { backgroundColor: c.border }]} />
 
           <View style={styles.headerRow}>
-             <View style={{ flex: 1 }}>
-                <Text style={[styles.dishType, { color: c.primary }]}>
-                  {DISH_TYPES[dish.type as keyof typeof DISH_TYPES] || dish.type}
-                </Text>
-                <Text style={[styles.dishName, { color: c.text }]}>{dish.name}</Text>
-             </View>
-             <Text style={[styles.priceTag, { color: c.primary }]}>
-                {dish.price.toLocaleString()} ₸
-             </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.dishType, { color: c.primary }]}>
+                {DISH_TYPES[dish.type as keyof typeof DISH_TYPES] || dish.type}
+              </Text>
+              <Text style={[styles.dishName, { color: c.text }]}>
+                {dish.name}
+              </Text>
+            </View>
+            <Text style={[styles.priceTag, { color: c.primary }]}>
+              {dish.price.toLocaleString()} ₸
+            </Text>
           </View>
 
           {/* Stats / Badges */}
           <View style={styles.badgesRow}>
-            <View style={[styles.infoBadge, { backgroundColor: c.surface, borderColor: c.border }]}>
-               <Ionicons name="time-outline" size={16} color={c.textSecondary} style={{ marginRight: 6 }} />
-               <Text style={{ color: c.textSecondary, fontWeight: "600" }}>
-                 {dish.time || "20-30"} мин
-               </Text>
+            <View
+              style={[
+                styles.infoBadge,
+                { backgroundColor: c.surface, borderColor: c.border },
+              ]}
+            >
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color={c.textSecondary}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={{ color: c.textSecondary, fontWeight: "600" }}>
+                {dish.time || "20-30"} мин
+              </Text>
             </View>
 
             {dish.is_spicy && (
-               <View style={[styles.infoBadge, { backgroundColor: "#FF3B3020", borderColor: "#FF3B3050" }]}>
-                  <Ionicons name="flame" size={16} color="#FF3B30" style={{ marginRight: 6 }} />
-                  <Text style={{ color: "#FF3B30", fontWeight: "600" }}>Острое</Text>
-               </View>
+              <View
+                style={[
+                  styles.infoBadge,
+                  { backgroundColor: "#FF3B3020", borderColor: "#FF3B3050" },
+                ]}
+              >
+                <Ionicons
+                  name="flame"
+                  size={16}
+                  color="#FF3B30"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={{ color: "#FF3B30", fontWeight: "600" }}>
+                  Острое
+                </Text>
+              </View>
             )}
 
             {!isAvailable && (
-               <View style={[styles.infoBadge, { backgroundColor: "#FF3B3020", borderColor: "#FF3B3050" }]}>
-                  <Text style={{ color: "#FF3B30", fontWeight: "600" }}>Нет в наличии</Text>
-               </View>
+              <View
+                style={[
+                  styles.infoBadge,
+                  { backgroundColor: "#FF3B3020", borderColor: "#FF3B3050" },
+                ]}
+              >
+                <Text style={{ color: "#FF3B30", fontWeight: "600" }}>
+                  Нет в наличии
+                </Text>
+              </View>
             )}
-            
+
             {/* Rating Placeholder - could be real if dish has rating */}
-            <View style={[styles.infoBadge, { backgroundColor: c.surface, borderColor: c.border }]}>
-               <Ionicons name="star" size={16} color="#FFD700" style={{ marginRight: 6 }} />
-               <Text style={{ color: c.text, fontWeight: "600" }}>4.8</Text>
+            <View
+              style={[
+                styles.infoBadge,
+                { backgroundColor: c.surface, borderColor: c.border },
+              ]}
+            >
+              <Ionicons
+                name="star"
+                size={16}
+                color="#FFD700"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={{ color: c.text, fontWeight: "600" }}>4.8</Text>
             </View>
           </View>
 
@@ -236,7 +293,9 @@ const DishDetailScreen = ({
           {/* Description */}
           {dish.description ? (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Описание</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>
+                Описание
+              </Text>
               <Text style={[styles.description, { color: c.textSecondary }]}>
                 {dish.description}
               </Text>
@@ -245,22 +304,23 @@ const DishDetailScreen = ({
 
           {/* Ingredients */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Ингредиенты</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>
+              Ингредиенты
+            </Text>
             <View style={styles.ingredientsContainer}>
-               <Text style={[styles.description, { color: c.textSecondary }]}>
-                  {dish.ingredients}
-               </Text>
+              <Text style={[styles.description, { color: c.textSecondary }]}>
+                {dish.ingredients}
+              </Text>
             </View>
           </View>
-
         </View>
       </Animated.ScrollView>
 
       {/* Footer Action */}
       <LinearGradient
         colors={[
-            c.background === '#000000' ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)', 
-            c.background
+          c.background === "#000000" ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)",
+          c.background,
         ]}
         style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}
       >
@@ -270,12 +330,12 @@ const DishDetailScreen = ({
           disabled={!isAvailable}
           fullWidth
           size="lg"
-          style={{ 
-            shadowColor: c.primary, 
-            shadowOpacity: 0.3, 
-            shadowRadius: 10, 
+          style={{
+            shadowColor: c.primary,
+            shadowOpacity: 0.3,
+            shadowRadius: 10,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 8 
+            elevation: 8,
           }}
         />
       </LinearGradient>

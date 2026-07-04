@@ -19,10 +19,10 @@ export default function OrdersScreen({ navigation }: any) {
   const isChef = profile?.role === 'chef';
 
   // My Orders (Outgoing)
-  const { data: myOrders = [], isLoading: myLoading, refetch: refetchMy } = useOrders(profile?.user_id);
+  const { data: myOrders = [], isLoading: myLoading, refetch: refetchMy } = useOrders();
   
   // Incoming Orders (For Chef)
-  const { data: chefOrders = [], isLoading: chefLoading, refetch: refetchChef } = useChefOrders(profile?.user_id);
+  const { data: chefOrders = [], isLoading: chefLoading, refetch: refetchChef } = useChefOrders();
 
   const [refreshing, setRefreshing] = useState(false);
 

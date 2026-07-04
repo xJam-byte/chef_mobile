@@ -36,19 +36,17 @@ export type RootStackParamList = {
   VideoViewer: { video: VideoFeedItem };
   Checkout: undefined;
   Payment: { addressId: number; totalAmount: number };
+  Success: undefined;
+  Support: undefined;
+  Terms: undefined;
+  Privacy: undefined;
 };
 
-export type AuthScreenProps<T extends keyof AuthStackParamList> = StackScreenProps<
-  AuthStackParamList,
-  T
->;
+export type AuthScreenProps<T extends keyof AuthStackParamList> =
+  StackScreenProps<AuthStackParamList, T>;
 
-export type RootStackScreenProps<T extends keyof RootStackParamList> = StackScreenProps<
-  RootStackParamList,
-  T
->;
+export type RootStackScreenProps<T extends keyof RootStackParamList> =
+  StackScreenProps<RootStackParamList, T>;
 
-export type MainTabScreenProps<T extends keyof MainTabParamList> = BottomTabScreenProps<
-  MainTabParamList,
-  T
->;
+export type MainTabScreenProps<T extends keyof MainTabParamList> =
+  BottomTabScreenProps<MainTabParamList, T>;

@@ -23,7 +23,7 @@ const OrdersScreen = () => {
     isLoading: ordersLoading,
     isRefetching,
     refetch,
-  } = useOrders(userId ?? 0);
+  } = useOrders();
 
   const getStatusVariant = (status: Order["status"]) => {
     switch (status) {

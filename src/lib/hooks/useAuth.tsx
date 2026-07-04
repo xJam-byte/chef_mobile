@@ -2,11 +2,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { apiClient } from "../api/client";
-import { login, registration, me, sendSms, verifySms, loginEmail } from "../api/auth";
-import { setUserProfile, getAccessToken, setAccessToken, removeAccessToken } from "../utils/storage";
+import {
+  login,
+  registration,
+  me,
+  sendSms,
+  verifySms,
+  loginEmail,
+} from "../api/auth";
+import {
+  setUserProfile,
+  getAccessToken,
+  setAccessToken,
+  removeAccessToken,
+} from "../utils/storage";
 import type { LoginDto, RegisterDto, User, LoginEmailDto } from "../types";
-
-
 
 export function useAuthStatus() {
   return useQuery<User | null>({
@@ -15,21 +25,18 @@ export function useAuthStatus() {
       try {
         const token = await getAccessToken();
         // console.log('🔑 Auth Check - Token exists:', !!token);
-        
+
         if (!token) return null; // No token locally = definitely not logged in
 
         const user = await me();
-        console.log('👤 useAuthStatus: User fetched from API', !!user);
-        
+
         // ✅ Save profile to storage so useProfile() can access it
         if (user) {
           await setUserProfile(user);
         }
-        
+
         return user;
       } catch (error: any) {
-        console.error('❌ Auth Check - Error:', error?.response?.status, error?.message);
-        
         // Only return null if it's a 401 (unauthenticated) error
         if (error?.response?.status === 401) {
           // console.log('🚫 Auth Check - 401 Unauthorized, returning null');
@@ -47,7 +54,7 @@ export function useAuthStatus() {
       // Retry network errors up to 2 times
       return failureCount < 2;
     },
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -60,7 +67,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (payload: LoginDto) => {
       // Compatibility wrapper if old login is still used somewhere
-      const data = await login(payload); 
+      const data = await login(payload);
       await setAccessToken(data.token);
       apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
       return data;
@@ -95,7 +102,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (payload: RegisterDto) => {
       const data = await registration(payload); // { user }
-      // NOTE: We do NOT set access token here anymore. 
+      // NOTE: We do NOT set access token here anymore.
       // User must verify SMS to get token.
       return data;
     },
@@ -136,7 +143,6 @@ export function useVerifySms() {
       return data;
     },
     onSuccess: async (data) => {
-      console.log('✅ useVerifySms: Login success, updating cache...');
       // Update cache immediately
       qc.setQueryData(["profile"], data.user);
       await setUserProfile(data.user);
@@ -145,4 +151,3 @@ export function useVerifySms() {
     },
   });
 }
-

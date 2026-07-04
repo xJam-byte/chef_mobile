@@ -8,6 +8,7 @@ import { StatusBar } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import FlashMessage from "react-native-flash-message";
 import "./src/lib/i18n"; // Initialize i18n
 import { CartProvider } from "./src/lib/hooks/useCart";
 import { ThemeProvider } from "./src/lib/theme";
@@ -61,6 +62,7 @@ export default function App() {
           <QueryClientProvider client={queryClient}>
             <CartProviderWithAuth>
               <RootNavigator />
+              <FlashMessage position="top" />
             </CartProviderWithAuth>
           </QueryClientProvider>
         </SafeAreaProvider>

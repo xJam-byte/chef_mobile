@@ -14,20 +14,28 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.chef.mobile"
+      "bundleIdentifier": "kz.airesidence.chef",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F97316"
       },
-      "package": "com.chef.mobile"
+      "package": "kz.airesidence.chef"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "45efcca1-fdcb-4c33-94c1-4a52848f6f02"
+      }
+    }
   }
 }

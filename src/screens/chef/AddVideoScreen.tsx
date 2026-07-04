@@ -30,7 +30,7 @@ export default function AddVideoScreen({ navigation }: any) {
   const { data: profile } = useProfile();
   const { data: chef } = useChefByUserId(profile?.user_id);
   const chefId = chef?.chef_id;
-  
+
   const { data: dishesData } = useChefDishes(chefId);
   const dishes = dishesData?.data || [];
 
@@ -66,13 +66,13 @@ export default function AddVideoScreen({ navigation }: any) {
       });
 
       showMessage({ message: "Видео успешно загружено!", type: "success" });
-      
+
       // Reset form
       setTitle("");
       setDescription("");
       setSelectedDishId(null);
       setVideoUri(null);
-      
+
       navigation.goBack();
     } catch (error: any) {
       showMessage({
@@ -84,9 +84,13 @@ export default function AddVideoScreen({ navigation }: any) {
 
   const handleVideoPick = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Нет разрешения", "Необходимо разрешение для доступа к галерее");
+        Alert.alert(
+          t("common.error"),
+          t("addVideo.permissionRequired", "Gallery permission required"),
+        );
         return;
       }
 
@@ -101,16 +105,16 @@ export default function AddVideoScreen({ navigation }: any) {
         showMessage({ message: "Видео выбрано", type: "success" });
       }
     } catch (error) {
-      Alert.alert("Ошибка", "Не удалось выбрать видео");
+      Alert.alert(
+        t("common.error"),
+        t("addVideo.selectError", "Failed to select video"),
+      );
     }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-                  <PremiumHeader 
-                      title={t('addVideo.title', 'Add New Video')}
-                      backButton
-                  />
+      <PremiumHeader title={t("addVideo.title", "Add New Video")} backButton />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Video Upload Section */}
         <TouchableOpacity
@@ -142,7 +146,11 @@ export default function AddVideoScreen({ navigation }: any) {
             <TextInput
               style={[
                 styles.input,
-                { backgroundColor: c.surface, color: c.text, borderColor: c.border },
+                {
+                  backgroundColor: c.surface,
+                  color: c.text,
+                  borderColor: c.border,
+                },
               ]}
               placeholder="Например: Как приготовить плов"
               placeholderTextColor={c.textMuted}
@@ -158,7 +166,11 @@ export default function AddVideoScreen({ navigation }: any) {
             <TextInput
               style={[
                 styles.textArea,
-                { backgroundColor: c.surface, color: c.text, borderColor: c.border },
+                {
+                  backgroundColor: c.surface,
+                  color: c.text,
+                  borderColor: c.border,
+                },
               ]}
               placeholder="Расскажите о видео..."
               placeholderTextColor={c.textMuted}
@@ -192,11 +204,11 @@ export default function AddVideoScreen({ navigation }: any) {
                 ]}
               >
                 {selectedDishId
-                  ? dishes.find((d: any) => d.dish_id === selectedDishId)?.name ||
-                    "Блюдо не найдено"
+                  ? dishes.find((d: any) => d.dish_id === selectedDishId)
+                      ?.name || "Блюдо не найдено"
                   : dishes.length === 0
-                  ? "Нет доступных блюд"
-                  : "Выберите блюдо"}
+                    ? "Нет доступных блюд"
+                    : "Выберите блюдо"}
               </Text>
               <Ionicons name="chevron-down" size={20} color={c.textMuted} />
             </TouchableOpacity>
@@ -231,7 +243,9 @@ export default function AddVideoScreen({ navigation }: any) {
                     <TouchableOpacity
                       style={[
                         styles.modalItem,
-                        selectedDishId === null && { backgroundColor: c.primary + "15" },
+                        selectedDishId === null && {
+                          backgroundColor: c.primary + "15",
+                        },
                       ]}
                       onPress={() => {
                         setSelectedDishId(null);
@@ -242,7 +256,11 @@ export default function AddVideoScreen({ navigation }: any) {
                         Без блюда
                       </Text>
                       {selectedDishId === null && (
-                        <Ionicons name="checkmark" size={20} color={c.primary} />
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={c.primary}
+                        />
                       )}
                     </TouchableOpacity>
                     {dishes.map((dish: any) => (
@@ -260,17 +278,26 @@ export default function AddVideoScreen({ navigation }: any) {
                         }}
                       >
                         <View>
-                          <Text style={[styles.modalItemText, { color: c.text }]}>
+                          <Text
+                            style={[styles.modalItemText, { color: c.text }]}
+                          >
                             {dish.name}
                           </Text>
                           <Text
-                            style={[styles.modalItemSubtext, { color: c.textMuted }]}
+                            style={[
+                              styles.modalItemSubtext,
+                              { color: c.textMuted },
+                            ]}
                           >
                             {dish.price} ₸
                           </Text>
                         </View>
                         {selectedDishId === dish.dish_id && (
-                          <Ionicons name="checkmark" size={20} color={c.primary} />
+                          <Ionicons
+                            name="checkmark"
+                            size={20}
+                            color={c.primary}
+                          />
                         )}
                       </TouchableOpacity>
                     ))}
@@ -289,13 +316,16 @@ export default function AddVideoScreen({ navigation }: any) {
           <View
             style={[
               styles.infoCard,
-              { backgroundColor: c.primary + "15", borderColor: c.primary + "30" },
+              {
+                backgroundColor: c.primary + "15",
+                borderColor: c.primary + "30",
+              },
             ]}
           >
             <Ionicons name="information-circle" size={20} color={c.primary} />
             <Text style={[styles.infoText, { color: c.text }]}>
-              Выберите блюдо, чтобы пользователи могли добавить его в корзину прямо из
-              видео!
+              Выберите блюдо, чтобы пользователи могли добавить его в корзину
+              прямо из видео!
             </Text>
           </View>
 
@@ -303,7 +333,11 @@ export default function AddVideoScreen({ navigation }: any) {
           <TouchableOpacity
             style={[
               styles.submitBtn,
-              { backgroundColor: createVideoMutation.isPending ? c.textMuted : c.primary },
+              {
+                backgroundColor: createVideoMutation.isPending
+                  ? c.textMuted
+                  : c.primary,
+              },
             ]}
             onPress={handleSubmit}
             activeOpacity={0.8}

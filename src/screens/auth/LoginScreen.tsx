@@ -30,7 +30,9 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   const verifySmsMutation = useVerifySms();
   const loginEmailMutation = useLoginEmail();
 
-  const [step, setStep] = useState<"select" | "phone" | "code" | "email">("select");
+  const [step, setStep] = useState<"select" | "phone" | "code" | "email">(
+    "select",
+  );
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -117,7 +119,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       Alert.alert(t("common.success"), t("auth.successSmsSent"));
     } catch (e: any) {
       Alert.alert(
@@ -151,16 +153,22 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
   };
 
   const handleLoginEmail = async () => {
-      try {
-          if (!email || !password) {
-               Alert.alert(t('common.error'), t('auth.errorAllFieldsRequired') || "Please fill all fields");
-               return;
-          }
-          await loginEmailMutation.mutateAsync({ email: email.trim(), password });
-      } catch (e: any) {
-          Alert.alert(t('common.error'),  e?.response?.data?.message || t('auth.errorLoginFailed'));
+    try {
+      if (!email || !password) {
+        Alert.alert(
+          t("common.error"),
+          t("auth.errorAllFieldsRequired") || "Please fill all fields",
+        );
+        return;
       }
-  }
+      await loginEmailMutation.mutateAsync({ email: email.trim(), password });
+    } catch (e: any) {
+      Alert.alert(
+        t("common.error"),
+        e?.response?.data?.message || t("auth.errorLoginFailed"),
+      );
+    }
+  };
 
   const handleResendSms = async () => {
     if (timer > 0) return;
@@ -173,13 +181,13 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <TouchableOpacity 
-              onPress={() => navigation.goBack()} 
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
               style={styles.backButton}
             >
               <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -189,62 +197,82 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 <Ionicons name="person" size={40} color="#fff" />
               </View>
             </View>
-            <Animated.Text 
+            <Animated.Text
               style={[
-                styles.title, 
-                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                styles.title,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
               ]}
             >
               {t("auth.welcomeBack")}
             </Animated.Text>
-            <Animated.Text 
+            <Animated.Text
               style={[
-                styles.subtitle, 
-                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+                styles.subtitle,
+                { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
               ]}
             >
-              {step === "select" ? t("auth.selectLoginMethod") :
-               step === "email" ? t("auth.loginWithEmail") :
-               step === "phone" ? t("auth.loginToAccount") :
-               t("auth.enterSmsCode")}
+              {step === "select"
+                ? t("auth.selectLoginMethod")
+                : step === "email"
+                  ? t("auth.loginWithEmail")
+                  : step === "phone"
+                    ? t("auth.loginToAccount")
+                    : t("auth.enterSmsCode")}
             </Animated.Text>
           </View>
 
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.card, 
-              { 
+              styles.card,
+              {
                 backgroundColor: c.authCard,
                 borderColor: c.authCardBorder,
                 opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
-              }
+                transform: [{ translateY: slideAnim }],
+              },
             ]}
           >
             {step === "select" ? (
-                <View style={{ gap: 16 }}>
-                    <TouchableOpacity
-                        style={[styles.methodButton, { backgroundColor: c.input }]}
-                        onPress={() => setStep("phone")}
-                    >
-                         <Ionicons name="phone-portrait-outline" size={24} color={c.primary} />
-                         <Text style={[styles.methodButtonText, { color: c.text }]}>{t("auth.continueWithPhone") || "Continue with Phone"}</Text>
-                    </TouchableOpacity>
+              <View style={{ gap: 16 }}>
+                <TouchableOpacity
+                  style={[styles.methodButton, { backgroundColor: c.input }]}
+                  onPress={() => setStep("phone")}
+                >
+                  <Ionicons
+                    name="phone-portrait-outline"
+                    size={24}
+                    color={c.primary}
+                  />
+                  <Text style={[styles.methodButtonText, { color: c.text }]}>
+                    {t("auth.continueWithPhone") || "Continue with Phone"}
+                  </Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.methodButton, { backgroundColor: c.input }]}
-                        onPress={() => setStep("email")}
-                    >
-                         <Ionicons name="mail-outline" size={24} color={c.primary} />
-                         <Text style={[styles.methodButtonText, { color: c.text }]}>{t("auth.continueWithEmail") || "Continue with Email"}</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.methodButton, { backgroundColor: c.input }]}
+                  onPress={() => setStep("email")}
+                >
+                  <Ionicons name="mail-outline" size={24} color={c.primary} />
+                  <Text style={[styles.methodButtonText, { color: c.text }]}>
+                    {t("auth.continueWithEmail") || "Continue with Email"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : step === "email" ? (
-                <>
+              <>
                 <View style={styles.inputContainer}>
-                  <Text style={[styles.label, { color: c.text }]}>{t("auth.emailOptional")}</Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: c.input }]}>
-                    <Ionicons name="mail-outline" size={20} color={c.textSecondary} style={styles.inputIcon} />
+                  <Text style={[styles.label, { color: c.text }]}>
+                    {t("auth.emailOptional")}
+                  </Text>
+                  <View
+                    style={[styles.inputWrapper, { backgroundColor: c.input }]}
+                  >
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color={c.textSecondary}
+                      style={styles.inputIcon}
+                    />
                     <TextInput
                       style={[styles.input, { color: c.text }]}
                       value={email}
@@ -258,19 +286,28 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 </View>
 
                 <View style={styles.inputContainer}>
-                    <Text style={[styles.label, { color: c.text }]}>{t('auth.passwordLabel')}</Text>
-                    <View style={[styles.inputWrapper, { backgroundColor: c.input }]}>
-                      <Ionicons name="lock-closed-outline" size={20} color={c.textSecondary} style={styles.inputIcon} />
-                      <TextInput
-                        style={[styles.input, { color: c.text }]}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        placeholder={t('auth.passwordPlaceholder')}
-                        placeholderTextColor={c.textSecondary}
-                      />
-                    </View>
-                 </View>
+                  <Text style={[styles.label, { color: c.text }]}>
+                    {t("auth.passwordLabel")}
+                  </Text>
+                  <View
+                    style={[styles.inputWrapper, { backgroundColor: c.input }]}
+                  >
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={c.textSecondary}
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { color: c.text }]}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      placeholder={t("auth.passwordPlaceholder")}
+                      placeholderTextColor={c.textSecondary}
+                    />
+                  </View>
+                </View>
 
                 <Button
                   title={t("auth.login")}
@@ -279,21 +316,36 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   fullWidth
                   style={{ marginTop: 8 }}
                 />
-                
-                <TouchableOpacity onPress={() => setStep("select")} style={{ marginTop: 20 }}>
-                    <Text style={[styles.link, { textAlign: 'center', color: c.textSecondary }]}>
-                        {t('common.back')}
-                    </Text>
+
+                <TouchableOpacity
+                  onPress={() => setStep("select")}
+                  style={{ marginTop: 20 }}
+                >
+                  <Text
+                    style={[
+                      styles.link,
+                      { textAlign: "center", color: c.textSecondary },
+                    ]}
+                  >
+                    {t("common.back")}
+                  </Text>
                 </TouchableOpacity>
-                </>
+              </>
             ) : step === "phone" ? (
               <>
                 <View style={styles.inputContainer}>
                   <Text style={[styles.label, { color: c.text }]}>
                     {t("auth.phoneLabel")}
                   </Text>
-                  <View style={[styles.inputWrapper, { backgroundColor: c.input }]}>
-                    <Ionicons name="call-outline" size={20} color={c.textSecondary} style={styles.inputIcon} />
+                  <View
+                    style={[styles.inputWrapper, { backgroundColor: c.input }]}
+                  >
+                    <Ionicons
+                      name="call-outline"
+                      size={20}
+                      color={c.textSecondary}
+                      style={styles.inputIcon}
+                    />
                     <TextInput
                       style={[styles.input, { color: c.text }]}
                       value={phoneNumber}
@@ -314,11 +366,19 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   fullWidth
                   style={{ marginTop: 8 }}
                 />
-                
-                 <TouchableOpacity onPress={() => setStep("select")} style={{ marginTop: 20 }}>
-                    <Text style={[styles.link, { textAlign: 'center', color: c.textSecondary }]}>
-                        {t('common.back')}
-                    </Text>
+
+                <TouchableOpacity
+                  onPress={() => setStep("select")}
+                  style={{ marginTop: 20 }}
+                >
+                  <Text
+                    style={[
+                      styles.link,
+                      { textAlign: "center", color: c.textSecondary },
+                    ]}
+                  >
+                    {t("common.back")}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -330,10 +390,10 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   <TextInput
                     style={[
                       styles.codeInput,
-                      { 
-                        backgroundColor: c.input, 
+                      {
+                        backgroundColor: c.input,
                         color: c.text,
-                        borderColor: c.primary 
+                        borderColor: c.primary,
                       },
                     ]}
                     value={code}
@@ -357,7 +417,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   style={{ marginTop: 8 }}
                 />
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleResendSms}
                   disabled={timer > 0}
                   style={styles.resendButton}
@@ -376,7 +436,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setStep("phone")}
                   style={styles.changeNumberButton}
                 >
@@ -408,52 +468,52 @@ export default LoginScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scrollContent: { 
-    flexGrow: 1, 
-    justifyContent: "center", 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
     padding: 24,
     paddingTop: 60,
   },
-  header: { 
-    alignItems: "center", 
+  header: {
+    alignItems: "center",
     marginBottom: 40,
-    position: 'relative',
+    position: "relative",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
     zIndex: 10,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 20,
   },
   logoCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  title: { 
-    fontSize: 32, 
-    fontWeight: "800", 
-    color: "#fff", 
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#fff",
     textAlign: "center",
     marginBottom: 8,
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: "rgba(255,255,255,0.8)", 
-    textAlign: "center" 
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
   },
-  card: { 
-    borderRadius: 30, 
+  card: {
+    borderRadius: 30,
     padding: 32,
     borderWidth: 1,
     shadowColor: "#000",
@@ -470,8 +530,8 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 56,
@@ -483,7 +543,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: "500",
-    height: '100%',
+    height: "100%",
   },
   codeInput: {
     borderRadius: 16,
@@ -497,12 +557,12 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 13,
   },
   resendButton: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   resendLink: {
     fontWeight: "700",
@@ -510,38 +570,38 @@ const styles = StyleSheet.create({
   },
   changeNumberButton: {
     marginTop: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   backLink: {
     fontSize: 14,
     fontWeight: "500",
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 30,
     gap: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: "rgba(0,0,0,0.05)",
     paddingTop: 20,
   },
   footerText: {
     fontSize: 14,
   },
-  link: { 
+  link: {
     fontWeight: "800",
     fontSize: 14,
   },
   methodButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 20,
-      borderRadius: 16,
-      gap: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
   },
   methodButtonText: {
-      fontSize: 16,
-      fontWeight: '600',
-  }
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

@@ -3,7 +3,13 @@
  * Supports swiping through a list of videos (e.g. from Chef Profile)
  */
 
-import React, { useRef, useState, useCallback, useMemo, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   View,
   FlatList,
@@ -33,25 +39,28 @@ import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
 import type { VideoFeedItem } from "../../lib/api/videos";
 import type { Dish } from "../../lib/types";
+import { ReportModal } from "../../components/ui";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 const SubscribeButton = ({ authorId }: { authorId: number }) => {
-    const { follow, unfollow } = useFollowUser();
-    const { data: isFollowingData } = useIsFollowing(authorId);
-    const isFollowing = isFollowingData?.data?.isFollowing;
-    const { t } = useTranslation();
+  const { follow, unfollow } = useFollowUser();
+  const { data: isFollowingData } = useIsFollowing(authorId);
+  const isFollowing = isFollowingData?.data?.isFollowing;
+  const { t } = useTranslation();
 
-    if (isFollowing) return null;
+  if (isFollowing) return null;
 
-    return (
-        <TouchableOpacity 
-            style={styles.subscribeButton}
-            onPress={() => follow(authorId)}
-        >
-            <Text style={styles.subscribeText}>{t('profile.follow') || 'Follow'}</Text>
-        </TouchableOpacity>
-    );
+  return (
+    <TouchableOpacity
+      style={styles.subscribeButton}
+      onPress={() => follow(authorId)}
+    >
+      <Text style={styles.subscribeText}>
+        {t("profile.follow") || "Follow"}
+      </Text>
+    </TouchableOpacity>
+  );
 };
 
 export default function VideoViewerScreen({ route, navigation }: any) {
@@ -80,13 +89,24 @@ export default function VideoViewerScreen({ route, navigation }: any) {
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
 
+  // Report Modal State
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetId, setReportTargetId] = useState<number>(0);
+
   // Scroll to initial index on mount
   useEffect(() => {
-    if (initialIndex > 0 && videos.length > initialIndex && flatListRef.current) {
-        // Use a small timeout to ensure layout is ready
-        setTimeout(() => {
-            flatListRef.current?.scrollToIndex({ index: initialIndex, animated: false });
-        }, 100);
+    if (
+      initialIndex > 0 &&
+      videos.length > initialIndex &&
+      flatListRef.current
+    ) {
+      // Use a small timeout to ensure layout is ready
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: initialIndex,
+          animated: false,
+        });
+      }, 100);
     }
   }, [initialIndex, videos.length]);
 
@@ -118,6 +138,7 @@ export default function VideoViewerScreen({ route, navigation }: any) {
       picture: videoItem.dish.picture,
       chefId: videoItem.author.id,
       description: videoItem.dish.description,
+      is_spicy: false,
       type: "main",
       ingredients: "",
       availability_status: "available",
@@ -158,6 +179,11 @@ export default function VideoViewerScreen({ route, navigation }: any) {
     navigation.push("ChefDetail", { chefId });
   };
 
+  const handleReport = (videoId: string) => {
+    setReportTargetId(Number(videoId)); // Assuming IDs are numeric/compatible
+    setReportModalVisible(true);
+  };
+
   const renderVideo = ({
     item,
     index,
@@ -184,7 +210,6 @@ export default function VideoViewerScreen({ route, navigation }: any) {
         <View style={styles.overlay}>
           {/* Right Side Actions */}
           <View style={[styles.actions, { bottom: bottomLift + 50 }]}>
-            
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item)}
@@ -204,73 +229,106 @@ export default function VideoViewerScreen({ route, navigation }: any) {
 
             <TouchableOpacity
               style={styles.actionButton}
-                  onPress={() => {
-                    Share.share({
-                      message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
-                      url: `chefmobile://video/${item.id}`, // for iOS
-                    });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
-                </TouchableOpacity>
-                
-              </View>
-    
-              {/* Bottom Info Area */}
-              <View style={[styles.bottomContainer, { bottom: bottomLift }]}>
-                
-                {/* User Info Row */}
-                <View style={styles.userInfoRow}>
-                  <TouchableOpacity onPress={() => handleChefPress(item.author.chefId)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                    {item.author.avatar ? (
-                        <Image source={{ uri: item.author.avatar }} style={styles.userAvatar} />
-                    ) : (
-                        <View style={[styles.userAvatar, { backgroundColor: c.primary }]}>
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.author.name?.[0]}</Text>
-                        </View>
-                    )}
-                    <View style={{ marginLeft: 8 }}>
-                        <Text style={styles.userName}>{item.author.name}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Ionicons name="star" size={12} color={c.warning} />
-                            <Text style={styles.userRating}>4.9</Text>
-                            <Text style={styles.userDot}>•</Text>
-                            <Text style={styles.userTime}>~25 мин</Text>
-                        </View>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  <SubscribeButton authorId={item.author.id} />
+              onPress={() => {
+                Share.share({
+                  message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
+                  url: `chefmobile://video/${item.id}`, // for iOS
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleReport(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="alert-circle-outline" size={32} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom Info Area */}
+          <View style={[styles.bottomContainer, { bottom: bottomLift }]}>
+            {/* User Info Row */}
+            <View style={styles.userInfoRow}>
+              <TouchableOpacity
+                onPress={() => handleChefPress(item.author.chefId)}
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              >
+                {item.author.avatar ? (
+                  <Image
+                    source={{ uri: item.author.avatar }}
+                    style={styles.userAvatar}
+                  />
+                ) : (
+                  <View
+                    style={[styles.userAvatar, { backgroundColor: c.primary }]}
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                      {item.author.name?.[0]}
+                    </Text>
+                  </View>
+                )}
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.userName}>{item.author.name}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons name="star" size={12} color={c.warning} />
+                    <Text style={styles.userRating}>4.9</Text>
+                    <Text style={styles.userDot}>•</Text>
+                    <Text style={styles.userTime}>~25 мин</Text>
+                  </View>
                 </View>
+              </TouchableOpacity>
+
+              <SubscribeButton authorId={item.author.id} />
+            </View>
 
             {/* Description */}
             <Text style={styles.descriptionText} numberOfLines={2}>
-                {item.description || item.dish?.description || "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
+              {item.description ||
+                item.dish?.description ||
+                "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
             </Text>
 
             {/* Action Bar */}
             {item.dish && (
-                <View style={styles.actionBar}>
-                    <TouchableOpacity style={styles.dishMiniCard} activeOpacity={0.9} onPress={() => navigation.navigate("DishDetail", { dishId: item.dish!.id })}>
-                        <Image source={{ uri: item.dish.picture }} style={styles.dishMiniImage} />
-                        <View style={{ flex: 1, justifyContent: 'center' }}>
-                            <Text style={styles.dishMiniName} numberOfLines={1}>{item.dish.name}</Text>
-                            <Text style={styles.dishMiniPrice}>{item.dish.price} ₸</Text>
-                        </View>
-                    </TouchableOpacity>
+              <View style={styles.actionBar}>
+                <TouchableOpacity
+                  style={styles.dishMiniCard}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    navigation.navigate("DishDetail", { dishId: item.dish!.id })
+                  }
+                >
+                  <Image
+                    source={{ uri: item.dish.picture }}
+                    style={styles.dishMiniImage}
+                  />
+                  <View style={{ flex: 1, justifyContent: "center" }}>
+                    <Text style={styles.dishMiniName} numberOfLines={1}>
+                      {item.dish.name}
+                    </Text>
+                    <Text style={styles.dishMiniPrice}>
+                      {item.dish.price} ₸
+                    </Text>
+                  </View>
+                </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={[styles.addToCartButton, { backgroundColor: c.primary }]}
-                        onPress={() => handleAddToCart(item)}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="cart-outline" size={20} color="#fff" />
-                        <Text style={styles.addToCartText}>В корзину</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.addToCartButton,
+                    { backgroundColor: c.primary },
+                  ]}
+                  onPress={() => handleAddToCart(item)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="cart-outline" size={20} color="#fff" />
+                  <Text style={styles.addToCartText}>В корзину</Text>
+                </TouchableOpacity>
+              </View>
             )}
-
           </View>
         </View>
       </View>
@@ -298,14 +356,20 @@ export default function VideoViewerScreen({ route, navigation }: any) {
         })}
         initialScrollIndex={initialIndex}
       />
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetId={reportTargetId}
+        targetType="video"
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-  
-  videoContainer: { width: "100%", position: 'relative' },
+
+  videoContainer: { width: "100%", position: "relative" },
   overlay: { ...StyleSheet.absoluteFillObject },
 
   closeButton: {
@@ -365,7 +429,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   userRating: {
-    color: "#fff", 
+    color: "#fff",
     fontSize: 13,
     fontWeight: "600",
     marginLeft: 4,
@@ -403,7 +467,7 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.8)",
     textShadowRadius: 2,
   },
-  
+
   // Action Bar
   actionBar: {
     flexDirection: "row",
@@ -450,4 +514,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
-});  
+});

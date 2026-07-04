@@ -1,13 +1,12 @@
-/**
- * UI Components barrel export
- */
-
-export { Button } from "./Button";
-export { Input } from "./Input";
-export { Card } from "./Card";
-export { Spinner } from "./Spinner";
-export { Badge } from "./Badge";
-export { Avatar } from "./Avatar";
-export { StarRating } from "./StarRating";
-export { ThemeToggle } from "./ThemeToggle";
-export { PremiumHeader } from "./PremiumHeader";
+export * from "./Button";
+export * from "./Input";
+export * from "./Card";
+export * from "./Badge";
+export * from "./Avatar";
+export * from "./StarRating";
+export * from "./Spinner";
+export * from "./ThemeToggle";
+export * from "./PremiumHeader";
+export * from "./SelectionModal";
+export * from "./LegalDocumentRenderer";
+export * from "./ReportModal";

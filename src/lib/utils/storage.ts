@@ -165,19 +165,26 @@ export async function setUserProfile(user: User): Promise<void> {
 /**
  * Get theme preference from storage
  */
-export async function getThemePreference(): Promise<"light" | "dark" | null> {
+// ...
+/**
+ * Get theme preference from storage
+ */
+export async function getThemePreference(): Promise<
+  "light" | "dark" | "system" | null
+> {
   const AS = await getAsyncStorage();
   if (AS) {
     try {
       const theme = await AS.getItem(THEME_KEY);
-      return (theme as "light" | "dark" | null) ?? null;
+      return (theme as "light" | "dark" | "system" | null) ?? null;
     } catch {
       // continue
     }
   }
 
   const secure = await secureGet(THEME_KEY);
-  if (secure === "light" || secure === "dark") return secure;
+  if (secure === "light" || secure === "dark" || secure === "system")
+    return secure;
   return null;
 }
 
@@ -185,7 +192,7 @@ export async function getThemePreference(): Promise<"light" | "dark" | null> {
  * Save theme preference to storage
  */
 export async function setThemePreference(
-  theme: "light" | "dark",
+  theme: "light" | "dark" | "system",
 ): Promise<void> {
   const AS = await getAsyncStorage();
   if (AS) {

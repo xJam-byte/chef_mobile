@@ -6,9 +6,9 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Appearance } from "react-native";
+import { Appearance, useColorScheme } from "react-native";
 
-export type ThemeName = "light" | "dark";
+export type ThemeName = "light" | "dark" | "system";
 
 export type ThemeColors = {
   name: ThemeName;
@@ -121,22 +121,23 @@ export const DARK_COLORS: ThemeColors = {
 type ThemeContextValue = {
   theme: ThemeColors;
   themeName: ThemeName;
-  setTheme: (theme: ThemeName) => void;
+  setTheme: (theme: ThemeName | "system") => void;
   toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: LIGHT_COLORS,
   themeName: "light",
-  setTheme: () => { },
-  toggleTheme: () => { },
+  setTheme: () => {},
+  toggleTheme: () => {},
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [themeName, setThemeName] = useState<ThemeName>("light");
+  const [themeName, setThemeName] = useState<ThemeName>("system");
   const [isReady, setIsReady] = useState(false);
+  const systemColorScheme = useColorScheme();
 
   // Load theme preference on mount
   useEffect(() => {
@@ -146,30 +147,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       if (savedTheme) {
         setThemeName(savedTheme);
       } else {
-        // Use system preference if no saved theme
-        const systemTheme = Appearance.getColorScheme();
-        setThemeName(systemTheme === "dark" ? "dark" : "light");
+        setThemeName("system");
       }
       setIsReady(true);
     };
     loadTheme();
   }, []);
 
-  // Listen to system theme changes only if user hasn't set a preference
-  useEffect(() => {
-    const sub = Appearance.addChangeListener(async ({ colorScheme }) => {
-      const { getThemePreference } = await import("./utils/storage");
-      const savedTheme = await getThemePreference();
-      if (!savedTheme) {
-        setThemeName(colorScheme === "dark" ? "dark" : "light");
-      }
-    });
-    return () => sub.remove();
-  }, []);
+  const activeThemeName = useMemo(() => {
+    if (themeName === "system") {
+      return systemColorScheme === "dark" ? "dark" : "light";
+    }
+    return themeName;
+  }, [themeName, systemColorScheme]);
 
   const theme = useMemo(
-    () => (themeName === "dark" ? DARK_COLORS : LIGHT_COLORS),
-    [themeName]
+    () => (activeThemeName === "dark" ? DARK_COLORS : LIGHT_COLORS),
+    [activeThemeName],
   );
 
   const setTheme = async (newTheme: ThemeName) => {
@@ -179,7 +173,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const toggleTheme = () => {
-    setTheme(themeName === "light" ? "dark" : "light");
+    // Legacy toggle support, cycles light -> dark -> system -> light
+    if (themeName === "light") setTheme("dark");
+    else if (themeName === "dark") setTheme("system");
+    else setTheme("light");
   };
 
   if (!isReady) {
@@ -195,4 +192,3 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useTheme = () => useContext(ThemeContext);
 export const useColors = () => useTheme().theme;
-

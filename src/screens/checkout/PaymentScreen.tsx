@@ -36,7 +36,8 @@ export default function PaymentScreen() {
   const createOrder = useCreateOrder();
 
   const [intentId, setIntentId] = useState<string | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>("card");
+  const [selectedMethod, setSelectedMethod] =
+    useState<PaymentMethodType>("card");
   const [processing, setProcessing] = useState(false);
 
   // Create payment intent on mount
@@ -55,7 +56,7 @@ export default function PaymentScreen() {
           });
           navigation.goBack();
         },
-      }
+      },
     );
   }, []);
 
@@ -93,8 +94,7 @@ export default function PaymentScreen() {
           price: Number(item.dish.price),
         })),
       };
-      
-      console.log("[createOrder] payload:", JSON.stringify(orderData, null, 2));
+
       await createOrder.mutateAsync(orderData);
 
       // 3. Clear cart
@@ -124,7 +124,11 @@ export default function PaymentScreen() {
     }
   };
 
-  const paymentMethods: { type: PaymentMethodType; icon: string; label: string }[] = [
+  const paymentMethods: {
+    type: PaymentMethodType;
+    icon: string;
+    label: string;
+  }[] = [
     { type: "card", icon: "card", label: t("payment.card") },
     { type: "cash", icon: "cash", label: t("payment.cash") },
     { type: "online", icon: "globe", label: t("payment.online") },
@@ -132,7 +136,13 @@ export default function PaymentScreen() {
 
   if (createIntent.isPending || !intentId) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: c.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: c.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={c.primary} />
         <Text style={[styles.loadingText, { color: c.textSecondary }]}>
           {t("payment.preparing")}
@@ -143,10 +153,7 @@ export default function PaymentScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <PremiumHeader 
-        title={t("payment.title", "Payment")}
-        backButton
-      />
+      <PremiumHeader title={t("payment.title", "Payment")} backButton />
       <View style={styles.content}>
         {/* Amount Display */}
         <View style={[styles.amountCard, { backgroundColor: c.card }]}>
@@ -171,7 +178,8 @@ export default function PaymentScreen() {
                 styles.methodCard,
                 {
                   backgroundColor: c.card,
-                  borderColor: selectedMethod === method.type ? c.primary : c.border,
+                  borderColor:
+                    selectedMethod === method.type ? c.primary : c.border,
                   borderWidth: 2,
                 },
               ]}
@@ -185,7 +193,10 @@ export default function PaymentScreen() {
               <Text
                 style={[
                   styles.methodLabel,
-                  { color: selectedMethod === method.type ? c.text : c.textSecondary },
+                  {
+                    color:
+                      selectedMethod === method.type ? c.text : c.textSecondary,
+                  },
                 ]}
               >
                 {method.label}
@@ -213,7 +224,12 @@ export default function PaymentScreen() {
       </View>
 
       {/* Pay Button */}
-      <View style={[styles.footer, { backgroundColor: c.surface, borderTopColor: c.border }]}>
+      <View
+        style={[
+          styles.footer,
+          { backgroundColor: c.surface, borderTopColor: c.border },
+        ]}
+      >
         <Button
           title={processing ? t("payment.processing") : t("payment.pay")}
           onPress={handlePayment}

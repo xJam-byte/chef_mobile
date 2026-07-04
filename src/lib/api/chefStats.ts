@@ -1,10 +1,11 @@
 import { apiClient } from './client';
 
 export interface ChefStats {
+  totalOrders: number;
+  totalEarnings: number;
   monthlyEarnings: number;
   videoOrdersCount: number;
   topDishesThisWeek: TopDish[];
-  totalOrders: number;
   totalRevenue: number;
   averageOrderValue: number;
 }

@@ -19,25 +19,70 @@ export default function CheckoutScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { items, totalPrice } = useCart();
+  const { items, totalPrice, removeItem } = useCart();
   const { data: profile } = useProfile();
   const { data: addresses = [] } = useMyAddresses(profile?.user_id);
 
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
-    addresses.find((a) => a.is_default)?.address_id || null
+    null,
   );
 
-  const selectedAddress = addresses.find((a) => a.address_id === selectedAddressId);
+  // Sync selectedAddressId when addresses are loaded
+  React.useEffect(() => {
+    if (addresses.length > 0 && selectedAddressId === null) {
+      const defaultAddress = addresses.find((a) => a.is_default);
+      setSelectedAddressId(
+        defaultAddress?.address_id || addresses[0].address_id,
+      );
+    }
+  }, [addresses, selectedAddressId]);
+
+  // Filter out own dishes (self-order prevention)
+  const validItems = React.useMemo(() => {
+    if (!profile?.user_id) return items;
+    return items.filter((item) => item.dish.chefId !== profile.user_id);
+  }, [items, profile?.user_id]);
+
+  // Alert user if some items were filtered
+  React.useEffect(() => {
+    if (items.length > validItems.length) {
+      Alert.alert(
+        t("common.warning", "Warning"),
+        t(
+          "checkout.ownDishesRemoved",
+          "Your own dishes have been removed from checkout.",
+        ),
+      );
+    }
+  }, [validItems.length]);
+
+  const selectedAddress = addresses.find(
+    (a) => a.address_id === selectedAddressId,
+  );
 
   const handleProceedToPayment = () => {
     if (!selectedAddressId) {
-      Alert.alert(t("checkout.selectAddress"), t("checkout.selectAddressDescription"));
+      Alert.alert(
+        t("checkout.selectAddress"),
+        t("checkout.selectAddressDescription"),
+      );
+      return;
+    }
+
+    if (validItems.length === 0) {
+      Alert.alert(
+        t("checkout.emptyCart", "Cart is empty"),
+        t("checkout.addItemsFirst", "Please add items to your cart first"),
+      );
       return;
     }
 
     navigation.navigate("Payment", {
       addressId: selectedAddressId,
-      totalAmount: totalPrice,
+      totalAmount: validItems.reduce(
+        (sum, item) => sum + item.dish.price * item.quantity,
+        0,
+      ),
     });
   };
 
@@ -47,17 +92,14 @@ export default function CheckoutScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      <PremiumHeader 
-        title={t("checkout.title", "Checkout")}
-        backButton
-      />
+      <PremiumHeader title={t("checkout.title", "Checkout")} backButton />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Order Summary */}
         <View style={[styles.section, { backgroundColor: c.card }]}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>
             {t("checkout.orderSummary")}
           </Text>
-          
+
           {items.map((item) => (
             <View key={item.dish.dish_id} style={styles.itemRow}>
               <Text style={[styles.itemName, { color: c.text }]}>
@@ -70,7 +112,7 @@ export default function CheckoutScreen() {
           ))}
 
           <View style={[styles.divider, { backgroundColor: c.border }]} />
-          
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: c.text }]}>
               {t("checkout.total")}
@@ -155,7 +197,12 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* Bottom Button */}
-      <View style={[styles.footer, { backgroundColor: c.surface, borderTopColor: c.border }]}>
+      <View
+        style={[
+          styles.footer,
+          { backgroundColor: c.surface, borderTopColor: c.border },
+        ]}
+      >
         <Button
           title={t("checkout.proceedToPayment")}
           onPress={handleProceedToPayment}

@@ -28,7 +28,8 @@
     "unfollowError": "Failed to unfollow",
     "month": "Month",
     "customer": "Customer",
-    "more": "More"
+    "more": "More",
+    "typeMessage": "Type a message..."
   },
   "auth": {
     "welcome": "Welcome",
@@ -71,6 +72,7 @@
     "errorInvalidPhone": "Enter a valid phone number",
     "errorInvalidCode": "Enter a 6-digit code",
     "successSmsSent": "SMS code sent to your number",
+    "smsCodeSentTo": "SMS code sent to {{phone}}",
     "errorSmsSend": "Failed to send SMS",
     "errorLogin": "Login Error",
     "errorInvalidSmsCode": "Invalid code",
@@ -202,7 +204,9 @@
       "ready": "Ready for Pickup",
       "delivering": "On the way",
       "completed": "Completed",
-      "cancelled": "Cancelled"
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "selfDelivered": "Self Pickup"
     },
     "tracking": {
       "title": "Order Tracking",
@@ -220,8 +224,8 @@
       }
     },
     "tabs": {
-        "myOrders": "My Orders",
-        "incoming": "Incoming Orders"
+      "myOrders": "My Orders",
+      "incoming": "Incoming Orders"
     }
   },
   "chef": {
@@ -359,7 +363,15 @@
     "disabled": "Disabled",
     "comingSoon": "Coming soon...",
     "addresses": "Addresses",
-    "myAddresses": "My Addresses"
+    "myAddresses": "My Addresses",
+    "selectTheme": "Select Theme",
+    "selectLanguage": "Select Language",
+    "system": "System",
+    "changePasswordSuccess": "Password changed successfully",
+    "notificationsSaved": "Notification settings saved",
+    "termsText": "Terms of Service content goes here...",
+    "privacyText": "Privacy Policy content goes here...",
+    "support": "Support"
   },
   "addressManagement": {
     "title": "My Addresses",
@@ -432,5 +444,11 @@
     "addedToCart": "{{dishName}} added to cart!",
     "profileUnavailable": "Profile unavailable",
     "notAChef": "This user is not a chef"
+  },
+  "support": {
+    "noTickets": "How can we help?",
+    "subjectPlaceholder": "Subject",
+    "messagePlaceholder": "Describe your issue...",
+    "startChat": "Start Chat"
   }
 }

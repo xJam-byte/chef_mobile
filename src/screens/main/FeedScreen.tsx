@@ -32,6 +32,7 @@ import {
   useCart,
   useFollowUser,
   useIsFollowing,
+  useProfile,
 } from "../../lib/hooks";
 import VideoPlayer from "../../components/video/VideoPlayer";
 import { showMessage } from "react-native-flash-message";
@@ -40,25 +41,36 @@ import type { Dish } from "../../lib/types";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../../navigation/types";
+import { ReportModal } from "../../components/ui";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
-const SubscribeButton = ({ authorId }: { authorId: number }) => {
-    const { follow, unfollow } = useFollowUser();
-    const { data: isFollowingData } = useIsFollowing(authorId);
-    const isFollowing = isFollowingData?.data?.isFollowing;
-    const { t } = useTranslation();
+const SubscribeButton = ({
+  authorId,
+  currentUserId,
+}: {
+  authorId: number;
+  currentUserId?: number;
+}) => {
+  const { follow, unfollow } = useFollowUser();
+  const { data: isFollowingData } = useIsFollowing(authorId);
+  const isFollowing = isFollowingData?.data?.isFollowing;
+  const { t } = useTranslation();
 
-    if (isFollowing) return null;
+  // Don't show follow button for own profile
+  if (currentUserId && authorId === currentUserId) return null;
+  if (isFollowing) return null;
 
-    return (
-        <TouchableOpacity 
-            style={styles.subscribeButton}
-            onPress={() => follow(authorId)}
-        >
-            <Text style={styles.subscribeText}>{t('profile.follow') || 'Follow'}</Text>
-        </TouchableOpacity>
-    );
+  return (
+    <TouchableOpacity
+      style={styles.subscribeButton}
+      onPress={() => follow(authorId)}
+    >
+      <Text style={styles.subscribeText}>
+        {t("profile.follow") || "Follow"}
+      </Text>
+    </TouchableOpacity>
+  );
 };
 
 export default function FeedScreen() {
@@ -80,9 +92,14 @@ export default function FeedScreen() {
   const likeMutation = useLikeVideo();
   const unlikeMutation = useUnlikeVideo();
   const { addItem } = useCart();
+  const { data: profile } = useProfile();
 
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+
+  // Report Modal State
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetId, setReportTargetId] = useState<number>(0);
 
   const videos = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
@@ -110,6 +127,17 @@ export default function FeedScreen() {
   const handleAddToCart = (video: VideoFeedItem) => {
     if (!video.dish) return;
 
+    // Prevent chef from ordering their own dish
+    if (profile?.user_id && video.author.id === profile.user_id) {
+      showMessage({
+        message: t("common.error"),
+        description: t("dish.cantOrderOwn", "You cannot order your own dishes"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+
     const dish: Dish = {
       dish_id: video.dish.id,
       name: video.dish.name,
@@ -119,6 +147,7 @@ export default function FeedScreen() {
       description: video.dish.description,
       type: "main",
       ingredients: "",
+      is_spicy: false,
       availability_status: "available",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -153,6 +182,11 @@ export default function FeedScreen() {
       return;
     }
     navigation.navigate("ChefDetail", { chefId });
+  };
+
+  const handleReport = (videoId: string) => {
+    setReportTargetId(Number(videoId));
+    setReportModalVisible(true);
   };
 
   const renderVideo = ({
@@ -214,7 +248,6 @@ export default function FeedScreen() {
 
           {/* Right Side Actions */}
           <View style={[styles.actions, { bottom: bottomLift + 50 }]}>
-            
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleLike(item)}
@@ -232,84 +265,108 @@ export default function FeedScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* <TouchableOpacity
+            <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => {}}
+              onPress={() => {
+                Share.share({
+                  message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
+                  url: `chefmobile://video/${item.id}`, // for iOS
+                });
+              }}
               activeOpacity={0.7}
             >
-              <Ionicons name="chatbubble-outline" size={32} color="#fff" />
-              <Text style={styles.actionText}>{item.stats.comments || 24}</Text>
-            </TouchableOpacity> */}
+              <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
-                  onPress={() => {
-                    Share.share({
-                      message: `Check out this dish by ${item.author.name}! \n\nchefmobile://video/${item.id}`,
-                      url: `chefmobile://video/${item.id}`, // for iOS
-                    });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
-                </TouchableOpacity>
-                
-              </View>
-    
-              {/* Bottom Info Area */}
-              <View style={[styles.bottomContainer, { bottom: bottomLift - 50}]}>
-                
-                {/* User Info Row */}
-                <View style={styles.userInfoRow}>
-                  <TouchableOpacity onPress={() => handleChefPress(item.author.chefId)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                    {item.author.avatar ? (
-                        <Image source={{ uri: item.author.avatar }} style={styles.userAvatar} />
-                    ) : (
-                        <View style={[styles.userAvatar, { backgroundColor: c.primary }]}>
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{item.author.name?.[0]}</Text>
-                        </View>
-                    )}
-                    <View style={{ marginLeft: 8 }}>
-                        <Text style={styles.userName}>{item.author.name}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Ionicons name="star" size={12} color={c.warning} />
-                            <Text style={styles.userRating}>4.9</Text>
-                            <Text style={styles.userDot}>•</Text>
-                            <Text style={styles.userTime}>~25 мин</Text>
-                        </View>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  <SubscribeButton authorId={item.author.id} />
+              onPress={() => handleReport(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="alert-circle-outline" size={32} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom Info Area */}
+          <View style={[styles.bottomContainer, { bottom: bottomLift - 50 }]}>
+            {/* User Info Row */}
+            <View style={styles.userInfoRow}>
+              <TouchableOpacity
+                onPress={() => handleChefPress(item.author.chefId)}
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              >
+                {item.author.avatar ? (
+                  <Image
+                    source={{ uri: item.author.avatar }}
+                    style={styles.userAvatar}
+                  />
+                ) : (
+                  <View
+                    style={[styles.userAvatar, { backgroundColor: c.primary }]}
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                      {item.author.name?.[0]}
+                    </Text>
+                  </View>
+                )}
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.userName}>{item.author.name}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Ionicons name="star" size={12} color={c.warning} />
+                    <Text style={styles.userRating}>4.9</Text>
+                    <Text style={styles.userDot}>•</Text>
+                    <Text style={styles.userTime}>~25 мин</Text>
+                  </View>
                 </View>
+              </TouchableOpacity>
+
+              <SubscribeButton authorId={item.author.id} />
+            </View>
 
             {/* Description */}
             <Text style={styles.descriptionText} numberOfLines={2}>
-                {item.description || item.dish?.description || "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
+              {item.description ||
+                item.dish?.description ||
+                "Готовлю настоящий бешбармак по рецепту бабушки 👨‍🍳"}
             </Text>
 
             {/* Action Bar */}
             {item.dish && (
-                <View style={styles.actionBar}>
-                    <TouchableOpacity style={styles.dishMiniCard} activeOpacity={0.9} onPress={() => navigation.navigate("DishDetail", { dishId: item.dish!.id })}>
-                        <Image source={{ uri: item.dish.picture }} style={styles.dishMiniImage} />
-                        <View style={{ flex: 1, justifyContent: 'center' }}>
-                            <Text style={styles.dishMiniName} numberOfLines={1}>{item.dish.name}</Text>
-                            <Text style={styles.dishMiniPrice}>{item.dish.price} ₸</Text>
-                        </View>
-                    </TouchableOpacity>
+              <View style={styles.actionBar}>
+                <TouchableOpacity
+                  style={styles.dishMiniCard}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    navigation.navigate("DishDetail", { dishId: item.dish!.id })
+                  }
+                >
+                  <Image
+                    source={{ uri: item.dish.picture }}
+                    style={styles.dishMiniImage}
+                  />
+                  <View style={{ flex: 1, justifyContent: "center" }}>
+                    <Text style={styles.dishMiniName} numberOfLines={1}>
+                      {item.dish.name}
+                    </Text>
+                    <Text style={styles.dishMiniPrice}>
+                      {item.dish.price} ₸
+                    </Text>
+                  </View>
+                </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={[styles.addToCartButton, { backgroundColor: c.primary }]}
-                        onPress={() => handleAddToCart(item)}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="cart-outline" size={20} color="#fff" />
-                        <Text style={styles.addToCartText}>В корзину</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.addToCartButton,
+                    { backgroundColor: c.primary },
+                  ]}
+                  onPress={() => handleAddToCart(item)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="cart-outline" size={20} color="#fff" />
+                  <Text style={styles.addToCartText}>В корзину</Text>
+                </TouchableOpacity>
+              </View>
             )}
-
           </View>
         </View>
       </View>
@@ -327,7 +384,7 @@ export default function FeedScreen() {
   if (!videos.length && !isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-         <Text style={{color: 'white'}}>No videos</Text>
+        <Text style={{ color: "white" }}>No videos</Text>
       </View>
     );
   }
@@ -356,6 +413,12 @@ export default function FeedScreen() {
         }}
         onEndReachedThreshold={0.5}
       />
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetId={reportTargetId}
+        targetType="video"
+      />
     </SafeAreaView>
   );
 }
@@ -363,8 +426,8 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   centered: { justifyContent: "center", alignItems: "center" },
-  
-  videoContainer: { width: "100%", position: 'relative' },
+
+  videoContainer: { width: "100%", position: "relative" },
   overlay: { ...StyleSheet.absoluteFillObject },
 
   // Top Tabs
@@ -487,7 +550,7 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.8)",
     textShadowRadius: 2,
   },
-  
+
   // Action Bar
   actionBar: {
     flexDirection: "row",

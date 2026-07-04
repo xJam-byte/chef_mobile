@@ -1,10 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../api/client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "../api/client";
 import type {
   FollowStatsResponse,
   IsFollowingResponse,
   FollowsResponse,
-} from '../types';
+} from "../types";
 
 /**
  * Hook to follow/unfollow a user
@@ -21,18 +21,18 @@ export function useFollowUser() {
       // console.log('✅ Follow successful');
       // Invalidate relevant queries
       // NOTE: Don't invalidate 'profile' - it doesn't change when following someone
-      queryClient.invalidateQueries({ queryKey: ['followStats'] });
-      queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
-      queryClient.invalidateQueries({ queryKey: ['chef'] });
+      queryClient.invalidateQueries({ queryKey: ["followStats"] });
+      queryClient.invalidateQueries({ queryKey: ["isFollowing"] });
+      queryClient.invalidateQueries({ queryKey: ["chef"] });
     },
     onError: (error: any) => {
       // Don't invalidate profile on auth errors to prevent redirect to login
-      console.error('Follow error:', error?.response?.status, error?.message);
-      
+      console.error("Follow error:", error?.response?.status, error?.message);
+
       // Only invalidate non-auth related queries
       if (error?.response?.status !== 401) {
-        queryClient.invalidateQueries({ queryKey: ['followStats'] });
-        queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
+        queryClient.invalidateQueries({ queryKey: ["followStats"] });
+        queryClient.invalidateQueries({ queryKey: ["isFollowing"] });
       }
     },
   });
@@ -43,21 +43,20 @@ export function useFollowUser() {
       return res.data;
     },
     onSuccess: () => {
-      console.log('✅ Unfollow successful');
       // Invalidate relevant queries
       // NOTE: Don't invalidate 'profile' - it doesn't change when unfollowing someone
-      queryClient.invalidateQueries({ queryKey: ['followStats'] });
-      queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
-      queryClient.invalidateQueries({ queryKey: ['chef'] });
+      queryClient.invalidateQueries({ queryKey: ["followStats"] });
+      queryClient.invalidateQueries({ queryKey: ["isFollowing"] });
+      queryClient.invalidateQueries({ queryKey: ["chef"] });
     },
     onError: (error: any) => {
       // Don't invalidate profile on auth errors to prevent redirect to login
-      console.error('Unfollow error:', error?.response?.status, error?.message);
-      
+      console.error("Unfollow error:", error?.response?.status, error?.message);
+
       // Only invalidate non-auth related queries
       if (error?.response?.status !== 401) {
-        queryClient.invalidateQueries({ queryKey: ['followStats'] });
-        queryClient.invalidateQueries({ queryKey: ['isFollowing'] });
+        queryClient.invalidateQueries({ queryKey: ["followStats"] });
+        queryClient.invalidateQueries({ queryKey: ["isFollowing"] });
       }
     },
   });
@@ -74,7 +73,7 @@ export function useFollowUser() {
  */
 export function useFollowStats(userId: number | undefined) {
   return useQuery<FollowStatsResponse>({
-    queryKey: ['followStats', userId],
+    queryKey: ["followStats", userId],
     queryFn: async () => {
       const res = await apiClient.get(`/follows/${userId}/stats`);
       return res.data;
@@ -88,7 +87,7 @@ export function useFollowStats(userId: number | undefined) {
  */
 export function useIsFollowing(userId: number | undefined) {
   return useQuery<IsFollowingResponse>({
-    queryKey: ['isFollowing', userId],
+    queryKey: ["isFollowing", userId],
     queryFn: async () => {
       const res = await apiClient.get(`/follows/check/${userId}`);
       return res.data;
@@ -102,7 +101,7 @@ export function useIsFollowing(userId: number | undefined) {
  */
 export function useFollowers(userId: number | undefined) {
   return useQuery<FollowsResponse>({
-    queryKey: ['followers', userId],
+    queryKey: ["followers", userId],
     queryFn: async () => {
       const res = await apiClient.get(`/follows/${userId}/followers`);
       return res.data;
@@ -116,7 +115,7 @@ export function useFollowers(userId: number | undefined) {
  */
 export function useFollowing(userId: number | undefined) {
   return useQuery<FollowsResponse>({
-    queryKey: ['following', userId],
+    queryKey: ["following", userId],
     queryFn: async () => {
       const res = await apiClient.get(`/follows/${userId}/following`);
       return res.data;

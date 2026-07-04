@@ -70,6 +70,7 @@
     "errorInvalidPhone": "Дұрыс телефон нөмірін енгізіңіз",
     "errorInvalidCode": "6 таңбалы кодты енгізіңіз",
     "successSmsSent": "SMS-код нөміріңізге жіберілді",
+    "smsCodeSentTo": "SMS-код {{phone}} нөміріне жіберілді",
     "errorSmsSend": "SMS жіберу мүмкін болмады",
     "errorLogin": "Кіру қатесі",
     "errorInvalidSmsCode": "Қате код",
@@ -197,7 +198,9 @@
       "ready": "Дайын",
       "delivering": "Жолда",
       "completed": "Аяқталды",
-      "cancelled": "Болдырылмады"
+      "delivered": "Жеткізілді",
+      "cancelled": "Болдырылмады",
+      "selfDelivered": "Өзі алып кету"
     },
     "tracking": {
       "title": "Тапсырысты бақылау",
@@ -215,8 +218,8 @@
       }
     },
     "tabs": {
-        "myOrders": "Менің тапсырыстарым",
-        "incoming": "Кіріс тапсырыстар"
+      "myOrders": "Менің тапсырыстарым",
+      "incoming": "Кіріс тапсырыстар"
     },
     "confirmed": "Расталды",
     "delivered": "Жеткізілді",
@@ -346,7 +349,14 @@
     "disabled": "Өшірулі",
     "comingSoon": "Жақында...",
     "addresses": "Мекенжайлар",
-    "myAddresses": "Менің мекенжайларым"
+    "myAddresses": "Менің мекенжайларым",
+    "selectTheme": "Тақырыпты таңдаңыз",
+    "selectLanguage": "Тілді таңдаңыз",
+    "system": "Жүйелік",
+    "changePasswordSuccess": "Құпия сөз сәтті өзгертілді",
+    "notificationsSaved": "Хабарландыру параметрлері сақталды",
+    "termsText": "Пайдалану шарттары...",
+    "privacyText": "Құпиялылық саясаты..."
   },
   "addressManagementNew": {
     "title": "Менің мекенжайларым",

@@ -10,18 +10,15 @@ export const orderApi = {
    * Create a new order
    */
   async createOrder(data: CreateOrderDto): Promise<Order> {
-    // console.log("OOOOOO",data)
     const response = await apiClient.post<Order>("/order", data);
-    // console.log("Response",response)
     return response.data;
   },
 
   /**
-   * Get user's order history
+   * Get current user's order history (uses JWT token)
    */
-  async getOrderHistory(userId: number): Promise<Order[]> {
-    const response = await apiClient.get<Order[]>(`/order/${userId}/history`);
-    
+  async getOrderHistory(): Promise<Order[]> {
+    const response = await apiClient.get<Order[]>("/order/my/history");
     return response.data;
   },
 
@@ -33,8 +30,11 @@ export const orderApi = {
     return response.data;
   },
 
-  async getChefOrders(userId: number): Promise<Order[]> {
-    const response = await apiClient.get<Order[]>(`/order/${userId}/chef`);
+  /**
+   * Get current chef's orders (uses JWT token)
+   */
+  async getChefOrders(): Promise<Order[]> {
+    const response = await apiClient.get<Order[]>("/order/my/chef");
     return response.data;
   },
 
@@ -42,7 +42,9 @@ export const orderApi = {
    * Update order status
    */
   async updateOrderStatus(orderId: number, status: string): Promise<Order> {
-    const response = await apiClient.post<Order>(`/order/${orderId}/status`, { status });
+    const response = await apiClient.post<Order>(`/order/${orderId}/status`, {
+      status,
+    });
     return response.data;
   },
 };

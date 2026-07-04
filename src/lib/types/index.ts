@@ -80,6 +80,8 @@ export interface Chef {
   createdAt: string;
   updatedAt: string;
   users?: User;
+  /** @alias users — some components use `chef.user` instead of `chef.users` */
+  user?: User;
 }
 
 export interface BecomeChefDto {
@@ -145,6 +147,28 @@ export interface Order {
   status: "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
   order_details?: OrderDetail[];
   estimated_minutes?: number;
+  delivery_address_id?: number;
+  payment_method?: string;
+  payment_status?: string;
+  payment_transaction_id?: string;
+  /** Delivery address (included from backend) */
+  addresses?: Address;
+  /** Customer info (included from backend) */
+  users?: {
+    user_id: number;
+    name: string;
+    email?: string;
+    phone_number?: string;
+    profile_pic?: string;
+  };
+  /** @alias users */
+  user?: {
+    user_id: number;
+    name: string;
+    email?: string;
+    phone_number?: string;
+    profile_pic?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -157,6 +181,12 @@ export interface OrderDetail {
   preferences: string;
   price: number;
   dish?: Dish;
+  /** Backend returns 'dishes' (plural) from Prisma relation */
+  dishes?: Dish & {
+    chefs?: Chef & {
+      users?: { name: string; profile_pic?: string };
+    };
+  };
 }
 
 export interface CreateOrderItemDto {
@@ -256,4 +286,22 @@ export interface IsFollowingResponse {
   data: {
     isFollowing: boolean;
   };
+}
+
+// ==================== Chef Stats ====================
+
+export interface ChefStats {
+  totalOrders: number;
+  totalRevenue: number;
+  totalEarnings: number;
+  averageOrderValue: number;
+  monthlyEarnings: number;
+  videoOrdersCount: number;
+  topDishesThisWeek: Array<{
+    dish_id: number;
+    name: string;
+    picture: string | null;
+    ordersThisWeek: number;
+    revenueThisWeek: number;
+  }>;
 }
