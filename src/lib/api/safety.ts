@@ -3,7 +3,8 @@ import { apiClient } from "./client";
 
 export const safetyApi = {
   report: async (data: {
-    targetId: number;
+    // number for users/dishes, uuid string for videos
+    targetId: number | string;
     targetType: "user" | "video" | "dish";
     reason: string;
     details?: string;

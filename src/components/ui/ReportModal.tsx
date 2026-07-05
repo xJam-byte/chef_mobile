@@ -17,7 +17,8 @@ import { Button } from "./Button";
 interface ReportModalProps {
   visible: boolean;
   onClose: () => void;
-  targetId: number;
+  // number for users/dishes, uuid string for videos
+  targetId: number | string;
   targetType: "user" | "video" | "dish";
 }
 
