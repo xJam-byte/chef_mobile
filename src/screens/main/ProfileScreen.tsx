@@ -27,6 +27,8 @@ import {
   useFollowing,
 } from "../../lib/hooks";
 import { useChefByUserId } from "../../lib/hooks/useChefs";
+import { getChefByUserId } from "../../lib/api/chef";
+import { showMessage } from "react-native-flash-message";
 import { API_BASE_URL } from "../../lib/constants";
 import { useColors } from "../../lib/theme";
 
@@ -52,6 +54,25 @@ export default function ProfileScreen({ navigation }: any) {
     : null;
 
   const roleIsChef = profile?.role === "chef";
+
+  // The following list contains users (user_id), but ChefDetail expects
+  // chefs.chef_id — resolve the chef record before navigating.
+  const handleFollowedUserPress = async (userId: number) => {
+    try {
+      const followedChef = await getChefByUserId(userId);
+      if (followedChef?.chef_id) {
+        navigation.navigate("ChefDetail", { chefId: followedChef.chef_id });
+        return;
+      }
+    } catch {
+      // ignore and show the message below
+    }
+    showMessage({
+      message: t("feed.profileUnavailable", "Profile unavailable"),
+      type: "info",
+      icon: "info",
+    });
+  };
 
   // Get chef info if user is a chef
   const { data: chef } = useChefByUserId(profile?.user_id);
@@ -777,9 +798,7 @@ export default function ProfileScreen({ navigation }: any) {
                     styles.customerListItem,
                     { backgroundColor: c.card, shadowColor: c.text },
                   ]}
-                  onPress={() =>
-                    navigation.navigate("ChefDetail", { chefId: user.user_id })
-                  }
+                  onPress={() => handleFollowedUserPress(user.user_id)}
                 >
                   <Avatar uri={user.profile_pic} name={user.name} size="md" />
                   <View style={{ flex: 1, paddingHorizontal: 16 }}>
