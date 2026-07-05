@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import { apiClient } from "../api/client";
 import {
-  login,
   registration,
   me,
   sendSms,
@@ -16,7 +15,7 @@ import {
   setAccessToken,
   removeAccessToken,
 } from "../utils/storage";
-import type { LoginDto, RegisterDto, User, LoginEmailDto } from "../types";
+import type { RegisterDto, User, LoginEmailDto } from "../types";
 
 export function useAuthStatus() {
   return useQuery<User | null>({
@@ -58,24 +57,6 @@ export function useAuthStatus() {
     gcTime: 10 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-  });
-}
-
-export function useLogin() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (payload: LoginDto) => {
-      // Compatibility wrapper if old login is still used somewhere
-      const data = await login(payload);
-      await setAccessToken(data.token);
-      apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
-      return data;
-    },
-    onSuccess: async (data) => {
-      qc.setQueryData(["profile"], data.user);
-      await qc.invalidateQueries({ queryKey: ["profile"] });
-    },
   });
 }
 

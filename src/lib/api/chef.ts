@@ -40,6 +40,6 @@ export const getChefById = async (chefId: number): Promise<Chef> => {
  * Become a chef
  */
 export const becomeChef = async (data: BecomeChefDto): Promise<Chef> => {
-  const response = await apiClient.post<Chef>("/chef/become", data);
+  const response = await apiClient.post<Chef>("/chef/becomeChef", data);
   return response.data;
 };

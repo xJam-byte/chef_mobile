@@ -1,13 +1,8 @@
 // src/lib/api/auth.ts
 import { apiClient } from "./client";
-import type { LoginDto, LoginEmailDto, RegisterDto, User } from "../types";
+import type { LoginEmailDto, RegisterDto, User } from "../types";
 
 export type AuthResponse = { token: string; user: User };
-
-export const login = async (data: LoginDto): Promise<AuthResponse> => {
-  const res = await apiClient.post<AuthResponse>("/auth/login", data);
-  return res.data;
-};
 
 export const loginEmail = async (data: LoginEmailDto): Promise<AuthResponse> => {
   const res = await apiClient.post<AuthResponse>("/auth/login-email", data);
