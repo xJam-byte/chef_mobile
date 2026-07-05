@@ -19,7 +19,7 @@ export default function CheckoutScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { items, totalPrice, removeItem } = useCart();
+  const { items } = useCart();
   const { data: profile } = useProfile();
   const { data: addresses = [] } = useMyAddresses(profile?.user_id);
 
@@ -30,18 +30,27 @@ export default function CheckoutScreen() {
   // Sync selectedAddressId when addresses are loaded
   React.useEffect(() => {
     if (addresses.length > 0 && selectedAddressId === null) {
-      const defaultAddress = addresses.find((a) => a.is_default);
-      setSelectedAddressId(
-        defaultAddress?.address_id || addresses[0].address_id,
-      );
+      setSelectedAddressId(addresses[0].address_id);
     }
   }, [addresses, selectedAddressId]);
 
-  // Filter out own dishes (self-order prevention)
+  // Filter out own dishes (self-order prevention).
+  // dish.chefId is chefs.chef_id, so compare against the profile's chef record.
+  const myChefId = profile?.chefs?.[0]?.chef_id;
+
   const validItems = React.useMemo(() => {
-    if (!profile?.user_id) return items;
-    return items.filter((item) => item.dish.chefId !== profile.user_id);
-  }, [items, profile?.user_id]);
+    if (!myChefId) return items;
+    return items.filter((item) => item.dish.chefId !== myChefId);
+  }, [items, myChefId]);
+
+  const payableTotal = React.useMemo(
+    () =>
+      validItems.reduce(
+        (sum, item) => sum + Number(item.dish.price) * item.quantity,
+        0,
+      ),
+    [validItems],
+  );
 
   // Alert user if some items were filtered
   React.useEffect(() => {
@@ -79,10 +88,7 @@ export default function CheckoutScreen() {
 
     navigation.navigate("Payment", {
       addressId: selectedAddressId,
-      totalAmount: validItems.reduce(
-        (sum, item) => sum + item.dish.price * item.quantity,
-        0,
-      ),
+      totalAmount: payableTotal,
     });
   };
 
@@ -100,13 +106,13 @@ export default function CheckoutScreen() {
             {t("checkout.orderSummary")}
           </Text>
 
-          {items.map((item) => (
+          {validItems.map((item) => (
             <View key={item.dish.dish_id} style={styles.itemRow}>
               <Text style={[styles.itemName, { color: c.text }]}>
                 {item.quantity}x {item.dish.name}
               </Text>
               <Text style={[styles.itemPrice, { color: c.textSecondary }]}>
-                {(item.dish.price * item.quantity).toLocaleString()} ₸
+                {(Number(item.dish.price) * item.quantity).toLocaleString()} ₸
               </Text>
             </View>
           ))}
@@ -118,7 +124,7 @@ export default function CheckoutScreen() {
               {t("checkout.total")}
             </Text>
             <Text style={[styles.totalValue, { color: c.primary }]}>
-              {totalPrice.toLocaleString()} ₸
+              {payableTotal.toLocaleString()} ₸
             </Text>
           </View>
         </View>
