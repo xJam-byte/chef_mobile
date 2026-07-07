@@ -91,7 +91,7 @@ export default function VideoViewerScreen({ route, navigation }: any) {
 
   // Report Modal State
   const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportTargetId, setReportTargetId] = useState<number>(0);
+  const [reportTargetId, setReportTargetId] = useState<string>("");
 
   // Scroll to initial index on mount
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function VideoViewerScreen({ route, navigation }: any) {
   };
 
   const handleReport = (videoId: string) => {
-    setReportTargetId(Number(videoId)); // Assuming IDs are numeric/compatible
+    setReportTargetId(videoId); // video ids are uuid strings
     setReportModalVisible(true);
   };
 

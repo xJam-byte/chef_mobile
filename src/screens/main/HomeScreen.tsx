@@ -2,18 +2,17 @@
  * Home Screen - Dishes catalog
  */
 
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { showMessage } from "react-native-flash-message";
 import { useTranslation } from "react-i18next";
 import { DishCard } from "../../components/features";
 import { Spinner } from "../../components/ui";
-import { useDishes } from "../../lib/hooks";
+import { useDishes, useCart } from "../../lib/hooks";
 import { useColors } from "../../lib/theme";
 import type { Dish } from "../../lib/types";
 import type { RootStackScreenProps } from "../../navigation/types";
-import { CartContext } from "../../context/CartContext";
 
 const HomeScreen = () => {
   const c = useColors();
@@ -33,16 +32,25 @@ const HomeScreen = () => {
     refetch: () => void;
   };
 
-  const cartContext = useContext(CartContext);
+  const { addItem } = useCart();
 
   const handleDishPress = (dish: Dish) => {
     navigation.navigate("DishDetail", { dishId: dish.dish_id });
   };
 
   const handleAddToCart = (dish: Dish) => {
-    if (!cartContext) return;
+    const result = addItem(dish, 1, "");
 
-    cartContext.addItem(dish, 1, "");
+    if (result.alreadyExists) {
+      showMessage({
+        message: t("feed.alreadyInCart", { dishName: dish.name }),
+        description: t("feed.changeQuantityInCart"),
+        type: "info",
+        icon: "info",
+      });
+      return;
+    }
+
     showMessage({
       message: t('home.addedToCart'),
       description: dish.name,

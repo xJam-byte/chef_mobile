@@ -5,12 +5,6 @@
 export type UserRole = "customer" | "chef";
 // ==================== Auth ====================
 
-export interface LoginDto {
-  email?: string;
-  phone_number?: string;
-  password?: string;
-}
-
 export interface LoginEmailDto {
   email: string;
   password: string;

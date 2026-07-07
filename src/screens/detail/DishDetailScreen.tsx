@@ -3,7 +3,7 @@
  * Premium "Bomb" Design
  */
 
-import React, { useContext, useRef } from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -23,8 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button, Badge, Spinner } from "../../components/ui";
-import { useDish, useProfile } from "../../lib/hooks";
-import { CartContext } from "../../context/CartContext";
+import { useDish, useProfile, useCart } from "../../lib/hooks";
 import { DISH_TYPES } from "../../lib/constants";
 import type { RootStackScreenProps } from "../../navigation/types";
 import { useColors } from "../../lib/theme";
@@ -42,7 +41,7 @@ const DishDetailScreen = ({
   const { dishId } = route.params;
   const { data: dish, isLoading, isError } = useDish(dishId);
   const { data: profile } = useProfile();
-  const cartContext = useContext(CartContext);
+  const { addItem } = useCart();
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -67,8 +66,10 @@ const DishDetailScreen = ({
   const imageUri = dish.picture || null;
   const isAvailable = dish.availability_status === "available";
 
-  // Check if current user is the chef of this dish
-  const isOwnDish = profile?.user_id === (dish as any).chefId;
+  // Check if current user is the chef of this dish.
+  // dish.chefId is chefs.chef_id, so compare against the profile's chef record.
+  const myChefId = profile?.chefs?.[0]?.chef_id;
+  const isOwnDish = !!myChefId && myChefId === dish.chefId;
 
   const handleAddToCart = () => {
     if (isOwnDish) {
@@ -87,16 +88,25 @@ const DishDetailScreen = ({
       return;
     }
 
-    if (cartContext) {
-      cartContext.addItem(dish, 1, "");
+    const result = addItem(dish, 1, "");
+
+    if (result.alreadyExists) {
       showMessage({
-        message: "Добавлено в корзину",
-        description: dish.name,
-        type: "success",
-        icon: "success",
-        backgroundColor: c.primary,
+        message: t("feed.alreadyInCart", { dishName: dish.name }),
+        description: t("feed.changeQuantityInCart"),
+        type: "info",
+        icon: "info",
       });
+      return;
     }
+
+    showMessage({
+      message: "Добавлено в корзину",
+      description: dish.name,
+      type: "success",
+      icon: "success",
+      backgroundColor: c.primary,
+    });
   };
 
   // Animations

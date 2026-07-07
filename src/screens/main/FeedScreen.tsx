@@ -99,7 +99,7 @@ export default function FeedScreen() {
 
   // Report Modal State
   const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportTargetId, setReportTargetId] = useState<number>(0);
+  const [reportTargetId, setReportTargetId] = useState<string>("");
 
   const videos = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
@@ -185,7 +185,7 @@ export default function FeedScreen() {
   };
 
   const handleReport = (videoId: string) => {
-    setReportTargetId(Number(videoId));
+    setReportTargetId(videoId); // video ids are uuid strings
     setReportModalVisible(true);
   };
 
