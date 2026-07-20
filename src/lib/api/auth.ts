@@ -9,6 +9,18 @@ export const loginEmail = async (data: LoginEmailDto): Promise<AuthResponse> => 
   return res.data;
 };
 
+/** Шаг 1 входа по почте: проверяет email+пароль, шлёт код на почту */
+export const sendEmailCode = async (data: LoginEmailDto): Promise<{ message: string }> => {
+  const res = await apiClient.post("/auth/email/send-code", data);
+  return res.data;
+};
+
+/** Шаг 2 входа по почте: код из письма → токен */
+export const verifyEmail = async (data: { email: string; code: string }): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/email/verify", data);
+  return res.data;
+};
+
 export const registration = async (data: RegisterDto): Promise<{ user: User }> => {
   const res = await apiClient.post<{ user: User }>("/auth/registration", data);
   return res.data;
@@ -21,6 +33,36 @@ export const sendSms = async (phone_number: string): Promise<{ message: string }
 
 export const verifySms = async (data: { phone_number: string; code: string }): Promise<AuthResponse> => {
   const res = await apiClient.post<AuthResponse>("/auth/verify-sms", data);
+  return res.data;
+};
+
+/** Смена пароля, шаг 1: SMS-код на свой номер (нужна авторизация) */
+export const sendPasswordCode = async (): Promise<{ message: string; phone_number: string }> => {
+  const res = await apiClient.post("/auth/password/send-code");
+  return res.data;
+};
+
+/** Смена пароля, шаг 2: код + новый пароль */
+export const changePasswordWithCode = async (data: {
+  code: string;
+  new_password: string;
+}): Promise<{ ok: boolean }> => {
+  const res = await apiClient.post("/auth/password/change", data);
+  return res.data;
+};
+
+/** Смена почты, шаг 1: код на НОВУЮ почту */
+export const sendEmailChangeCode = async (newEmail: string): Promise<{ message: string }> => {
+  const res = await apiClient.post("/auth/email-change/send-code", { newEmail });
+  return res.data;
+};
+
+/** Смена почты, шаг 2: код → почта сохранена */
+export const confirmEmailChange = async (data: {
+  newEmail: string;
+  code: string;
+}): Promise<{ user_id: number; email: string }> => {
+  const res = await apiClient.post("/auth/email-change/confirm", data);
   return res.data;
 };
 

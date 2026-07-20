@@ -3,8 +3,9 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateContacts, uploadAvatar, updateEmail, updatePassword } from "../api/user";
-import { getUserProfile, setUserProfile } from "../utils/storage";
+import { updateContacts, uploadAvatar, updateEmail, updatePassword, deleteMyAccount } from "../api/user";
+import { apiClient } from "../api/client";
+import { getUserProfile, setUserProfile, removeAccessToken } from "../utils/storage";
 import { QUERY_KEYS } from "../constants";
 import type { User, UpdateContactsDto, UploadAvatarDto, UpdateEmailDto, UpdatePasswordDto } from "../types";
 import { useAuthStatus } from "./useAuth";
@@ -27,7 +28,10 @@ export const useUpdateContacts = () => {
         mutationFn: (data: UpdateContactsDto) => updateContacts(data),
         onSuccess: (user) => {
             setUserProfile(user);
-            queryClient.setQueryData(["profile"], user);
+            // Ответ содержит только часть полей — мержим, чтобы не потерять chefs/_count
+            queryClient.setQueryData(["profile"], (old: any) =>
+                old ? { ...old, ...user } : user,
+            );
         },
     });
 };
@@ -67,5 +71,22 @@ export const useUpdateEmail = () => {
 export const useUpdatePassword = () => {
     return useMutation({
         mutationFn: (data: UpdatePasswordDto) => updatePassword(data),
+    });
+};
+
+/**
+ * Удаление аккаунта: чистит токен и весь кэш — как полный выход
+ */
+export const useDeleteAccount = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => deleteMyAccount(),
+        onSuccess: async () => {
+            await removeAccessToken();
+            delete apiClient.defaults.headers.Authorization;
+            queryClient.setQueryData(["profile"], null);
+            queryClient.clear();
+        },
     });
 };

@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   TextInput,
   TouchableOpacity,
   Animated,
@@ -15,8 +14,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { showMessage } from "react-native-flash-message";
 import { Button } from "../../components/ui";
 import { useRegister, useVerifySms } from "../../lib/hooks";
+import { translateApiError } from "../../lib/utils/apiErrors";
 import type { AuthScreenProps } from "../../navigation/types";
 import { useColors } from "../../lib/theme";
 import type { UserRole } from "../../lib/types";
@@ -34,6 +35,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [selectedRole, setSelectedRole] = useState<UserRole>("customer");
 
   // Animations
@@ -81,18 +83,26 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     try {
       const rawPhone = getRawPhoneNumber(phoneNumber);
       
+      const showValidationError = (description: string) =>
+        showMessage({
+          message: t('common.error'),
+          description,
+          type: "warning",
+          icon: "warning",
+        });
+
       if (rawPhone.length < 12) {
-        Alert.alert(t('common.error'), t('auth.errorInvalidPhone'));
+        showValidationError(t('auth.errorInvalidPhone'));
         return;
       }
 
       if (!name) {
-        Alert.alert(t('common.error'), t('auth.errorNameRequired'));
+        showValidationError(t('auth.errorNameRequired'));
         return;
       }
 
       if (!password) {
-        Alert.alert(t('common.error'), t('auth.errorPasswordRequired'));
+        showValidationError(t('auth.errorPasswordRequired'));
         return;
       }
 
@@ -102,21 +112,26 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
         email: email.trim() || undefined,
         password: password.trim(),
         role: selectedRole,
+        referral_code: referralCode.trim() || undefined,
       });
       
       // Move to verification step
       setStep("verify");
-      Alert.alert(t('common.success'), t('auth.successSmsSent'));
-      
+      showMessage({
+        message: t('common.success'),
+        description: t('auth.successSmsSent'),
+        type: "success",
+        icon: "success",
+      });
+
     } catch (e: any) {
-      const msgRaw = e?.response?.data?.message ?? e?.response?.data?.error ?? e?.message;
-
-      const msg =
-        Array.isArray(msgRaw) ? msgRaw.join("\n") :
-          typeof msgRaw === "string" ? msgRaw :
-            JSON.stringify(e?.response?.data ?? {}, null, 2);
-
-      Alert.alert(t('auth.errorRegistration'), msg);
+      showMessage({
+        message: t('auth.errorRegistration'),
+        description: translateApiError(e),
+        type: "danger",
+        icon: "danger",
+        duration: 4000,
+      });
     }
   };
 
@@ -124,7 +139,12 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
     try {
       const rawPhone = getRawPhoneNumber(phoneNumber);
       if (code.length !== 6) {
-        Alert.alert(t('common.error'), t('auth.errorInvalidCode'));
+        showMessage({
+          message: t('common.error'),
+          description: t('auth.errorInvalidCode'),
+          type: "warning",
+          icon: "warning",
+        });
         return;
       }
 
@@ -135,7 +155,13 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
       
       // Navigation is handled by RootNavigator/AuthState
     } catch (e: any) {
-       Alert.alert(t('common.error'), e?.response?.data?.message || t('auth.errorInvalidSmsCode'));
+      showMessage({
+        message: t('common.error'),
+        description: translateApiError(e),
+        type: "danger",
+        icon: "danger",
+        duration: 4000,
+      });
     }
   }
 
@@ -217,24 +243,26 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
               }
             ]}
           >
-            {/* Role Selection */}
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: c.text }]}>{t('roleSelection.chooseRole')}</Text>
-              <View style={styles.rolesContainer}>
-                <RoleCard 
-                  role="customer" 
-                  title={t('roleSelection.customer')} 
-                  icon="person"
-                  description={t('roleSelection.customerDescriptionShort') || "Order food"}
-                />
-                <RoleCard 
-                  role="chef" 
-                  title={t('roleSelection.chef')} 
-                  icon="restaurant"
-                  description={t('roleSelection.chefDescriptionShort') || "Cook & sell"}
-                />
+            {/* Role Selection — только на шаге формы, на шаге SMS-кода не показываем */}
+            {step === "form" && (
+              <View style={styles.section}>
+                <Text style={[styles.label, { color: c.text }]}>{t('roleSelection.chooseRole')}</Text>
+                <View style={styles.rolesContainer}>
+                  <RoleCard
+                    role="customer"
+                    title={t('roleSelection.customer')}
+                    icon="person"
+                    description={t('roleSelection.customerDescriptionShort') || "Order food"}
+                  />
+                  <RoleCard
+                    role="chef"
+                    title={t('roleSelection.chef')}
+                    icon="restaurant"
+                    description={t('roleSelection.chefDescriptionShort') || "Cook & sell"}
+                  />
+                </View>
               </View>
-            </View>
+            )}
 
             {step === "form" ? (
               <>
@@ -303,6 +331,22 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                       />
                     </View>
                   </View>
+
+                  {/* Referral code (optional) */}
+                  <View style={styles.inputContainer}>
+                    <Text style={[styles.label, { color: c.text }]}>{t('auth.referralLabel')}</Text>
+                    <View style={[styles.inputWrapper, { backgroundColor: c.input }]}>
+                      <Ionicons name="gift-outline" size={20} color={c.textSecondary} style={styles.inputIcon} />
+                      <TextInput
+                        style={[styles.input, { color: c.text }]}
+                        value={referralCode}
+                        onChangeText={setReferralCode}
+                        autoCapitalize="characters"
+                        placeholder={t('auth.referralPlaceholder')}
+                        placeholderTextColor={c.textSecondary}
+                      />
+                    </View>
+                  </View>
                 </View>
 
                 <Button
@@ -320,7 +364,7 @@ const RegisterScreen = ({ navigation }: AuthScreenProps<"Register">) => {
                     {t('auth.enterSmsCode')}
                   </Text>
                   <Text style={{ color: c.textSecondary, marginBottom: 20 }}>
-                    {t('auth.smsCodeSentTo')} {phoneNumber}
+                    {t('auth.smsCodeSentTo', { phone: phoneNumber })}
                   </Text>
                   
                   <TextInput

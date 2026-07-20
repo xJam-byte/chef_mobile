@@ -8,6 +8,12 @@ import {
   sendSms,
   verifySms,
   loginEmail,
+  sendEmailCode,
+  verifyEmail,
+  sendPasswordCode,
+  changePasswordWithCode,
+  sendEmailChangeCode,
+  confirmEmailChange,
 } from "../api/auth";
 import {
   setUserProfile,
@@ -73,6 +79,63 @@ export function useLoginEmail() {
     onSuccess: async (data) => {
       qc.setQueryData(["profile"], data.user);
       await qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useSendEmailCode() {
+  return useMutation({
+    mutationFn: async (payload: LoginEmailDto) => {
+      return await sendEmailCode(payload);
+    },
+  });
+}
+
+export function useVerifyEmail() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { email: string; code: string }) => {
+      const data = await verifyEmail(payload);
+      await setAccessToken(data.token);
+      apiClient.defaults.headers.Authorization = `Bearer ${data.token}`;
+      return data;
+    },
+    onSuccess: async (data) => {
+      qc.setQueryData(["profile"], data.user);
+      await setUserProfile(data.user);
+      await qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useSendPasswordCode() {
+  return useMutation({ mutationFn: sendPasswordCode });
+}
+
+export function useChangePasswordWithCode() {
+  return useMutation({
+    mutationFn: (payload: { code: string; new_password: string }) =>
+      changePasswordWithCode(payload),
+  });
+}
+
+export function useSendEmailChangeCode() {
+  return useMutation({
+    mutationFn: (newEmail: string) => sendEmailChangeCode(newEmail),
+  });
+}
+
+export function useConfirmEmailChange() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { newEmail: string; code: string }) =>
+      confirmEmailChange(payload),
+    onSuccess: (data) => {
+      qc.setQueryData(["profile"], (old: any) =>
+        old ? { ...old, email: data.email } : old,
+      );
     },
   });
 }

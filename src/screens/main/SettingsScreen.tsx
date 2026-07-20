@@ -7,11 +7,25 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColors, useTheme, ThemeName } from "../../lib/theme";
-import { useLogout } from "../../lib/hooks";
+import {
+  useLogout,
+  useProfile,
+  useSendPasswordCode,
+  useChangePasswordWithCode,
+  useSendEmailChangeCode,
+  useConfirmEmailChange,
+} from "../../lib/hooks";
+import {
+  useDeleteAccount,
+  useUpdateContacts,
+} from "../../lib/hooks/useUser";
+import { translateApiError } from "../../lib/utils/apiErrors";
 import { changeLanguage, getCurrentLanguage } from "../../lib/i18n";
 import {
   PremiumHeader,
@@ -25,10 +39,56 @@ export default function SettingsScreen({ navigation }: any) {
   const { t } = useTranslation();
   const { themeName, setTheme } = useTheme();
   const logoutMutation = useLogout();
+  const deleteAccountMutation = useDeleteAccount();
 
   const [language, setLanguage] = useState<"ru" | "en" | "kk">("ru");
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [langModalVisible, setLangModalVisible] = useState(false);
+
+  // Смена @username
+  const { data: profile } = useProfile();
+  const updateContactsMutation = useUpdateContacts();
+  const [usernameModalVisible, setUsernameModalVisible] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+
+  const openUsernameModal = () => {
+    setUsernameInput(profile?.username ?? "");
+    setUsernameModalVisible(true);
+  };
+
+  const handleSaveUsername = () => {
+    const username = usernameInput.trim().toLowerCase().replace(/^@/, "");
+    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+      showMessage({
+        message: t("settings.usernameInvalid",
+          "Юзернейм: 3–32 символа, только a-z, 0-9 и _"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    updateContactsMutation.mutate(
+      { email: profile?.email ?? "", username },
+      {
+        onSuccess: () => {
+          setUsernameModalVisible(false);
+          showMessage({
+            message: t("settings.usernameSaved", "Юзернейм обновлён"),
+            type: "success",
+            icon: "success",
+          });
+        },
+        onError: (e) => {
+          showMessage({
+            message: t("common.error"),
+            description: translateApiError(e),
+            type: "danger",
+            icon: "danger",
+          });
+        },
+      },
+    );
+  };
 
   // Notification toggles (mock)
   const [pushEnabled, setPushEnabled] = useState(true);
@@ -42,6 +102,46 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleThemeSelect = (value: string) => {
     setTheme(value as ThemeName);
+  };
+
+  // Двойное подтверждение: удаление необратимо
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      t("settings.deleteAccount"),
+      t("settings.deleteAccountWarning"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("settings.deleteAccountContinue"),
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              t("settings.deleteAccountConfirmTitle"),
+              t("settings.deleteAccountConfirmText"),
+              [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                  text: t("settings.deleteAccountFinal"),
+                  style: "destructive",
+                  onPress: () =>
+                    deleteAccountMutation.mutate(undefined, {
+                      onError: (e: any) => {
+                        const data = e?.response?.data;
+                        showMessage({
+                          message:
+                            data?.code === "active_orders"
+                              ? t("settings.deleteAccountActiveOrders")
+                              : (data?.message ?? t("common.error")),
+                          type: "danger",
+                        });
+                      },
+                    }),
+                },
+              ],
+            ),
+        },
+      ],
+    );
   };
 
   const handleLanguageSelect = (value: string) => {
@@ -68,11 +168,176 @@ export default function SettingsScreen({ navigation }: any) {
     });
   };
 
+  // ===== Личные данные (имя + почта; смена почты — с кодом на новую почту) =====
+  const sendEmailChangeCodeMutation = useSendEmailChangeCode();
+  const confirmEmailChangeMutation = useConfirmEmailChange();
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+
+  const openProfileModal = () => {
+    setNameInput(profile?.name ?? "");
+    setEmailInput(profile?.email ?? "");
+    setEmailCodeSent(false);
+    setEmailCode("");
+    setProfileModalVisible(true);
+  };
+
+  const profileSaving =
+    updateContactsMutation.isPending ||
+    sendEmailChangeCodeMutation.isPending ||
+    confirmEmailChangeMutation.isPending;
+
+  const handleSaveProfile = async () => {
+    const name = nameInput.trim();
+    const emailNew = emailInput.trim().toLowerCase();
+    const emailChanged = !!emailNew && emailNew !== (profile?.email ?? "");
+
+    if (!name) {
+      showMessage({
+        message: t("settings.nameRequired", "Введите имя"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    if (emailChanged && !/^\S+@\S+\.\S+$/.test(emailNew)) {
+      showMessage({
+        message: t("settings.emailInvalid", "Некорректная почта"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+
+    try {
+      if (name !== profile?.name) {
+        await updateContactsMutation.mutateAsync({
+          email: profile?.email ?? "",
+          name,
+        });
+      }
+
+      if (emailChanged && !emailCodeSent) {
+        // Шаг 1: отправляем код на НОВУЮ почту, форма ждёт код
+        await sendEmailChangeCodeMutation.mutateAsync(emailNew);
+        setEmailCodeSent(true);
+        showMessage({
+          message: t("settings.emailCodeSentTo", "Код отправлен на {{email}}", {
+            email: emailNew,
+          }),
+          type: "success",
+          icon: "success",
+        });
+        return;
+      }
+
+      if (emailChanged && emailCodeSent) {
+        // Шаг 2: подтверждаем код
+        if (emailCode.trim().length !== 6) {
+          showMessage({
+            message: t("auth.errorInvalidCode"),
+            type: "warning",
+            icon: "warning",
+          });
+          return;
+        }
+        await confirmEmailChangeMutation.mutateAsync({
+          newEmail: emailNew,
+          code: emailCode.trim(),
+        });
+      }
+
+      setProfileModalVisible(false);
+      showMessage({
+        message: t("settings.profileSaved", "Данные обновлены"),
+        type: "success",
+        icon: "success",
+      });
+    } catch (e) {
+      showMessage({
+        message: t("common.error"),
+        description: translateApiError(e),
+        type: "danger",
+        icon: "danger",
+      });
+    }
+  };
+
+  // ===== Смена пароля: SMS-код → новый пароль =====
+  const sendPasswordCodeMutation = useSendPasswordCode();
+  const changePasswordMutation = useChangePasswordWithCode();
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [passwordCode, setPasswordCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPassword2, setNewPassword2] = useState("");
+
   const handleChangePassword = () => {
-    Alert.alert(
-      t("settings.changePassword"),
-      t("settings.changePasswordSuccess"),
-      [{ text: "OK" }],
+    setPasswordCode("");
+    setNewPassword("");
+    setNewPassword2("");
+    setPasswordModalVisible(true);
+    // Код уходит сразу при открытии модалки
+    sendPasswordCodeMutation.mutate(undefined, {
+      onError: (e) => {
+        showMessage({
+          message: t("common.error"),
+          description: translateApiError(e),
+          type: "danger",
+          icon: "danger",
+        });
+      },
+    });
+  };
+
+  const handleSubmitPassword = () => {
+    if (passwordCode.length !== 6) {
+      showMessage({
+        message: t("auth.errorInvalidCode"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    if (newPassword.length < 6) {
+      showMessage({
+        message: t("settings.passwordTooShort",
+          "Пароль должен быть не короче 6 символов"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    if (newPassword !== newPassword2) {
+      showMessage({
+        message: t("settings.passwordsDontMatch", "Пароли не совпадают"),
+        type: "warning",
+        icon: "warning",
+      });
+      return;
+    }
+    changePasswordMutation.mutate(
+      { code: passwordCode.trim(), new_password: newPassword },
+      {
+        onSuccess: () => {
+          setPasswordModalVisible(false);
+          showMessage({
+            message: t("settings.changePasswordSuccess", "Пароль успешно изменён"),
+            type: "success",
+            icon: "success",
+          });
+        },
+        onError: (e) => {
+          showMessage({
+            message: t("common.error"),
+            description: translateApiError(e),
+            type: "danger",
+            icon: "danger",
+          });
+        },
+      },
     );
   };
 
@@ -121,7 +386,13 @@ export default function SettingsScreen({ navigation }: any) {
       </View>
       <View style={styles.rowRight}>
         {value && (
-          <Text style={[styles.rowValue, { color: c.textMuted }]}>{value}</Text>
+          <Text
+            style={[styles.rowValue, { color: c.textMuted }]}
+            numberOfLines={1}
+            ellipsizeMode="middle"
+          >
+            {value}
+          </Text>
         )}
         {rightElement ||
           (onPress && (
@@ -185,6 +456,25 @@ export default function SettingsScreen({ navigation }: any) {
           />
         </View>
 
+        {/* Rewards Section */}
+        <View style={[styles.section, { backgroundColor: c.card }]}>
+          <Text style={[styles.sectionTitle, { color: c.text }]}>
+            {t("settings.rewards")}
+          </Text>
+
+          <SettingRow
+            icon="wallet"
+            title={t("wallet.title")}
+            onPress={() => navigation.navigate("Wallet")}
+          />
+
+          <SettingRow
+            icon="gift"
+            title={t("referral.title")}
+            onPress={() => navigation.navigate("Referral")}
+          />
+        </View>
+
         {/* Notifications Section */}
         <View style={[styles.section, { backgroundColor: c.card }]}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>
@@ -225,6 +515,20 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={[styles.sectionTitle, { color: c.text }]}>
             {t("settings.account")}
           </Text>
+
+          <SettingRow
+            icon="person-circle"
+            title={t("settings.personalData", "Личные данные")}
+            value={profile?.email || profile?.name || ""}
+            onPress={openProfileModal}
+          />
+
+          <SettingRow
+            icon="at"
+            title={t("settings.username", "Юзернейм")}
+            value={profile?.username ? `@${profile.username}` : "—"}
+            onPress={openUsernameModal}
+          />
 
           <SettingRow
             icon="lock-closed"
@@ -300,6 +604,21 @@ export default function SettingsScreen({ navigation }: any) {
           </Text>
         </TouchableOpacity>
 
+        {/* Удаление аккаунта — обязательный пункт App Store 5.1.1(v) */}
+        <TouchableOpacity
+          style={styles.deleteAccountBtn}
+          onPress={handleDeleteAccount}
+          disabled={deleteAccountMutation.isPending}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="trash-outline" size={16} color={c.textMuted} />
+          <Text style={[styles.deleteAccountText, { color: c.textMuted }]}>
+            {deleteAccountMutation.isPending
+              ? t("settings.deletingAccount")
+              : t("settings.deleteAccount")}
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.bottomPadding} />
       </ScrollView>
       <SelectionModal
@@ -319,6 +638,308 @@ export default function SettingsScreen({ navigation }: any) {
         selectedValue={language}
         onSelect={handleLanguageSelect}
       />
+
+      {/* Модалка «Личные данные»: имя + почта */}
+      <Modal
+        visible={profileModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setProfileModalVisible(false)}
+      >
+        <View style={styles.usernameBackdrop}>
+          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
+            <Text style={[styles.usernameTitle, { color: c.text }]}>
+              {t("settings.personalData", "Личные данные")}
+            </Text>
+
+            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+              {t("auth.nameLabel", "Имя")}
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={nameInput}
+                onChangeText={setNameInput}
+                placeholder={t("auth.namePlaceholder", "Ваше имя")}
+                placeholderTextColor={c.textMuted}
+              />
+            </View>
+
+            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+              Email
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={emailInput}
+                onChangeText={(v) => {
+                  setEmailInput(v);
+                  // Почту поменяли — прошлый код больше не актуален
+                  setEmailCodeSent(false);
+                  setEmailCode("");
+                }}
+                placeholder="you@example.com"
+                placeholderTextColor={c.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
+
+            {emailCodeSent && (
+              <>
+                <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+                  {t("settings.emailCodeLabel", "Код с новой почты")}
+                </Text>
+                <View
+                  style={[
+                    styles.usernameInputWrapper,
+                    { backgroundColor: c.input, borderColor: c.primary },
+                  ]}
+                >
+                  <TextInput
+                    style={[styles.usernameInput, { color: c.text }]}
+                    value={emailCode}
+                    onChangeText={setEmailCode}
+                    placeholder="000000"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoFocus
+                  />
+                </View>
+              </>
+            )}
+
+            <View style={styles.usernameActions}>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.input }]}
+                onPress={() => setProfileModalVisible(false)}
+              >
+                <Text style={{ color: c.text, fontWeight: "600" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
+                onPress={handleSaveProfile}
+                disabled={profileSaving}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700" }}>
+                  {profileSaving
+                    ? t("common.loading")
+                    : emailInput.trim().toLowerCase() !==
+                          (profile?.email ?? "") &&
+                        emailInput.trim() &&
+                        !emailCodeSent
+                      ? t("auth.getCode", "Получить код")
+                      : t("common.save", "Сохранить")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Модалка смены пароля: SMS-код → новый пароль */}
+      <Modal
+        visible={passwordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPasswordModalVisible(false)}
+      >
+        <View style={styles.usernameBackdrop}>
+          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
+            <Text style={[styles.usernameTitle, { color: c.text }]}>
+              {t("settings.changePassword")}
+            </Text>
+            <Text style={[styles.usernameHint, { color: c.textSecondary }]}>
+              {t(
+                "settings.passwordCodeHint",
+                "Мы отправили SMS-код на ваш номер {{phone}}. Введите его и новый пароль.",
+                { phone: profile?.phone_number ?? "" },
+              )}
+            </Text>
+
+            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+              {t("auth.smsCodeLabel", "Код из SMS")}
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={passwordCode}
+                onChangeText={setPasswordCode}
+                placeholder="000000"
+                placeholderTextColor={c.textMuted}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+            </View>
+
+            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+              {t("settings.newPassword", "Новый пароль")}
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                placeholder="••••••"
+                placeholderTextColor={c.textMuted}
+              />
+            </View>
+
+            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
+              {t("settings.repeatPassword", "Повторите пароль")}
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={newPassword2}
+                onChangeText={setNewPassword2}
+                secureTextEntry
+                placeholder="••••••"
+                placeholderTextColor={c.textMuted}
+              />
+            </View>
+
+            <TouchableOpacity
+              onPress={() =>
+                sendPasswordCodeMutation.mutate(undefined, {
+                  onSuccess: () =>
+                    showMessage({
+                      message: t("auth.successSmsSent", "Код отправлен"),
+                      type: "success",
+                      icon: "success",
+                    }),
+                  onError: (e) =>
+                    showMessage({
+                      message: t("common.error"),
+                      description: translateApiError(e),
+                      type: "danger",
+                      icon: "danger",
+                    }),
+                })
+              }
+              disabled={sendPasswordCodeMutation.isPending}
+              style={{ marginBottom: 16 }}
+            >
+              <Text style={{ color: c.primary, fontWeight: "600", fontSize: 13 }}>
+                {t("auth.resendCode", "Отправить код повторно")}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.usernameActions}>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.input }]}
+                onPress={() => setPasswordModalVisible(false)}
+              >
+                <Text style={{ color: c.text, fontWeight: "600" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
+                onPress={handleSubmitPassword}
+                disabled={changePasswordMutation.isPending}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700" }}>
+                  {changePasswordMutation.isPending
+                    ? t("common.loading")
+                    : t("common.save", "Сохранить")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Модалка смены @username */}
+      <Modal
+        visible={usernameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setUsernameModalVisible(false)}
+      >
+        <View style={styles.usernameBackdrop}>
+          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
+            <Text style={[styles.usernameTitle, { color: c.text }]}>
+              {t("settings.username", "Юзернейм")}
+            </Text>
+            <Text style={[styles.usernameHint, { color: c.textSecondary }]}>
+              {t(
+                "settings.usernameHint",
+                "По нему вас смогут отмечать в коллабах. 3–32 символа: a-z, 0-9 и _",
+              )}
+            </Text>
+            <View
+              style={[
+                styles.usernameInputWrapper,
+                { backgroundColor: c.input, borderColor: c.border },
+              ]}
+            >
+              <Text style={{ color: c.textMuted, fontSize: 16 }}>@</Text>
+              <TextInput
+                style={[styles.usernameInput, { color: c.text }]}
+                value={usernameInput}
+                onChangeText={setUsernameInput}
+                placeholder="username"
+                placeholderTextColor={c.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={32}
+                autoFocus
+              />
+            </View>
+            <View style={styles.usernameActions}>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.input }]}
+                onPress={() => setUsernameModalVisible(false)}
+              >
+                <Text style={{ color: c.text, fontWeight: "600" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
+                onPress={handleSaveUsername}
+                disabled={updateContactsMutation.isPending}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700" }}>
+                  {updateContactsMutation.isPending
+                    ? t("common.loading")
+                    : t("common.save", "Сохранить")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -326,6 +947,58 @@ export default function SettingsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  usernameBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  usernameCard: {
+    borderRadius: 20,
+    padding: 20,
+  },
+  usernameTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  usernameHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  usernameInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 50,
+    marginBottom: 16,
+  },
+  usernameInput: {
+    flex: 1,
+    fontSize: 16,
+    height: "100%",
+    paddingVertical: 0,
+  },
+  usernameActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  usernameBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   section: {
     margin: 16,
@@ -354,7 +1027,7 @@ const styles = StyleSheet.create({
   rowLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    flexShrink: 0,
   },
   iconCircle: {
     width: 36,
@@ -372,9 +1045,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    flex: 1,
+    justifyContent: "flex-end",
+    marginLeft: 12,
   },
   rowValue: {
     fontSize: 14,
+    flexShrink: 1,
   },
   logoutBtn: {
     flexDirection: "row",
@@ -389,6 +1066,19 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  deleteAccountBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 12,
+  },
+  deleteAccountText: {
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   bottomPadding: {
     height: 32,

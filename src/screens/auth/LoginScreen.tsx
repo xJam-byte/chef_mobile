@@ -16,9 +16,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/ui";
-import { useSendSms, useVerifySms, useLoginEmail } from "../../lib/hooks";
+import {
+  useSendSms,
+  useVerifySms,
+  useSendEmailCode,
+  useVerifyEmail,
+} from "../../lib/hooks";
 import { useColors } from "../../lib/theme";
 import { AuthScreenProps } from "../../navigation/types";
+import { showMessage } from "react-native-flash-message";
+import { translateApiError } from "../../lib/utils/apiErrors";
 
 const { width } = Dimensions.get("window");
 
@@ -28,11 +35,12 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
 
   const sendSmsMutation = useSendSms();
   const verifySmsMutation = useVerifySms();
-  const loginEmailMutation = useLoginEmail();
+  const sendEmailCodeMutation = useSendEmailCode();
+  const verifyEmailMutation = useVerifyEmail();
 
-  const [step, setStep] = useState<"select" | "phone" | "code" | "email">(
-    "select",
-  );
+  const [step, setStep] = useState<
+    "select" | "phone" | "code" | "email" | "emailCode"
+  >("select");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -152,22 +160,65 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
     }
   };
 
-  const handleLoginEmail = async () => {
+  // Шаг 1: email+пароль → код уходит на почту
+  const handleSendEmailCode = async () => {
     try {
       if (!email || !password) {
-        Alert.alert(
-          t("common.error"),
-          t("auth.errorAllFieldsRequired") || "Please fill all fields",
-        );
+        showMessage({
+          message: t("auth.errorAllFieldsRequired", "Заполните все поля"),
+          type: "warning",
+          icon: "warning",
+        });
         return;
       }
-      await loginEmailMutation.mutateAsync({ email: email.trim(), password });
+      await sendEmailCodeMutation.mutateAsync({ email: email.trim(), password });
+      setCode("");
+      setStep("emailCode");
+      startTimer();
+      showMessage({
+        message: t("auth.emailCodeSent", "Код отправлен на почту"),
+        type: "success",
+        icon: "success",
+      });
     } catch (e: any) {
-      Alert.alert(
-        t("common.error"),
-        e?.response?.data?.message || t("auth.errorLoginFailed"),
-      );
+      showMessage({
+        message: t("common.error"),
+        description: translateApiError(e),
+        type: "danger",
+        icon: "danger",
+      });
     }
+  };
+
+  // Шаг 2: код из письма → вход
+  const handleVerifyEmail = async () => {
+    try {
+      if (code.length !== 6) {
+        showMessage({
+          message: t("auth.errorInvalidCode"),
+          type: "warning",
+          icon: "warning",
+        });
+        return;
+      }
+      await verifyEmailMutation.mutateAsync({
+        email: email.trim(),
+        code: code.trim(),
+      });
+      // RootNavigator will handle navigation to Main
+    } catch (e: any) {
+      showMessage({
+        message: t("auth.errorLogin"),
+        description: translateApiError(e),
+        type: "danger",
+        icon: "danger",
+      });
+    }
+  };
+
+  const handleResendEmailCode = async () => {
+    if (timer > 0) return;
+    await handleSendEmailCode();
   };
 
   const handleResendSms = async () => {
@@ -215,9 +266,11 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 ? t("auth.selectLoginMethod")
                 : step === "email"
                   ? t("auth.loginWithEmail")
-                  : step === "phone"
-                    ? t("auth.loginToAccount")
-                    : t("auth.enterSmsCode")}
+                  : step === "emailCode"
+                    ? t("auth.enterEmailCode", "Введите код из письма")
+                    : step === "phone"
+                      ? t("auth.loginToAccount")
+                      : t("auth.enterSmsCode")}
             </Animated.Text>
           </View>
 
@@ -238,31 +291,45 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                   style={[styles.methodButton, { backgroundColor: c.input }]}
                   onPress={() => setStep("phone")}
                 >
-                  <Ionicons
-                    name="phone-portrait-outline"
-                    size={24}
-                    color={c.primary}
-                  />
-                  <Text style={[styles.methodButtonText, { color: c.text }]}>
+                  <View style={[styles.methodIconCircle, { backgroundColor: c.primary + "1A" }]}>
+                    <Ionicons
+                      name="phone-portrait-outline"
+                      size={22}
+                      color={c.primary}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.methodButtonText, { color: c.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     {t("auth.continueWithPhone") || "Continue with Phone"}
                   </Text>
+                  <Ionicons name="chevron-forward" size={18} color={c.textSecondary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.methodButton, { backgroundColor: c.input }]}
                   onPress={() => setStep("email")}
                 >
-                  <Ionicons name="mail-outline" size={24} color={c.primary} />
-                  <Text style={[styles.methodButtonText, { color: c.text }]}>
+                  <View style={[styles.methodIconCircle, { backgroundColor: c.primary + "1A" }]}>
+                    <Ionicons name="mail-outline" size={22} color={c.primary} />
+                  </View>
+                  <Text
+                    style={[styles.methodButtonText, { color: c.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     {t("auth.continueWithEmail") || "Continue with Email"}
                   </Text>
+                  <Ionicons name="chevron-forward" size={18} color={c.textSecondary} />
                 </TouchableOpacity>
               </View>
             ) : step === "email" ? (
               <>
                 <View style={styles.inputContainer}>
                   <Text style={[styles.label, { color: c.text }]}>
-                    {t("auth.emailOptional")}
+                    {t("auth.emailLabel", "Email")}
                   </Text>
                   <View
                     style={[styles.inputWrapper, { backgroundColor: c.input }]}
@@ -310,9 +377,9 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                 </View>
 
                 <Button
-                  title={t("auth.login")}
-                  onPress={handleLoginEmail}
-                  loading={loginEmailMutation.isPending}
+                  title={t("auth.getCode")}
+                  onPress={handleSendEmailCode}
+                  loading={sendEmailCodeMutation.isPending}
                   fullWidth
                   style={{ marginTop: 8 }}
                 />
@@ -327,6 +394,71 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                       { textAlign: "center", color: c.textSecondary },
                     ]}
                   >
+                    {t("common.back")}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : step === "emailCode" ? (
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: c.text }]}>
+                    {t("auth.emailCodeLabel", "Код из письма")}
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.codeInput,
+                      {
+                        backgroundColor: c.input,
+                        color: c.text,
+                        borderColor: c.primary,
+                      },
+                    ]}
+                    value={code}
+                    onChangeText={setCode}
+                    placeholder="000000"
+                    placeholderTextColor={c.textSecondary}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoFocus
+                  />
+                  <Text style={[styles.hint, { color: c.textSecondary }]}>
+                    {t("auth.emailCodeSentTo", {
+                      email: email.trim(),
+                      defaultValue: `Код отправлен на ${email.trim()}`,
+                    })}
+                  </Text>
+                </View>
+
+                <Button
+                  title={t("auth.login")}
+                  onPress={handleVerifyEmail}
+                  loading={verifyEmailMutation.isPending}
+                  fullWidth
+                  style={{ marginTop: 8 }}
+                />
+
+                <TouchableOpacity
+                  onPress={handleResendEmailCode}
+                  disabled={timer > 0}
+                  style={styles.resendButton}
+                >
+                  <Text
+                    style={[
+                      styles.resendLink,
+                      { color: timer > 0 ? c.textSecondary : c.primary },
+                    ]}
+                  >
+                    {timer > 0
+                      ? t("auth.resendIn", { seconds: timer })
+                      : t("auth.resendCode")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setStep("email")}
+                  style={styles.changeNumberButton}
+                >
+                  <Text style={[styles.backLink, { color: c.textSecondary }]}>
                     {t("common.back")}
                   </Text>
                 </TouchableOpacity>
@@ -405,7 +537,7 @@ const LoginScreen = ({ navigation }: AuthScreenProps<"Login">) => {
                     autoFocus
                   />
                   <Text style={[styles.hint, { color: c.textSecondary }]}>
-                    {t("auth.smsCodeSentTo")} {phoneNumber}
+                    {t("auth.smsCodeSentTo", { phone: phoneNumber })}
                   </Text>
                 </View>
 
@@ -596,11 +728,20 @@ const styles = StyleSheet.create({
   methodButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 16,
-    gap: 16,
+    gap: 12,
+  },
+  methodIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   methodButtonText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: "600",
   },

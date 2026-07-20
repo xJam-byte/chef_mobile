@@ -53,3 +53,11 @@ export const updatePassword = async (data: UpdatePasswordDto): Promise<User> => 
     );
     return response.data;
 };
+
+/**
+ * Удаление аккаунта — необратимо (требование App Store 5.1.1v)
+ */
+export const deleteMyAccount = async (): Promise<{ success: boolean }> => {
+    const response = await apiClient.delete("/user-customer/me");
+    return response.data;
+};
