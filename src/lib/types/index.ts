@@ -16,6 +16,7 @@ export interface RegisterDto {
   password: string;
   phone_number: string;
   role?: UserRole;
+  referral_code?: string;
 }
 
 export interface AuthResponse {
@@ -25,14 +26,51 @@ export interface AuthResponse {
 
 // ==================== User ====================
 
+export type UserTier = "bronze" | "silver" | "gold" | "platinum";
+
+export type CoinTransactionType =
+  | "cashback"
+  | "referral_bonus"
+  | "taster_reward"
+  | "order_payment"
+  | "order_refund"
+  | "battle_prize"
+  | "admin_adjust";
+
+export interface CoinTransaction {
+  tx_id: number;
+  walletId: number;
+  type: CoinTransactionType;
+  amount: number;
+  orderId?: number | null;
+  referenceId?: string | null;
+  description?: string | null;
+  createdAt: string;
+}
+
+export interface WalletOverview {
+  balance: number;
+  tier: UserTier;
+  cashback_rate: number;
+  lifetime_spend: number;
+  next_tier: {
+    tier: UserTier;
+    threshold: number;
+    remaining: number;
+  } | null;
+}
+
 export interface User {
   user_id: number;
   name: string;
+  username?: string | null;
   email?: string;
   password?: string;
   phone_number: string;
   profile_pic?: string;
   role: UserRole | "admin";
+  tier?: UserTier;
+  lifetime_spend?: string | number;
   createdAt: string;
   updatedAt: string;
   chefs?: Chef[];
@@ -47,6 +85,7 @@ export interface UpdateContactsDto {
   email: string;
   name?: string;
   phone_number?: string;
+  username?: string;
 }
 
 export interface UpdateEmailDto {
@@ -55,7 +94,8 @@ export interface UpdateEmailDto {
 }
 
 export interface UpdatePasswordDto {
-  email: string;
+  /** Текущий пароль обязателен — защита от захвата аккаунта по украденному токену */
+  currentPassword: string;
   password: string;
 }
 
@@ -71,6 +111,9 @@ export interface Chef {
   userId: number;
   bio?: string;
   rating: number;
+  commission_rate?: string | number;
+  rank_tier?: "top3" | "top10" | null;
+  is_certified?: boolean;
   createdAt: string;
   updatedAt: string;
   users?: User;
@@ -105,6 +148,15 @@ export interface Dish {
   time?: number;
   is_spicy: boolean;
   availability_status: "available" | "not_available";
+  nutrition?: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+    per: string;
+    confidence: number;
+  } | null;
+  nutrition_status?: "pending" | "done" | "failed" | null;
   createdAt: string;
   updatedAt: string;
   chefs?: Chef;
@@ -188,6 +240,22 @@ export interface CreateOrderItemDto {
   quantity: number;
   preferences: string;
   price: number;
+  /** Повар-исполнитель (оффер); по умолчанию — автор блюда */
+  chefId?: number;
+}
+
+/** Повар, готовящий блюдо (dish offer) — у каждого своя цена */
+export interface DishChefOffer {
+  chef_id: number;
+  user_id: number | null;
+  name: string | null;
+  avatar: string | null;
+  rating: number;
+  is_certified: boolean;
+  rank_tier: string | null;
+  price: number;
+  is_author: boolean;
+  is_open: boolean;
 }
 
 export interface CreateOrderDto {
@@ -197,6 +265,7 @@ export interface CreateOrderDto {
   delivery_address_id?: number;
   payment_method?: string;
   payment_intent_id?: string;
+  coins_to_spend?: number;
   items: CreateOrderItemDto[];
 }
 
@@ -219,6 +288,7 @@ export interface CreateReviewDto {
   chefId: number;
   rating: number;
   comment?: string;
+  photoUrl?: string;
 }
 
 // ==================== Address ====================
@@ -241,6 +311,11 @@ export interface CartItem {
   dish: Dish;
   quantity: number;
   preferences: string;
+  /** Выбранный повар-исполнитель (оффер); undefined = автор блюда */
+  chefId?: number;
+  chefName?: string;
+  /** Цена выбранного повара; undefined = цена блюда */
+  offerPrice?: number;
 }
 
 // ==================== Pagination ====================

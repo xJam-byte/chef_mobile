@@ -5,12 +5,30 @@
 import { apiClient } from "./client";
 import type { Order, CreateOrderDto } from "../types";
 
+export interface OrderQuote {
+  subtotal: number;
+  discount_percent: number;
+  discount_amount: number;
+  max_coins: number;
+  coins_applied: number;
+  delivery_fee: number;
+  total: number;
+}
+
 export const orderApi = {
   /**
    * Create a new order
    */
   async createOrder(data: CreateOrderDto): Promise<Order> {
     const response = await apiClient.post<Order>("/order", data);
+    return response.data;
+  },
+
+  /**
+   * Compute totals (pioneer discount, coins) without creating the order
+   */
+  async quoteOrder(data: CreateOrderDto): Promise<OrderQuote> {
+    const response = await apiClient.post<OrderQuote>("/order/quote", data);
     return response.data;
   },
 

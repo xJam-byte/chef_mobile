@@ -13,12 +13,19 @@ import React, {
 import type { CartItem, Dish } from "../types";
 import { saveCart, loadCart } from "../storage";
 
+export interface CartOfferSelection {
+  chefId: number;
+  chefName?: string;
+  price: number;
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (
     dish: Dish,
     quantity?: number,
     preferences?: string,
+    offer?: CartOfferSelection,
   ) => { success: boolean; alreadyExists: boolean };
   removeItem: (dishId: number) => void;
   updateQuantity: (dishId: number, quantity: number) => void;
@@ -72,6 +79,7 @@ export const CartProvider = ({ children, userId }: CartProviderProps) => {
       dish: Dish,
       quantity: number = 1,
       preferences: string = "",
+      offer?: CartOfferSelection,
     ): { success: boolean; alreadyExists: boolean } => {
       // Check if item already exists in current state
       const existingIndex = items.findIndex(
@@ -82,8 +90,18 @@ export const CartProvider = ({ children, userId }: CartProviderProps) => {
         return { success: false, alreadyExists: true };
       }
 
-      // Add new item
-      setItems((prev) => [...prev, { dish, quantity, preferences }]);
+      // Add new item (с выбранным поваром-исполнителем, если передан)
+      setItems((prev) => [
+        ...prev,
+        {
+          dish,
+          quantity,
+          preferences,
+          chefId: offer?.chefId,
+          chefName: offer?.chefName,
+          offerPrice: offer?.price,
+        },
+      ]);
       return { success: true, alreadyExists: false };
     },
     [items],
@@ -125,7 +143,8 @@ export const CartProvider = ({ children, userId }: CartProviderProps) => {
   }, []);
 
   const totalPrice = items.reduce(
-    (sum, item) => sum + item.dish.price * item.quantity,
+    (sum, item) =>
+      sum + (item.offerPrice ?? Number(item.dish.price)) * item.quantity,
     0,
   );
 

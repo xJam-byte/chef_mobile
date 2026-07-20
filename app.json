@@ -16,7 +16,12 @@
       "supportsTablet": true,
       "bundleIdentifier": "kz.airesidence.chef",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Приложение использует камеру, чтобы вы могли снимать видео блюд и видеореакции, а также фотографировать блюда и кухню для сертификации.",
+        "NSMicrophoneUsageDescription": "Микрофон нужен для записи звука в ваших видео о блюдах и видеореакциях.",
+        "NSPhotoLibraryUsageDescription": "Доступ к галерее нужен, чтобы прикреплять фото блюд, фото к отзывам и загружать видео из вашей медиатеки.",
+        "NSPhotoLibraryAddUsageDescription": "Разрешите сохранять снятые в приложении фото и видео в вашу галерею.",
+        "NSLocationWhenInUseUsageDescription": "Геолокация используется, чтобы находить поваров рядом с вами и рассчитывать стоимость доставки на ваш адрес."
       }
     },
     "android": {
@@ -24,13 +29,32 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F97316"
       },
-      "package": "kz.airesidence.chef"
+      "package": "kz.airesidence.chef",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Доступ к галерее нужен, чтобы прикреплять фото блюд, фото к отзывам и загружать видео.",
+          "cameraPermission": "Камера нужна, чтобы снимать видео блюд, видеореакции и фото для сертификации."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Геолокация используется, чтобы находить поваров рядом и рассчитывать доставку."
+        }
+      ]
     ],
     "extra": {
       "eas": {

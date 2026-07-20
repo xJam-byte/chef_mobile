@@ -47,9 +47,13 @@ const CartScreen = () => {
         <View style={styles.itemContent}>
             <View style={styles.itemHeader}>
                 <View>
-                   <Text style={[styles.chefName, { color: c.textSecondary }]}>Повар</Text>
+                   <Text style={[styles.chefName, { color: c.textSecondary }]}>
+                     {item.chefName ? `Повар: ${item.chefName}` : "Повар"}
+                   </Text>
                    <Text style={[styles.dishName, { color: c.text }]} numberOfLines={1}>{item.dish.name}</Text>
-                   <Text style={[styles.dishPrice, { color: c.primary }]}>{item.dish.price} ₸</Text>
+                   <Text style={[styles.dishPrice, { color: c.primary }]}>
+                     {(item.offerPrice ?? Number(item.dish.price)).toLocaleString()} ₸
+                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => removeItem(item.dish.dish_id)}>
                     <Ionicons name="trash-outline" size={20} color={c.textSecondary} /> 
@@ -83,7 +87,9 @@ const CartScreen = () => {
       <View style={[styles.container, { backgroundColor: c.background }]}>
         <PremiumHeader title={t('cart.title')} />
         <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🛒</Text>
+            <View style={[styles.emptyIconCircle, { backgroundColor: c.primary + "1A" }]}>
+              <Ionicons name="cart-outline" size={56} color={c.primary} />
+            </View>
             <Text style={[styles.emptyTitle, { color: c.text }]}>
             {t('cart.empty')}
             </Text>
@@ -272,7 +278,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  emptyIcon: { fontSize: 80, marginBottom: 16 },
+  emptyIconCircle: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
   emptyTitle: { fontSize: 22, fontWeight: "700", marginBottom: 8 },
   emptyText: { fontSize: 16, textAlign: "center" },
 });

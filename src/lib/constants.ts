@@ -64,6 +64,7 @@ export const QUERY_KEYS = {
   // DISHES
   DISHES: (params: Record<string, any> = {}) => ["dishes", params] as const,
   DISH: (id?: number) => ["dish", id] as const,
+  DISH_CHEFS: (id?: number) => ["dish-chefs", id] as const,
   CHEF_DISHES: (chefId?: number) => ["chef-dishes", chefId] as const,
 
   // CHEFS
@@ -77,6 +78,23 @@ export const QUERY_KEYS = {
 
   // CART (если нужно)
   CART: () => ["cart"] as const,
+
+  // WALLET / GAMIFICATION
+  WALLET: () => ["wallet"] as const,
+  WALLET_TRANSACTIONS: () => ["wallet-transactions"] as const,
+  REFERRAL: () => ["referral"] as const,
+  BADGES: () => ["badges"] as const,
+  BATTLES: () => ["battles"] as const,
+  BATTLE_ENTRIES: (id?: number) => ["battle-entries", id] as const,
+  BATTLE_HISTORY: () => ["battle-history"] as const,
+  TOP_CHEFS: (month?: string) => ["top-chefs", month] as const,
+  CHEF_SCHEDULE: (chefId?: number) => ["chef-schedule", chefId] as const,
+  ORDER_DELIVERY: (orderId?: number) => ["order-delivery", orderId] as const,
+  VIDEO_REACTIONS: (videoId?: string) => ["video-reactions", videoId] as const,
+
+  // FAVORITES
+  FAVORITES: () => ["favorites"] as const,
+  IS_FAVORITE: (dishId?: number) => ["is-favorite", dishId] as const,
 } as const;
 
 

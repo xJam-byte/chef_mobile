@@ -2,8 +2,15 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import {
+  getVideoReactions,
+  createReactionUploadUrl,
+  confirmReaction,
+  deleteReaction,
+} from "../api/videos";
 import {
   getVideoFeed,
   getVideosByAuthor,
@@ -180,6 +187,7 @@ export function useCreateVideo() {
       videoUri: string;
       description?: string;
       dishId?: number;
+      chefIds?: number[];
     }) => {
       // 1. Fetch video file from local URI to get the Blob and correct type
       const response = await fetch(params.videoUri);
@@ -199,6 +207,7 @@ export function useCreateVideo() {
         videoUrl: publicUrl,
         description: params.description,
         dishId: params.dishId,
+        chefIds: params.chefIds,
       });
 
       return result;
@@ -206,6 +215,54 @@ export function useCreateVideo() {
     onSuccess: () => {
       // Invalidate video feed to show new video
       qc.invalidateQueries({ queryKey: ["video-feed"] });
+    },
+  });
+}
+
+// ============ Видеореакции ============
+
+export function useVideoReactions(videoId?: string) {
+  return useQuery({
+    queryKey: ["video-reactions", videoId],
+    queryFn: () => getVideoReactions(videoId!),
+    enabled: !!videoId,
+  });
+}
+
+export function useCreateReaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { videoId: string; videoUri: string; durationSec?: number }) => {
+      const response = await fetch(params.videoUri);
+      const blob = await response.blob();
+      const contentType = blob.type || "video/mp4";
+      const { uploadUrl, publicUrl } = await createReactionUploadUrl(
+        params.videoId,
+        contentType
+      );
+      await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body: blob,
+      });
+      return confirmReaction(params.videoId, {
+        url: publicUrl!,
+        durationSec: params.durationSec,
+      });
+    },
+    onSuccess: (_d, params) => {
+      qc.invalidateQueries({ queryKey: ["video-reactions", params.videoId] });
+    },
+  });
+}
+
+export function useDeleteReaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { reactionId: string; videoId: string }) =>
+      deleteReaction(params.reactionId),
+    onSuccess: (_d, params) => {
+      qc.invalidateQueries({ queryKey: ["video-reactions", params.videoId] });
     },
   });
 }

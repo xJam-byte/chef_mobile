@@ -26,6 +26,11 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   Settings: undefined;
+  Wallet: undefined;
+  Referral: undefined;
+  Battle: undefined;
+  Certification: undefined;
+  ChefSchedule: undefined;
   ChefDetail: { chefId: number };
   DishDetail: { dishId: number };
   OrderDetail: { orderId: number };

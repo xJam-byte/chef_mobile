@@ -5,6 +5,9 @@ import {
   getDishById,
   getDishesByChef,
   createDish,
+  getDishChefs,
+  upsertDishOffer,
+  deleteDishOffer,
 } from "../api/dishes";
 import type { CreateDishDto } from "../types";
 
@@ -72,6 +75,44 @@ export function useCreateDish() {
     mutationFn: (payload: CreateDishDto) => createDish(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dishes"] as any });
+    },
+  });
+}
+
+/* =========================
+   DISH OFFERS (кто готовит блюдо)
+========================= */
+
+export function useDishChefs(dishId?: number) {
+  return useQuery({
+    queryKey: QUERY_KEYS.DISH_CHEFS(dishId),
+    queryFn: () => getDishChefs(dishId!),
+    enabled: !!dishId,
+    staleTime: 1000 * 60, // минута: статус «открыт» меняется
+  });
+}
+
+export function useUpsertDishOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dishId, price }: { dishId: number; price: number }) =>
+      upsertDishOffer(dishId, price),
+    onSuccess: (_d, { dishId }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DISH_CHEFS(dishId) });
+      queryClient.invalidateQueries({ queryKey: ["dish", dishId] });
+      queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      queryClient.invalidateQueries({ queryKey: ["chef-dishes"] });
+    },
+  });
+}
+
+export function useDeleteDishOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ dishId }: { dishId: number }) => deleteDishOffer(dishId),
+    onSuccess: (_d, { dishId }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DISH_CHEFS(dishId) });
+      queryClient.invalidateQueries({ queryKey: ["chef-dishes"] });
     },
   });
 }

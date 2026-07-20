@@ -17,6 +17,7 @@ import { RouteProp } from "@react-navigation/native";
 
 import { useTheme } from "../../lib/theme";
 import { useOrder } from "../../lib/hooks";
+import { useOrderDelivery } from "../../lib/hooks/useSchedule";
 import { RootStackParamList } from "../../navigation/types";
 import { Spinner, Avatar } from "../../components/ui";
 
@@ -31,6 +32,7 @@ const OrderDetailScreen = () => {
   const { orderId } = route.params;
 
   const { data: order, isLoading } = useOrder(orderId);
+  const { data: delivery } = useOrderDelivery(orderId);
 
   const statusColor = useMemo(() => {
     switch (order?.status) {
@@ -86,6 +88,11 @@ const OrderDetailScreen = () => {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Status Card */}
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          {!!delivery?.status && (
+            <Text style={[styles.label, { color: c.textSecondary }]}>
+              {t("delivery.status")}: {t(`delivery.statuses.${delivery.status}`, delivery.status)}
+            </Text>
+          )}
           <Text style={[styles.label, { color: c.textSecondary }]}>{t("orders.status")}</Text>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>

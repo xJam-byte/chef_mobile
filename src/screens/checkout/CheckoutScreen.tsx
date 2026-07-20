@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -13,6 +14,11 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Button, PremiumHeader } from "../../components/ui";
 import { useColors } from "../../lib/theme";
 import { useMyAddresses, useCart, useProfile } from "../../lib/hooks";
+import { useWallet } from "../../lib/hooks/useWallet";
+import { useOrderQuote } from "../../lib/hooks/useOrders";
+
+// Фолбэк-доля чека для коинов, пока quote не загрузился (синхронно с бэкендом)
+const MAX_COIN_SHARE = 0.5;
 
 export default function CheckoutScreen() {
   const c = useColors();
@@ -40,17 +46,52 @@ export default function CheckoutScreen() {
 
   const validItems = React.useMemo(() => {
     if (!myChefId) return items;
-    return items.filter((item) => item.dish.chefId !== myChefId);
+    // исполнитель позиции: выбранный повар или автор блюда
+    return items.filter(
+      (item) => (item.chefId ?? item.dish.chefId) !== myChefId,
+    );
   }, [items, myChefId]);
 
-  const payableTotal = React.useMemo(
+  const subtotal = React.useMemo(
     () =>
       validItems.reduce(
-        (sum, item) => sum + Number(item.dish.price) * item.quantity,
+        (sum, item) =>
+          sum + (item.offerPrice ?? Number(item.dish.price)) * item.quantity,
         0,
       ),
     [validItems],
   );
+
+  // Серверный расчёт чека: скидка первооткрывателя, лимит коинов, итог
+  const quoteDto = React.useMemo(
+    () =>
+      validItems.length > 0
+        ? {
+            delivery_address_id: selectedAddressId ?? undefined,
+            items: validItems.map((item) => ({
+              dishId: item.dish.dish_id,
+              quantity: item.quantity,
+              preferences: item.preferences ?? "",
+              ...(item.chefId ? { chefId: item.chefId } : {}),
+            })),
+          }
+        : null,
+    [validItems, selectedAddressId],
+  ) as any;
+  const { data: quote, error: quoteError } = useOrderQuote(quoteDto);
+
+  // Оплата коинами (1 коин = 1 ₸, максимум 50% чека после скидок)
+  const { data: wallet } = useWallet();
+  const [useCoins, setUseCoins] = useState(false);
+  const discountAmount = quote?.discount_amount ?? 0;
+  const discountPercent = quote?.discount_percent ?? 0;
+  const afterDiscount = quote ? quote.total : subtotal;
+  const maxCoins = Math.min(
+    wallet?.balance ?? 0,
+    quote?.max_coins ?? Math.floor(subtotal * MAX_COIN_SHARE),
+  );
+  const coinsToSpend = useCoins ? maxCoins : 0;
+  const payableTotal = afterDiscount - coinsToSpend;
 
   // Alert user if some items were filtered
   React.useEffect(() => {
@@ -78,6 +119,19 @@ export default function CheckoutScreen() {
       return;
     }
 
+    // Серверный расчёт не прошёл (повар закрылся / оффер снят) —
+    // локальная сумма не совпадёт с интентом, оплату не пускаем
+    if (quoteDto && !quote) {
+      const data = (quoteError as any)?.response?.data;
+      Alert.alert(
+        t("common.error"),
+        data?.code === "chef_closed"
+          ? t("checkout.chefClosed")
+          : (data?.message ?? t("checkout.quoteFailed")),
+      );
+      return;
+    }
+
     if (validItems.length === 0) {
       Alert.alert(
         t("checkout.emptyCart", "Cart is empty"),
@@ -89,6 +143,7 @@ export default function CheckoutScreen() {
     navigation.navigate("Payment", {
       addressId: selectedAddressId,
       totalAmount: payableTotal,
+      coinsToSpend,
     });
   };
 
@@ -118,6 +173,61 @@ export default function CheckoutScreen() {
           ))}
 
           <View style={[styles.divider, { backgroundColor: c.border }]} />
+
+          {discountAmount > 0 && (
+            <View style={styles.itemRow}>
+              <View style={styles.coinsLabelWrap}>
+                <Ionicons name="compass-outline" size={16} color={c.info} />
+                <Text style={[styles.itemName, { color: c.info }]}>
+                  {t("checkout.pioneerDiscount", { percent: discountPercent })}
+                </Text>
+              </View>
+              <Text style={[styles.itemPrice, { color: c.info }]}>
+                −{discountAmount.toLocaleString()} ₸
+              </Text>
+            </View>
+          )}
+
+          {(quote?.delivery_fee ?? 0) > 0 && (
+            <View style={styles.itemRow}>
+              <View style={styles.coinsLabelWrap}>
+                <Ionicons name="bicycle-outline" size={16} color={c.textSecondary} />
+                <Text style={[styles.itemName, { color: c.textSecondary }]}>
+                  {t("checkout.deliveryFee")}
+                </Text>
+              </View>
+              <Text style={[styles.itemPrice, { color: c.textSecondary }]}>
+                +{Number(quote!.delivery_fee).toLocaleString()} ₸
+              </Text>
+            </View>
+          )}
+
+          {maxCoins > 0 && (
+            <View style={styles.itemRow}>
+              <View style={styles.coinsLabelWrap}>
+                <Ionicons name="server-outline" size={16} color={c.primary} />
+                <Text style={[styles.itemName, { color: c.text }]}>
+                  {t("checkout.useCoins", { count: maxCoins })}
+                </Text>
+              </View>
+              <Switch
+                value={useCoins}
+                onValueChange={setUseCoins}
+                trackColor={{ true: c.primary }}
+              />
+            </View>
+          )}
+
+          {coinsToSpend > 0 && (
+            <View style={styles.itemRow}>
+              <Text style={[styles.itemName, { color: c.success }]}>
+                {t("checkout.coinsDiscount")}
+              </Text>
+              <Text style={[styles.itemPrice, { color: c.success }]}>
+                −{coinsToSpend.toLocaleString()} ₸
+              </Text>
+            </View>
+          )}
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: c.text }]}>
@@ -244,7 +354,14 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
+  },
+  coinsLabelWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
   },
   itemName: { fontSize: 15, flex: 1 },
   itemPrice: { fontSize: 15, fontWeight: "600" },

@@ -7,6 +7,7 @@ import type {
   Dish,
   DishesResponse,
   CreateDishDto,
+  DishChefOffer,
   PaginationParams,
 } from "../types";
 
@@ -55,5 +56,29 @@ export const getDishesByChefId = async (chefId: number): Promise<Dish> => {
  */
 export const createDish = async (data: CreateDishDto): Promise<Dish> => {
   const response = await apiClient.post<Dish>("/dishes", data);
+  return response.data;
+};
+
+/**
+ * Повара, готовящие блюдо (активные офферы): цена каждого + открыт ли сейчас
+ */
+export const getDishChefs = async (
+  dishId: number,
+): Promise<DishChefOffer[]> => {
+  const response = await apiClient.get<DishChefOffer[]>(
+    `/dishes/${dishId}/chefs`,
+  );
+  return response.data;
+};
+
+/** Шеф присоединяется к блюду со своей ценой (или обновляет её) */
+export const upsertDishOffer = async (dishId: number, price: number) => {
+  const response = await apiClient.put(`/dishes/${dishId}/offer`, { price });
+  return response.data;
+};
+
+/** Шеф перестаёт готовить блюдо */
+export const deleteDishOffer = async (dishId: number) => {
+  const response = await apiClient.delete(`/dishes/${dishId}/offer`);
   return response.data;
 };

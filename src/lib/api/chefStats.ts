@@ -8,6 +8,9 @@ export interface ChefStats {
   topDishesThisWeek: TopDish[];
   totalRevenue: number;
   averageOrderValue: number;
+  commissionRate: number;
+  rankTier: "top3" | "top10" | null;
+  netRevenue: number;
 }
 
 export interface TopDish {

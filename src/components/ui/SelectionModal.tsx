@@ -9,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "../../lib/theme";
@@ -108,7 +109,11 @@ export const SelectionModal: React.FC<SelectionModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
+          <ScrollView
+            style={styles.contentScroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
             {options.map((option) => {
               const isSelected = option.value === selectedValue;
               return (
@@ -177,7 +182,7 @@ export const SelectionModal: React.FC<SelectionModalProps> = ({
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -224,8 +229,12 @@ const styles = StyleSheet.create({
   closeBtn: {
     padding: 4,
   },
+  contentScroll: {
+    maxHeight: height * 0.55,
+  },
   content: {
     gap: 12,
+    paddingBottom: 4,
   },
   optionItem: {
     flexDirection: "row",

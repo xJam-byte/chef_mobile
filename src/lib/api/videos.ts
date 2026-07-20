@@ -19,6 +19,7 @@ export interface VideoFeedItem {
   author: {
     id: number;
     name: string;
+    username?: string | null;
     avatar?: string;
     role: string;
     chefId?: number | null;
@@ -32,6 +33,30 @@ export interface VideoFeedItem {
     description?: string;
   } | null;
   likedByMe: boolean;
+  tagged_chefs?: {
+    chefId: number;
+    name?: string;
+    username?: string | null;
+    avatar?: string | null;
+    is_certified?: boolean;
+    rank_tier?: string | null;
+  }[];
+}
+
+export interface VideoReaction {
+  id: string;
+  videoId: string;
+  authorId: number;
+  url: string;
+  posterUrl?: string | null;
+  durationSec?: number | null;
+  createdAt: string;
+  author?: {
+    user_id: number;
+    name: string;
+    profile_pic?: string | null;
+    tier?: string;
+  };
 }
 
 export interface VideoFeedResponse {
@@ -109,10 +134,50 @@ export const confirmVideoUpload = async (data: {
   posterUrl?: string;
   description?: string;
   dishId?: number;
+  chefIds?: number[];
   durationMs?: number;
   width?: number;
   height?: number;
 }) => {
   const res = await apiClient.post("/v1/videos/confirm", data);
+  return res.data;
+};
+
+// ============ Видеореакции ============
+
+export const getVideoReactions = async (
+  videoId: string,
+  cursor?: string
+): Promise<{ items: VideoReaction[]; nextCursor: string | null }> => {
+  const res = await apiClient.get(`/v1/videos/${videoId}/reactions`, {
+    params: { cursor },
+  });
+  return res.data;
+};
+
+export const createReactionUploadUrl = async (
+  videoId: string,
+  contentType: string
+) => {
+  const res = await apiClient.post(
+    `/v1/videos/${videoId}/reactions/upload-url`,
+    { contentType }
+  );
+  return res.data as { key: string; uploadUrl: string; publicUrl?: string };
+};
+
+export const confirmReaction = async (
+  videoId: string,
+  data: { url: string; posterUrl?: string; durationSec?: number }
+) => {
+  const res = await apiClient.post(
+    `/v1/videos/${videoId}/reactions/confirm`,
+    data
+  );
+  return res.data;
+};
+
+export const deleteReaction = async (reactionId: string) => {
+  const res = await apiClient.delete(`/v1/videos/reactions/${reactionId}`);
   return res.data;
 };

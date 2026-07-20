@@ -12,6 +12,11 @@ import ChefDetailScreen from "../screens/detail/ChefDetailScreen";
 import AddDishScreen from "../screens/chef/AddDishScreen";
 import AddVideoScreen from "../screens/chef/AddVideoScreen";
 import SettingsScreen from "../screens/main/SettingsScreen";
+import WalletScreen from "../screens/WalletScreen";
+import ReferralScreen from "../screens/ReferralScreen";
+import BattleScreen from "../screens/BattleScreen";
+import CertificationScreen from "../screens/CertificationScreen";
+import ChefScheduleScreen from "../screens/ChefScheduleScreen";
 import CheckoutScreen from "../screens/checkout/CheckoutScreen";
 import PaymentScreen from "../screens/checkout/PaymentScreen";
 import SuccessScreen from "../screens/checkout/SuccessScreen";
@@ -73,6 +78,11 @@ export default function RootNavigator() {
             <Stack.Screen name="AddDish" component={AddDishScreen} />
             <Stack.Screen name="AddVideo" component={AddVideoScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="Referral" component={ReferralScreen} />
+            <Stack.Screen name="Battle" component={BattleScreen} />
+            <Stack.Screen name="Certification" component={CertificationScreen} />
+            <Stack.Screen name="ChefSchedule" component={ChefScheduleScreen} />
             <Stack.Screen name="Checkout" component={CheckoutScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="Success" component={SuccessScreen} />

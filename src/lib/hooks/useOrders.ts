@@ -39,7 +39,22 @@ export function useCreateOrder() {
     onSuccess: () => {
       // Invalidate all order-related queries
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WALLET() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WALLET_TRANSACTIONS() });
     },
+  });
+}
+
+/**
+ * Server-side order quote: subtotal, pioneer discount, coin limits, total.
+ * Единственный источник математики чека — сервер.
+ */
+export function useOrderQuote(dto: CreateOrderDto | null) {
+  return useQuery({
+    queryKey: ["order-quote", dto],
+    queryFn: () => orderApi.quoteOrder(dto!),
+    enabled: !!dto && dto.items.length > 0,
+    staleTime: 15_000,
   });
 }
 
