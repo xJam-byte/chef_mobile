@@ -15,6 +15,8 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { Avatar, StarRating, Spinner } from "../../components/ui";
 import VideoThumbnail from "../../components/video/VideoThumbnail";
+import { StatusCard } from "../../components/StatusCard";
+import { BadgesRow } from "../../components/BadgesRow";
 import { PremiumHeader } from "../../components/ui/PremiumHeader";
 import {
   useProfile,
@@ -26,6 +28,10 @@ import {
   useFollowStats,
   useFollowing,
 } from "../../lib/hooks";
+import {
+  useFavorites,
+  useToggleFavorite,
+} from "../../lib/hooks/useFavorites";
 import { useChefByUserId } from "../../lib/hooks/useChefs";
 import { getChefByUserId } from "../../lib/api/chef";
 import { showMessage } from "react-native-flash-message";
@@ -93,6 +99,10 @@ export default function ProfileScreen({ navigation }: any) {
 
   // Customer Orders
   const { data: customerOrders } = useOrders();
+
+  // Favorite dishes (customer)
+  const { data: favoriteDishes = [] } = useFavorites();
+  const toggleFavorite = useToggleFavorite();
 
   const videos = useMemo(
     () => videosData?.pages.flatMap((page) => page.items) ?? [],
@@ -179,7 +189,12 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={[styles.statValue, { color: c.text }]}>
             {formatCurrency(chefStats?.totalEarnings || 0)}
           </Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>
+          <Text
+            style={[styles.statLabel, { color: c.textSecondary }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {t("chef.earnings")}
           </Text>
         </TouchableOpacity>
@@ -197,7 +212,12 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={[styles.statValue, { color: c.primary }]}>
             {subscribers}
           </Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>
+          <Text
+            style={[styles.statLabel, { color: c.textSecondary }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {t("chef.subscribers")}
           </Text>
         </TouchableOpacity>
@@ -213,7 +233,12 @@ export default function ProfileScreen({ navigation }: any) {
           <Text style={[styles.statValue, { color: c.text }]}>
             {followingCount}
           </Text>
-          <Text style={[styles.statLabel, { color: c.textSecondary }]}>
+          <Text
+            style={[styles.statLabel, { color: c.textSecondary }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {t("chef.following")}
           </Text>
         </TouchableOpacity>
@@ -282,6 +307,88 @@ export default function ProfileScreen({ navigation }: any) {
             ]}
           />
         </LinearGradient>
+
+        {/* Commission / Rank Card */}
+        <View
+          style={[
+            styles.commissionCard,
+            { backgroundColor: c.card, borderColor: c.border },
+          ]}
+        >
+          <View style={styles.commissionRow}>
+            <View style={styles.commissionItem}>
+              <Text style={[styles.commissionValue, { color: c.text }]}>
+                {chefStats?.commissionRate ?? 15}%
+              </Text>
+              <Text style={[styles.commissionLabel, { color: c.textSecondary }]}>
+                {t("chef.commission")}
+              </Text>
+            </View>
+            <View style={styles.commissionItem}>
+              <Text style={[styles.commissionValue, { color: c.text }]}>
+                {formatCurrency(chefStats?.netRevenue || 0)} ₸
+              </Text>
+              <Text style={[styles.commissionLabel, { color: c.textSecondary }]}>
+                {t("chef.netRevenue")}
+              </Text>
+            </View>
+            <View style={styles.commissionItem}>
+              {chefStats?.rankTier ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Ionicons name="trophy" size={16} color="#D4A017" />
+                  <Text style={[styles.commissionValue, { color: "#D4A017" }]}>
+                    {t(`chef.rank_${chefStats.rankTier}`)}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.commissionValue, { color: c.textMuted }]}>
+                  —
+                </Text>
+              )}
+              <Text style={[styles.commissionLabel, { color: c.textSecondary }]}>
+                {t("chef.monthlyRank")}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.battleLink}
+            onPress={() => navigation.navigate("Battle")}
+          >
+            <Ionicons name="trophy-outline" size={16} color={c.primary} />
+            <Text style={{ color: c.primary, fontWeight: "600", fontSize: 13 }}>
+              {t("battle.title")}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={c.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.battleLink}
+            onPress={() => navigation.navigate("ChefSchedule")}
+          >
+            <Ionicons name="time-outline" size={16} color={c.textSecondary} />
+            <Text style={{ color: c.textSecondary, fontWeight: "600", fontSize: 13 }}>
+              {t("schedule.title")}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={c.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.battleLink}
+            onPress={() => navigation.navigate("Certification")}
+          >
+            <Ionicons name="shield-checkmark-outline" size={16} color={c.info} />
+            <Text style={{ color: c.info, fontWeight: "600", fontSize: 13 }}>
+              {chef?.is_certified
+                ? t("certification.certified")
+                : t("certification.title")}
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={c.info} />
+          </TouchableOpacity>
+        </View>
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
@@ -541,7 +648,7 @@ export default function ProfileScreen({ navigation }: any) {
                   <Ionicons name="chatbox" size={32} color={c.textMuted} />
                 </View>
                 <Text style={[styles.emptyText, { color: c.textMuted }]}>
-                  {t("chef.noReviews")}
+                  {t("profile.noReviews")}
                 </Text>
               </View>
             )}
@@ -626,8 +733,11 @@ export default function ProfileScreen({ navigation }: any) {
       </PremiumHeader>
 
       <View
-        style={{ marginTop: -30, paddingHorizontal: 20, paddingBottom: 100 }}
+        style={{ marginTop: 16, paddingHorizontal: 20, paddingBottom: 100 }}
       >
+        <StatusCard onPress={() => navigation.navigate("Wallet")} />
+        <BadgesRow />
+
         {/* Tabs Floating */}
         <View
           style={[
@@ -790,33 +900,64 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         ) : (
           <View style={{ marginTop: 24 }}>
-            {followingList?.data && followingList.data.length > 0 ? (
-              followingList.data.map((user: any) => (
+            {favoriteDishes.length > 0 ? (
+              favoriteDishes.map((dish: any) => (
                 <TouchableOpacity
-                  key={user.user_id}
+                  key={dish.dish_id}
                   style={[
                     styles.customerListItem,
                     { backgroundColor: c.card, shadowColor: c.text },
                   ]}
-                  onPress={() => handleFollowedUserPress(user.user_id)}
+                  onPress={() =>
+                    navigation.navigate("DishDetail", { dishId: dish.dish_id })
+                  }
                 >
-                  <Avatar uri={user.profile_pic} name={user.name} size="md" />
+                  {dish.picture ? (
+                    <Image
+                      source={{ uri: dish.picture }}
+                      style={styles.orderStartImage}
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.orderStartImage,
+                        {
+                          backgroundColor: c.input,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="restaurant"
+                        size={24}
+                        color={c.textMuted}
+                      />
+                    </View>
+                  )}
                   <View style={{ flex: 1, paddingHorizontal: 16 }}>
                     <Text style={[styles.customerItemTitle, { color: c.text }]}>
-                      {user.name}
+                      {dish.name}
                     </Text>
                     <View style={styles.customerDetailsRow}>
-                      <Ionicons name="star" size={14} color={c.primary} />
-                      <Text style={[styles.customerRating, { color: c.text }]}>
-                        5.0
+                      <Text style={[styles.customerPrice, { color: c.primary }]}>
+                        {formatCurrency(Number(dish.price))} ₸
                       </Text>
-                      <Text style={{ color: c.textMuted, fontSize: 12 }}>
-                        • Chef
-                      </Text>
+                      {!!dish.chef_name && (
+                        <Text style={{ color: c.textMuted, fontSize: 12 }}>
+                          • {dish.chef_name}
+                        </Text>
+                      )}
                     </View>
                   </View>
                   <TouchableOpacity
                     style={[styles.iconButton, { backgroundColor: c.input }]}
+                    onPress={() =>
+                      toggleFavorite.mutate({
+                        dishId: dish.dish_id,
+                        isFavorite: true,
+                      })
+                    }
                   >
                     <Ionicons name="heart" size={20} color="#FF3B30" />
                   </TouchableOpacity>
@@ -871,7 +1012,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 5,
   },
-  profileTexts: { flex: 1 },
+  // paddingRight — чтобы имя не заходило под кнопку настроек в правом верхнем углу
+  profileTexts: { flex: 1, paddingRight: 36 },
   name: {
     fontSize: 24,
     fontWeight: "800",
@@ -920,10 +1062,35 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statValue: { fontSize: 18, fontWeight: "800", marginBottom: 2 },
-  statLabel: { fontSize: 11, fontWeight: "600", textTransform: "uppercase" },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
 
   // Dashboard
   dashboardSection: { paddingHorizontal: 20, marginBottom: 32 },
+  commissionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginTop: 12,
+  },
+  commissionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  commissionItem: { alignItems: "center", flex: 1 },
+  commissionValue: { fontSize: 16, fontWeight: "800" },
+  commissionLabel: { fontSize: 12, marginTop: 2 },
+  battleLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 12,
+  },
   earningsCard: {
     padding: 24,
     borderRadius: 28,
@@ -1120,7 +1287,7 @@ const styles = StyleSheet.create({
     gap: 20,
     marginBottom: 30,
   },
-  customerInfo: { flex: 1 },
+  customerInfo: { flex: 1, paddingRight: 36 },
   customerName: {
     color: "#fff",
     fontSize: 30,
@@ -1163,7 +1330,6 @@ const styles = StyleSheet.create({
 
   tabsPillContainer: {
     flexDirection: "row",
-    marginHorizontal: 20,
     borderRadius: 20,
     padding: 6,
     alignItems: "center",
@@ -1172,7 +1338,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    marginTop: 70,
+    marginTop: 12,
   },
   tabPill: {
     flex: 1,
