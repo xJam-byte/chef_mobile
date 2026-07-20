@@ -43,13 +43,14 @@ export default function AddDishScreen({ navigation }: any) {
     const [isSpicy, setIsSpicy] = useState(false);
     const [image, setImage] = useState<string | null>(null);
 
-    const categories = [
-        { label: "Основные блюда", value: "Основные блюда", icon: "🍖" },
-        { label: "Супы", value: "Супы", icon: "🥣" },
-        { label: "Салаты", value: "Салаты", icon: "🥗" },
-        { label: "Десерты", value: "Десерты", icon: "🍰" },
-        { label: "Напитки", value: "Напитки", icon: "🍹" },
-        { label: "Национальные", value: "Национальные", icon: "🥟" },
+    // Векторные иконки вместо эмодзи: эмодзи на части устройств рендерятся как "?"
+    const categories: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+        { label: "Основные блюда", value: "Основные блюда", icon: "restaurant" },
+        { label: "Супы", value: "Супы", icon: "flame" },
+        { label: "Салаты", value: "Салаты", icon: "leaf" },
+        { label: "Десерты", value: "Десерты", icon: "ice-cream" },
+        { label: "Напитки", value: "Напитки", icon: "cafe" },
+        { label: "Национальные", value: "Национальные", icon: "earth" },
     ];
 
     const handleSubmit = async () => {
@@ -267,7 +268,11 @@ export default function AddDishScreen({ navigation }: any) {
                                     ]}
                                     onPress={() => setType(cat.value)}
                                 >
-                                    <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
+                                    <Ionicons
+                                        name={cat.icon}
+                                        size={16}
+                                        color={type === cat.value ? '#fff' : c.primary}
+                                    />
                                     <Text style={[styles.categoryText, { color: type === cat.value ? '#fff' : c.text }]}>{cat.label}</Text>
                                 </TouchableOpacity>
                             ))}

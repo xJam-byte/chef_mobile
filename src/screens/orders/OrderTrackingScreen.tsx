@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   // Header styles removed as PremiumHeader is used
 
   // Timer
-  timerContainer: { alignItems: "center", marginTop: -40, marginBottom: 24 },
+  timerContainer: { alignItems: "center", marginTop: 24, marginBottom: 24 },
   timerWrapper: {
     width: 220,
     height: 220,

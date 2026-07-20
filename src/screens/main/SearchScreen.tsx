@@ -108,9 +108,12 @@ export default function SearchScreen({ navigation }: any) {
                         <TextInput
                             style={[styles.searchInput, { color: '#fff' }]}
                             placeholder={t('search.searchPlaceholder')}
-                            placeholderTextColor="rgba(255,255,255,0.7)"
+                            placeholderTextColor="rgba(255,255,255,0.75)"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
+                            numberOfLines={1}
+                            returnKeyType="search"
+                            autoCorrect={false}
                         />
                         {searchQuery.length > 0 && (
                             <TouchableOpacity onPress={() => setSearchQuery("")}>
@@ -339,8 +342,13 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        fontSize: 16,
-        height: '100%'
+        fontSize: 15,
+        fontWeight: "500",
+        letterSpacing: 0,
+        height: '100%',
+        paddingVertical: 0,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     tabSwitcher: {
         flexDirection: "row",

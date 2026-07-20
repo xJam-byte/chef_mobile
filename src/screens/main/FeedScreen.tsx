@@ -15,6 +15,7 @@ import {
   Image,
   Share,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -35,6 +36,7 @@ import {
   useProfile,
 } from "../../lib/hooks";
 import VideoPlayer from "../../components/video/VideoPlayer";
+import ReactionsSheet from "../../components/video/ReactionsSheet";
 import { showMessage } from "react-native-flash-message";
 import type { VideoFeedItem } from "../../lib/api/videos";
 import type { Dish } from "../../lib/types";
@@ -82,6 +84,7 @@ export default function FeedScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [activeTab, setActiveTab] = useState<"forYou" | "following">("forYou");
+  const [reactionsVideoId, setReactionsVideoId] = useState<string | null>(null);
 
   const PAGE_HEIGHT = Math.max(1, WINDOW_HEIGHT - tabBarHeight);
   const bottomLift = tabBarHeight + insets.bottom;
@@ -203,49 +206,6 @@ export default function FeedScreen() {
         <VideoPlayer uri={item.url} isActive={isActive} />
 
         <View style={styles.overlay}>
-          {/* Top Tabs - Following / For You */}
-          <View style={[styles.topTabsContainer, { top: insets.top + 10 }]}>
-            <TouchableOpacity
-              onPress={() => setActiveTab("following")}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "following"
-                    ? styles.activeTab
-                    : styles.inactiveTab,
-                ]}
-              >
-                {t("feed.following")}
-              </Text>
-              {activeTab === "following" && (
-                <View style={styles.activeIndicator} />
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.tabDivider} />
-
-            <TouchableOpacity
-              onPress={() => setActiveTab("forYou")}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "forYou"
-                    ? styles.activeTab
-                    : styles.inactiveTab,
-                ]}
-              >
-                {t("feed.forYou")}
-              </Text>
-              {activeTab === "forYou" && (
-                <View style={styles.activeIndicator} />
-              )}
-            </TouchableOpacity>
-          </View>
-
           {/* Right Side Actions */}
           <View style={[styles.actions, { bottom: bottomLift + 50 }]}>
             <TouchableOpacity
@@ -255,7 +215,7 @@ export default function FeedScreen() {
             >
               <Ionicons
                 name={item.likedByMe ? "heart" : "heart-outline"}
-                size={34}
+                size={26}
                 color={item.likedByMe ? "#EF4444" : "#fff"}
               />
               <Text style={styles.actionText}>
@@ -275,7 +235,16 @@ export default function FeedScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-redo-outline" size={32} color="#fff" />
+              <Ionicons name="arrow-redo-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setReactionsVideoId(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="videocam-outline" size={24} color="#fff" />
+              <Text style={styles.actionText}>{t("reactions.short")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -283,12 +252,30 @@ export default function FeedScreen() {
               onPress={() => handleReport(item.id)}
               activeOpacity={0.7}
             >
-              <Ionicons name="alert-circle-outline" size={32} color="#fff" />
+              <Ionicons name="alert-circle-outline" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
 
           {/* Bottom Info Area */}
           <View style={[styles.bottomContainer, { bottom: bottomLift - 50 }]}>
+            {/* Отмеченные повара */}
+            {!!item.tagged_chefs?.length && (
+              <View style={styles.taggedRow}>
+                {item.tagged_chefs.map((tc) => (
+                  <TouchableOpacity
+                    key={tc.chefId}
+                    style={styles.taggedPill}
+                    onPress={() => handleChefPress(tc.chefId)}
+                  >
+                    <Ionicons name="person" size={12} color="#fff" />
+                    <Text style={styles.taggedText} numberOfLines={1}>
+                      {tc.username ? `@${tc.username}` : tc.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
             {/* User Info Row */}
             <View style={styles.userInfoRow}>
               <TouchableOpacity
@@ -390,7 +377,8 @@ export default function FeedScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    // Без верхнего edge: видео уходит под статусбар, как в TikTok
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <FlatList
         ref={flatListRef}
         data={videos}
@@ -413,24 +401,115 @@ export default function FeedScreen() {
         }}
         onEndReachedThreshold={0.5}
       />
+      {/* Top overlay: единый слой табов поверх ленты (как в TikTok),
+          не перерисовывается на каждом видео */}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.55)", "transparent"]}
+        style={[styles.topScrim, { height: insets.top + 80 }]}
+        pointerEvents="none"
+      />
+      <View
+        style={[styles.topTabsContainer, { top: insets.top + 6 }]}
+        pointerEvents="box-none"
+      >
+        <TouchableOpacity
+          onPress={() => setActiveTab("following")}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.tabItem}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "following" ? styles.activeTab : styles.inactiveTab,
+            ]}
+          >
+            {t("feed.following")}
+          </Text>
+          <View
+            style={[
+              styles.activeIndicator,
+              activeTab !== "following" && { opacity: 0 },
+            ]}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setActiveTab("forYou")}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.tabItem}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "forYou" ? styles.activeTab : styles.inactiveTab,
+            ]}
+          >
+            {t("feed.forYou")}
+          </Text>
+          <View
+            style={[
+              styles.activeIndicator,
+              activeTab !== "forYou" && { opacity: 0 },
+            ]}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Battle")}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.trophyButton}
+        >
+          <Ionicons name="trophy-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
       <ReportModal
         visible={reportModalVisible}
         onClose={() => setReportModalVisible(false)}
         targetId={reportTargetId}
         targetType="video"
       />
+
+      <ReactionsSheet
+        videoId={reactionsVideoId}
+        onClose={() => setReactionsVideoId(null)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  taggedRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 8,
+  },
+  taggedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    maxWidth: 140,
+  },
+  taggedText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   container: { flex: 1, backgroundColor: "#000" },
   centered: { justifyContent: "center", alignItems: "center" },
 
   videoContainer: { width: "100%", position: "relative" },
   overlay: { ...StyleSheet.absoluteFillObject },
 
-  // Top Tabs
+  // Top Tabs (единый оверлей поверх FlatList, TikTok-style)
+  topScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9,
+  },
   topTabsContainer: {
     position: "absolute",
     left: 0,
@@ -438,29 +517,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 24,
     zIndex: 10,
   },
+  tabItem: { alignItems: "center" },
   tabText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.6)",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowRadius: 4,
+    letterSpacing: 0.2,
+    textShadowColor: "rgba(0,0,0,0.45)",
+    textShadowRadius: 3,
   },
-  activeTab: { color: "#fff", fontWeight: "700" },
-  inactiveTab: { color: "rgba(255,255,255,0.6)" },
+  activeTab: { color: "#fff", fontWeight: "800" },
+  inactiveTab: { color: "rgba(255,255,255,0.65)", fontWeight: "600" },
   activeIndicator: {
-    width: 20,
-    height: 2,
+    width: 24,
+    height: 3,
+    borderRadius: 2,
     backgroundColor: "#fff",
-    alignSelf: "center",
-    marginTop: 4,
+    marginTop: 5,
   },
-  tabDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    marginHorizontal: 12,
+  trophyButton: {
+    position: "absolute",
+    right: 16,
+    top: 2,
   },
 
   // Actions
@@ -468,13 +547,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 12,
     alignItems: "center",
-    gap: 20,
+    gap: 16,
     zIndex: 20,
   },
   actionButton: { alignItems: "center", gap: 2 },
   actionText: {
     color: "#fff",
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "600",
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowRadius: 2,
@@ -496,9 +575,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: "#fff",
     alignItems: "center",
@@ -506,14 +585,14 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     textShadowColor: "rgba(0,0,0,0.8)",
     textShadowRadius: 2,
   },
   userRating: {
     color: "#fff", // or star color
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     marginLeft: 4,
   },
@@ -523,22 +602,22 @@ const styles = StyleSheet.create({
   },
   userTime: {
     color: "rgba(255,255,255,0.9)",
-    fontSize: 13,
+    fontSize: 12,
   },
   subscribeButton: {
     borderWidth: 1.5, // Slightly thicker border for better visibility
     borderColor: "rgba(255,255,255,0.6)",
-    paddingVertical: 8, // Increased vertical padding
-    paddingHorizontal: 16,
-    borderRadius: 24, // More rounded
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     backgroundColor: "rgba(0,0,0,0.3)", // Slightly darker background for contrast
     alignItems: "center", // Critical fix for 'crooked' text
     justifyContent: "center",
-    marginRight: 70,
+    marginRight: 60,
   },
   subscribeText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     includeFontPadding: false, // Prevents Android vertical alignment quirks
   },

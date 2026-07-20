@@ -20,14 +20,15 @@ const getApiUrl = () => {
   const debuggerHost = Constants.expoConfig?.hostUri;
   if (debuggerHost) {
     const ip = debuggerHost.split(":")[0];
-    const apiUrl = `http://${ip}:5000`;
+    // 5001: порт 5000 на macOS занят AirPlay Receiver (отвечает 403 на любой запрос)
+    const apiUrl = `http://${ip}:5001`;
     // console.log("✅ Using dynamic API URL:", apiUrl, "(from hostUri:", debuggerHost, ")");
     return apiUrl;
   }
 
   // 3. Fallback для веба или если что-то пошло не так
   // console.warn("⚠️ No hostUri found, using localhost fallback. This may not work on physical devices!");
-  return "http://localhost:5000";
+  return "http://localhost:5001";
 };
 
 export const API_BASE_URL = getApiUrl();

@@ -61,10 +61,9 @@ export default function SuccessScreen() {
           onPress={() => {
             navigation.dispatch(
               CommonActions.reset({
-                index: 1,
+                index: 0,
                 routes: [
-                  { name: "MainTabs" },
-                  { name: "OrderTracking" }, // Assuming this route exists or goes to Orders
+                  { name: "MainTabs", params: { screen: "Orders" } },
                 ],
               }),
             );

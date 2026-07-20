@@ -29,7 +29,16 @@
     "month": "Месяц",
     "customer": "Клиент",
     "more": "Ещё",
-    "typeMessage": "Введите сообщение..."
+    "typeMessage": "Введите сообщение...",
+    "backToHome": "На главную",
+    "block": "Заблокировать",
+    "blockConfirmMessage": "Вы больше не увидите контент этого пользователя",
+    "blockConfirmTitle": "Заблокировать пользователя?",
+    "chef": "Шеф",
+    "options": "Действия",
+    "report": "Пожаловаться",
+    "unblock": "Разблокировать",
+    "warning": "Внимание"
   },
   "auth": {
     "welcome": "Добро пожаловать",
@@ -95,7 +104,16 @@
     "loginWithEmail": "Войти через почту",
     "errorAllFieldsRequired": "Все поля обязательны",
     "errorLoginFailed": "Ошибка входа",
-    "verifyButton": "Подтвердить"
+    "verifyButton": "Подтвердить",
+    "referralLabel": "Реферальный код (необязательно)",
+    "referralPlaceholder": "Код друга",
+    "errorNameRequired": "Введите имя",
+    "errorPasswordRequired": "Введите пароль",
+    "emailLabel": "Email",
+    "emailCodeLabel": "Код из письма",
+    "emailCodeSent": "Код отправлен на почту",
+    "emailCodeSentTo": "Код отправлен на {{email}}",
+    "enterEmailCode": "Введите код из письма"
   },
   "roleSelection": {
     "title": "Выберите роль",
@@ -121,7 +139,7 @@
     "chefDescriptionShort": "Готовь и продавай"
   },
   "search": {
-    "searchPlaceholder": "Поиск по блюдам, ингредиентам...",
+    "searchPlaceholder": "Поиск блюд и поваров",
     "map": "Карта",
     "menu": "Меню",
     "profile": "Профиль",
@@ -197,14 +215,35 @@
     "subscribers": "Подписчики",
     "following": "Подписки",
     "addDishDesc": "Добавить новое блюдо в меню",
-    "addVideoDesc": "Поделиться видео готовки"
+    "addVideoDesc": "Поделиться видео готовки",
+    "commission": "Комиссия",
+    "netRevenue": "Чистыми",
+    "monthlyRank": "Ранг месяца",
+    "rank_top3": "Топ-3",
+    "rank_top10": "Топ-10",
+    "detailsTitle": "О шефе"
   },
   "dish": {
     "addToCart": "В корзину",
     "price": "Цена",
     "ingredients": "Ингредиенты",
     "description": "Описание",
-    "type": "Тип блюда"
+    "type": "Тип блюда",
+    "cantOrderOwn": "Нельзя заказать своё блюдо",
+    "unavailable": "Блюдо недоступно",
+    "whoCooks": "Кто готовит",
+    "author": "Автор",
+    "you": "вы",
+    "openNow": "Открыто",
+    "closedNow": "Закрыто",
+    "iAlsoCook": "Я тоже готовлю это блюдо",
+    "changeMyPrice": "Изменить мою цену",
+    "stopCooking": "Перестать готовить",
+    "yourPriceTitle": "Ваша цена за блюдо, ₸",
+    "offerSaved": "Ваш оффер сохранён — блюдо появилось в вашем меню",
+    "offerRemoved": "Вы больше не готовите это блюдо",
+    "addedToFavorites": "Добавлено в избранное",
+    "removedFromFavorites": "Удалено из избранного"
   },
   "addDish": {
     "title": "Добавить блюдо",
@@ -255,7 +294,12 @@
     "fillRequired": "Выберите видео и укажите название",
     "success": "Видео добавлено!",
     "info": "Рекомендуемый формат видео: вертикальное (9:16), не более 60 секунд",
-    "pickVideo": "Функция выбора видео будет добавлена"
+    "pickVideo": "Функция выбора видео будет добавлена",
+    "tagChefs": "Отметить поваров (до 5)",
+    "permissionRequired": "Нужен доступ к галерее",
+    "selectError": "Не удалось выбрать видео",
+    "searchChefs": "Имя или @юзернейм повара",
+    "noChefsFound": "Никого не нашли"
   },
   "settings": {
     "title": "Настройки",
@@ -284,11 +328,35 @@
     "selectTheme": "Выберите тему",
     "selectLanguage": "Выберите язык",
     "system": "Системная",
-    "changePasswordSuccess": "Пароль успешно изменен",
+    "changePasswordSuccess": "Пароль успешно изменён",
     "notificationsSaved": "Настройки уведомлений сохранены",
     "termsText": "Текст условий использования...",
     "privacyText": "Текст политики конфиденциальности...",
-    "support": "Поддержка"
+    "support": "Поддержка",
+    "rewards": "Бонусы",
+    "deleteAccount": "Удалить аккаунт",
+    "deletingAccount": "Удаляем аккаунт...",
+    "deleteAccountWarning": "Аккаунт и все ваши данные (видео, отзывы, коины, адреса) будут удалены безвозвратно. Восстановить их будет невозможно.",
+    "deleteAccountContinue": "Продолжить",
+    "deleteAccountConfirmTitle": "Точно удалить аккаунт?",
+    "deleteAccountConfirmText": "Это последнее предупреждение. Действие необратимо.",
+    "deleteAccountFinal": "Удалить навсегда",
+    "deleteAccountActiveOrders": "Сначала завершите или отмените активные заказы.",
+    "username": "Юзернейм",
+    "usernameHint": "По нему вас смогут отмечать в коллабах. 3–32 символа: a-z, 0-9 и _",
+    "usernameSaved": "Юзернейм обновлён",
+    "usernameInvalid": "Юзернейм: 3–32 символа, только a-z, 0-9 и _",
+    "personalData": "Личные данные",
+    "nameRequired": "Введите имя",
+    "emailInvalid": "Некорректная почта",
+    "profileSaved": "Данные обновлены",
+    "passwordTooShort": "Пароль должен быть не короче 6 символов",
+    "passwordsDontMatch": "Пароли не совпадают",
+    "passwordCodeHint": "Мы отправили SMS-код на ваш номер {{phone}}. Введите его и новый пароль.",
+    "newPassword": "Новый пароль",
+    "repeatPassword": "Повторите пароль",
+    "emailCodeLabel": "Код с новой почты",
+    "emailCodeSentTo": "Код отправлен на {{email}}"
   },
   "addressManagement": {
     "title": "Мои адреса",
@@ -307,7 +375,12 @@
     "zipCode": "Индекс",
     "country": "Страна",
     "makeDefault": "Сделать основным",
-    "isDefault": "Основной адрес"
+    "isDefault": "Основной адрес",
+    "addressAdded": "Адрес добавлен",
+    "errorAddingAddress": "Не удалось добавить адрес",
+    "fillAllFields": "Заполните все поля",
+    "noAddresses": "Адресов пока нет",
+    "userNotFound": "Пользователь не найден"
   },
   "home": {
     "loading": "Загрузка блюд...",
@@ -373,7 +446,20 @@
     "addAddress": "Добавить адрес",
     "proceedToPayment": "Перейти к оплате",
     "selectAddress": "Выберите адрес",
-    "selectAddressDescription": "Пожалуйста, выберите адрес доставки"
+    "selectAddressDescription": "Пожалуйста, выберите адрес доставки",
+    "useCoins": "Оплатить коинами ({{count}})",
+    "coinsDiscount": "Скидка коинами",
+    "pioneerDiscount": "Первооткрыватель −{{percent}}%",
+    "deliveryFee": "Доставка",
+    "addItemsFirst": "Сначала добавьте блюда в корзину",
+    "emptyCart": "Корзина пуста",
+    "ownDishesRemoved": "Свои блюда нельзя заказать — они убраны из корзины",
+    "successMessage": "Ваш заказ принят и передан шефу",
+    "successTitle": "Заказ оформлен!",
+    "title": "Оформление заказа",
+    "trackOrder": "Отследить заказ",
+    "chefClosed": "Повар одного из блюд сейчас закрыт. Откройте карточку блюда и выберите другого повара.",
+    "quoteFailed": "Не удалось рассчитать заказ. Проверьте корзину и попробуйте ещё раз."
   },
   "payment": {
     "preparing": "Подготовка оплаты...",
@@ -389,7 +475,8 @@
     "errorCreatingIntent": "Не удалось создать платежную сессию",
     "errorProcessing": "Не удалось обработать платеж",
     "orderPlaced": "Ваш заказ оформлен!",
-    "stubNotice": "Демо режим: Оплата всегда успешна"
+    "stubNotice": "Демо режим: Оплата всегда успешна",
+    "title": "Оплата"
   },
   "cart": {
     "title": "Корзина",
@@ -429,5 +516,149 @@
     "subjectPlaceholder": "Тема обращения",
     "messagePlaceholder": "Опишите вашу проблему...",
     "startChat": "Начать чат"
+  },
+  "wallet": {
+    "title": "Кошелёк",
+    "balance": "Баланс",
+    "coins": "коинов",
+    "history": "История",
+    "noTransactions": "Пока нет операций",
+    "cashbackRate": "Кешбэк {{percent}}% с каждого доставленного заказа",
+    "progressToNext": "Ещё {{amount}} ₸ до статуса {{tier}}",
+    "maxTier": "Максимальный статус достигнут",
+    "txTypes": {
+      "cashback": "Кешбэк за заказ",
+      "referral_bonus": "Бонус за друга",
+      "taster_reward": "Награда дегустатора",
+      "order_payment": "Оплата заказа коинами",
+      "order_refund": "Возврат коинов",
+      "battle_prize": "Приз битвы рецептов",
+      "admin_adjust": "Корректировка"
+    }
+  },
+  "tiers": {
+    "bronze": "Бронза",
+    "silver": "Серебро",
+    "gold": "Золото",
+    "platinum": "Платина"
+  },
+  "referral": {
+    "title": "Пригласи друга",
+    "hint": "Поделись кодом с другом без аккаунта — получи {{bonus}} коинов после его первого заказа",
+    "tapToCopy": "Нажми, чтобы скопировать",
+    "copied": "Код скопирован",
+    "share": "Поделиться",
+    "shareMessage": "Заказывай домашнюю еду в Chef! Мой код {{code}} даст тебе бонус: {{link}}",
+    "totalEarned": "Заработано: {{amount}} коинов",
+    "invitedFriends": "Приглашённые друзья",
+    "noInvited": "Пока никого не пригласили",
+    "friend": "Друг",
+    "statusPending": "Ждём заказ",
+    "statusCompleted": "Бонус получен"
+  },
+  "badges": {
+    "pioneer": "Первооткрыватель",
+    "taster": "Дегустатор",
+    "early_user": "Ранний пользователь",
+    "pioneerProgress": "Первооткрыватель: {{current}}/{{required}} новых поваров"
+  },
+  "battle": {
+    "title": "Битва рецептов",
+    "tab_current": "Текущие",
+    "tab_history": "Победители",
+    "category": "Категория",
+    "entriesCount": "{{count}} заявок",
+    "leaderboard": "Лидерборд",
+    "submitEntry": "Участвовать",
+    "alreadyEntered": "Вы участвуете",
+    "noEligibleDishes": "Нет блюд в категории",
+    "pickDish": "Выберите блюдо",
+    "entrySubmitted": "Заявка подана!",
+    "entryFailed": "Не удалось подать заявку",
+    "noEntries": "Пока нет заявок",
+    "noActive": "Сейчас нет активных битв",
+    "noHistory": "Прошедших битв пока нет",
+    "noWinner": "Победитель не определён"
+  },
+  "certification": {
+    "title": "Сертификация",
+    "certified": "Сертифицирован ✓",
+    "hint": "Загрузите 2–5 фото вашей кухни и блюд. ИИ оценит чистоту и подачу — при оценке 7/10 и выше вы получите значок сертифицированного повара.",
+    "pickPhotos": "Выбрать фото (2–5)",
+    "minPhotos": "Нужно минимум 2 фото",
+    "submit": "Отправить на анализ",
+    "analyzing": "ИИ анализирует фото...",
+    "approved": "Сертификация пройдена!",
+    "rejected": "Пока не пройдена",
+    "score": "Итог",
+    "cleanliness": "Чистота",
+    "plating": "Подача",
+    "failed": "Анализ не удался, попробуйте позже",
+    "disclaimer": "Оценка выполняется ИИ и может быть пересмотрена. Повторная попытка — раз в день."
+  },
+  "schedule": {
+    "title": "График работы",
+    "openNow": "Открыто сейчас",
+    "closedNow": "Закрыто сейчас",
+    "dayOff": "Выходной",
+    "openTime": "Время открытия",
+    "closeTime": "Время закрытия",
+    "save": "Сохранить график",
+    "saved": "График сохранён",
+    "saveFailed": "Не удалось сохранить график",
+    "days": {
+      "0": "Вс",
+      "1": "Пн",
+      "2": "Вт",
+      "3": "Ср",
+      "4": "Чт",
+      "5": "Пт",
+      "6": "Сб"
+    }
+  },
+  "delivery": {
+    "status": "Доставка",
+    "statuses": {
+      "created": "Заявка создана",
+      "courier_assigned": "Курьер назначен",
+      "in_progress": "В пути",
+      "delivered": "Доставлено",
+      "cancelled": "Отменена"
+    }
+  },
+  "reactions": {
+    "title": "Видеореакции",
+    "short": "Реакции",
+    "empty": "Пока нет реакций — будь первым!",
+    "record": "Записать реакцию",
+    "uploading": "Загружаем...",
+    "published": "Реакция опубликована!",
+    "failed": "Не удалось загрузить реакцию",
+    "locked": "Видеореакции открываются со статуса Silver"
+  },
+  "order": {
+    "trackingComingSoon": "Отслеживание скоро появится",
+    "trackingDescription": "Здесь будет карта с курьером и статусом заказа",
+    "trackingTitle": "Отслеживание заказа"
+  },
+  "report": {
+    "reasonPlaceholder": "Опишите причину...",
+    "reasonTitle": "Причина жалобы"
+  },
+  "apiErrors": {
+    "generic": "Что-то пошло не так. Попробуйте ещё раз",
+    "phoneExists": "Пользователь с таким номером телефона уже существует",
+    "emailExists": "Пользователь с такой почтой уже существует",
+    "phoneOrEmailExists": "Такой номер телефона или почта уже заняты",
+    "invalidCredentials": "Неверная почта или пароль",
+    "phoneNotRegistered": "Этот номер телефона не зарегистрирован",
+    "invalidOrExpiredCode": "Неверный или устаревший код",
+    "userNotFound": "Пользователь не найден",
+    "chefNotFound": "Шеф не найден",
+    "dishNotFound": "Блюдо не найдено",
+    "passwordTooShort": "Пароль должен быть не короче 6 символов",
+    "wrongCurrentPassword": "Текущий пароль указан неверно",
+    "usernameTaken": "Этот юзернейм уже занят",
+    "usernameInvalid": "Юзернейм: 3–32 символа, только a-z, 0-9 и _"
   }
 }

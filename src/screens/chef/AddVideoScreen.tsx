@@ -19,10 +19,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useColors } from "../../lib/theme";
-import { useProfile, useChefDishes, useCreateVideo } from "../../lib/hooks";
+import { useProfile, useChefDishes, useCreateVideo, useChefs } from "../../lib/hooks";
 import { useChefByUserId } from "../../lib/hooks/useChefs";
 import { showMessage } from "react-native-flash-message";
-import { PremiumHeader } from "../../components/ui";
+import { PremiumHeader, Avatar } from "../../components/ui";
 import { t } from "i18next";
 
 export default function AddVideoScreen({ navigation }: any) {
@@ -41,6 +41,42 @@ export default function AddVideoScreen({ navigation }: any) {
   const [selectedDishId, setSelectedDishId] = useState<number | null>(null);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [showDishPicker, setShowDishPicker] = useState(false);
+  const [taggedChefIds, setTaggedChefIds] = useState<number[]>([]);
+
+  // Другие повара для отметки на видео (до 5)
+  const { data: allChefsData } = useChefs();
+  const otherChefs = (
+    Array.isArray(allChefsData) ? allChefsData : (allChefsData as any)?.data ?? []
+  ).filter((ch: any) => ch.chef_id !== chefId);
+
+  // Поиск поваров для отметки: по имени или @username
+  const [chefSearch, setChefSearch] = useState("");
+  const chefUser = (ch: any) => ch.users ?? ch.user ?? {};
+  const chefHandle = (ch: any): string | null => chefUser(ch).username ?? null;
+  const chefName = (ch: any): string =>
+    chefUser(ch).name ?? `Chef #${ch.chef_id}`;
+
+  const filteredChefs = otherChefs.filter((ch: any) => {
+    const q = chefSearch.trim().toLowerCase().replace(/^@/, "");
+    if (!q) return true;
+    return (
+      chefName(ch).toLowerCase().includes(q) ||
+      (chefHandle(ch) ?? "").toLowerCase().includes(q)
+    );
+  });
+  const taggedChefs = otherChefs.filter((ch: any) =>
+    taggedChefIds.includes(ch.chef_id),
+  );
+
+  const toggleChefTag = (id: number) => {
+    setTaggedChefIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : prev.length < 5
+          ? [...prev, id]
+          : prev
+    );
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -63,6 +99,7 @@ export default function AddVideoScreen({ navigation }: any) {
         videoUri,
         description: description.trim() || undefined,
         dishId: selectedDishId || undefined,
+        chefIds: taggedChefIds.length ? taggedChefIds : undefined,
       });
 
       showMessage({ message: "Видео успешно загружено!", type: "success" });
@@ -72,6 +109,7 @@ export default function AddVideoScreen({ navigation }: any) {
       setDescription("");
       setSelectedDishId(null);
       setVideoUri(null);
+      setTaggedChefIds([]);
 
       navigation.goBack();
     } catch (error: any) {
@@ -182,6 +220,116 @@ export default function AddVideoScreen({ navigation }: any) {
               editable={!createVideoMutation.isPending}
             />
           </View>
+
+          {/* Отметить других поваров (коллаб): поиск по имени или @username */}
+          {otherChefs.length > 0 && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: c.text }]}>
+                {t("addVideo.tagChefs", "Отметить поваров (до 5)")}
+              </Text>
+
+              {/* Выбранные — чипсы с @username */}
+              {taggedChefs.length > 0 && (
+                <View style={styles.tagChipsRow}>
+                  {taggedChefs.map((ch: any) => (
+                    <TouchableOpacity
+                      key={ch.chef_id}
+                      onPress={() => toggleChefTag(ch.chef_id)}
+                      style={[
+                        styles.tagChip,
+                        {
+                          borderColor: c.primary,
+                          backgroundColor: c.primary + "20",
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: c.primary, fontSize: 13, fontWeight: "600" }}>
+                        {chefHandle(ch) ? `@${chefHandle(ch)}` : chefName(ch)}
+                      </Text>
+                      <Ionicons name="close" size={14} color={c.primary} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Поиск */}
+              <View
+                style={[
+                  styles.chefSearchBox,
+                  { backgroundColor: c.surface, borderColor: c.border },
+                ]}
+              >
+                <Ionicons name="search" size={18} color={c.textMuted} />
+                <TextInput
+                  style={[styles.chefSearchInput, { color: c.text }]}
+                  placeholder={t(
+                    "addVideo.searchChefs",
+                    "Имя или @юзернейм повара",
+                  )}
+                  placeholderTextColor={c.textMuted}
+                  value={chefSearch}
+                  onChangeText={setChefSearch}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {chefSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setChefSearch("")}>
+                    <Ionicons name="close-circle" size={18} color={c.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Результаты */}
+              <View style={{ marginTop: 8, gap: 4 }}>
+                {filteredChefs.slice(0, 6).map((ch: any) => {
+                  const selected = taggedChefIds.includes(ch.chef_id);
+                  const handle = chefHandle(ch);
+                  return (
+                    <TouchableOpacity
+                      key={ch.chef_id}
+                      onPress={() => toggleChefTag(ch.chef_id)}
+                      style={[
+                        styles.chefRow,
+                        {
+                          backgroundColor: selected ? c.primary + "12" : "transparent",
+                          borderColor: selected ? c.primary : c.border,
+                        },
+                      ]}
+                    >
+                      <Avatar
+                        uri={chefUser(ch).profile_pic}
+                        name={chefName(ch)}
+                        size="sm"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{ color: c.text, fontSize: 14, fontWeight: "600" }}
+                          numberOfLines={1}
+                        >
+                          {chefName(ch)}
+                        </Text>
+                        {!!handle && (
+                          <Text style={{ color: c.textMuted, fontSize: 12 }}>
+                            @{handle}
+                          </Text>
+                        )}
+                      </View>
+                      <Ionicons
+                        name={selected ? "checkmark-circle" : "add-circle-outline"}
+                        size={22}
+                        color={selected ? c.primary : c.textMuted}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+                {filteredChefs.length === 0 && (
+                  <Text style={{ color: c.textMuted, fontSize: 13, paddingVertical: 8 }}>
+                    {t("addVideo.noChefsFound", "Никого не нашли")}
+                  </Text>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Select Dish */}
           <View style={styles.inputGroup}>
@@ -384,6 +532,44 @@ const styles = StyleSheet.create({
   form: {
     padding: 16,
     paddingTop: 0,
+  },
+  tagChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  tagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  chefSearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  chefSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    height: "100%",
+    paddingVertical: 0,
+  },
+  chefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 8,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   inputGroup: {
     marginBottom: 20,

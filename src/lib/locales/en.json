@@ -29,7 +29,16 @@
     "month": "Month",
     "customer": "Customer",
     "more": "More",
-    "typeMessage": "Type a message..."
+    "typeMessage": "Type a message...",
+    "backToHome": "Back to home",
+    "block": "Block",
+    "blockConfirmMessage": "You will no longer see this user's content",
+    "blockConfirmTitle": "Block this user?",
+    "chef": "Chef",
+    "options": "Options",
+    "report": "Report",
+    "unblock": "Unblock",
+    "warning": "Warning"
   },
   "auth": {
     "welcome": "Welcome",
@@ -95,7 +104,16 @@
     "loginWithEmail": "Login with Email",
     "errorAllFieldsRequired": "All fields are required",
     "errorLoginFailed": "Login failed",
-    "verifyButton": "Verify"
+    "verifyButton": "Verify",
+    "referralLabel": "Referral code (optional)",
+    "referralPlaceholder": "Friend's code",
+    "errorNameRequired": "Name is required",
+    "errorPasswordRequired": "Password is required",
+    "emailLabel": "Email",
+    "emailCodeLabel": "Code from email",
+    "emailCodeSent": "Code sent to your email",
+    "emailCodeSentTo": "Code sent to {{email}}",
+    "enterEmailCode": "Enter the code from the email"
   },
   "roleSelection": {
     "title": "Choose Your Role",
@@ -121,7 +139,7 @@
     "chefDescriptionShort": "Cook & sell"
   },
   "search": {
-    "searchPlaceholder": "Search chefs...",
+    "searchPlaceholder": "Search dishes & chefs",
     "map": "Map",
     "chefs": "Chefs",
     "profile": "Profile",
@@ -258,7 +276,13 @@
     "subscribers": "Subscribers",
     "following": "Following",
     "addDishDesc": "Add a new dish to your menu",
-    "addVideoDesc": "Share a cooking video"
+    "addVideoDesc": "Share a cooking video",
+    "commission": "Commission",
+    "netRevenue": "Net revenue",
+    "monthlyRank": "Monthly rank",
+    "rank_top3": "Top 3",
+    "rank_top10": "Top 10",
+    "detailsTitle": "About the chef"
   },
   "dish": {
     "addToCart": "Add to Cart",
@@ -271,7 +295,21 @@
     "unavailable": "Unavailable",
     "unavailableMessage": "This dish is currently unavailable",
     "inStock": "In Stock",
-    "outOfStock": "Out of Stock"
+    "outOfStock": "Out of Stock",
+    "cantOrderOwn": "You can't order your own dish",
+    "whoCooks": "Who cooks it",
+    "author": "Author",
+    "you": "you",
+    "openNow": "Open",
+    "closedNow": "Closed",
+    "iAlsoCook": "I also cook this dish",
+    "changeMyPrice": "Change my price",
+    "stopCooking": "Stop cooking",
+    "yourPriceTitle": "Your price for this dish, ₸",
+    "offerSaved": "Your offer is saved — the dish is now in your menu",
+    "offerRemoved": "You no longer cook this dish",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites"
   },
   "addDish": {
     "title": "Add Dish",
@@ -338,7 +376,11 @@
     "addDishFirst": "Add a dish first",
     "dishLinkInfo": "Select a dish so users can add it to cart directly from the video!",
     "required": "*",
-    "dishNotFound": "Dish not found"
+    "dishNotFound": "Dish not found",
+    "tagChefs": "Tag chefs (up to 5)",
+    "selectError": "Failed to select video",
+    "searchChefs": "Chef name or @username",
+    "noChefsFound": "No one found"
   },
   "settings": {
     "title": "Settings",
@@ -371,7 +413,31 @@
     "notificationsSaved": "Notification settings saved",
     "termsText": "Terms of Service content goes here...",
     "privacyText": "Privacy Policy content goes here...",
-    "support": "Support"
+    "support": "Support",
+    "rewards": "Rewards",
+    "deleteAccount": "Delete account",
+    "deletingAccount": "Deleting account...",
+    "deleteAccountWarning": "Your account and all data (videos, reviews, coins, addresses) will be permanently deleted. This cannot be undone.",
+    "deleteAccountContinue": "Continue",
+    "deleteAccountConfirmTitle": "Delete account for good?",
+    "deleteAccountConfirmText": "This is your last warning. The action is irreversible.",
+    "deleteAccountFinal": "Delete permanently",
+    "deleteAccountActiveOrders": "Finish or cancel your active orders first.",
+    "username": "Username",
+    "usernameHint": "Others can tag you in collabs by it. 3–32 chars: a-z, 0-9 and _",
+    "usernameSaved": "Username updated",
+    "usernameInvalid": "Username: 3–32 chars, only a-z, 0-9 and _",
+    "personalData": "Personal info",
+    "nameRequired": "Enter your name",
+    "emailInvalid": "Invalid email",
+    "profileSaved": "Profile updated",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsDontMatch": "Passwords don't match",
+    "passwordCodeHint": "We sent an SMS code to {{phone}}. Enter it along with your new password.",
+    "newPassword": "New password",
+    "repeatPassword": "Repeat password",
+    "emailCodeLabel": "Code from new email",
+    "emailCodeSentTo": "Code sent to {{email}}"
   },
   "addressManagement": {
     "title": "My Addresses",
@@ -388,7 +454,14 @@
     "zipCode": "ZIP Code",
     "country": "Country",
     "makeDefault": "Make Default",
-    "isDefault": "Default Address"
+    "isDefault": "Default Address",
+    "addressAdded": "Address added",
+    "errorAddingAddress": "Failed to add address",
+    "fillAllFields": "Fill in all fields",
+    "noAddresses": "No addresses yet",
+    "userNotFound": "User not found",
+    "postalCode": "Postal code",
+    "yourAddresses": "Your addresses"
   },
   "checkout": {
     "orderSummary": "Order Summary",
@@ -398,7 +471,20 @@
     "addAddress": "Add Address",
     "proceedToPayment": "Proceed to Payment",
     "selectAddress": "Select address",
-    "selectAddressDescription": "Please select a delivery address"
+    "selectAddressDescription": "Please select a delivery address",
+    "useCoins": "Pay with coins ({{count}})",
+    "coinsDiscount": "Coins discount",
+    "pioneerDiscount": "Pioneer −{{percent}}%",
+    "deliveryFee": "Delivery",
+    "addItemsFirst": "Add dishes to the cart first",
+    "emptyCart": "Cart is empty",
+    "ownDishesRemoved": "You can't order your own dishes — they were removed from the cart",
+    "successMessage": "Your order was received and sent to the chef",
+    "successTitle": "Order placed!",
+    "title": "Checkout",
+    "trackOrder": "Track order",
+    "chefClosed": "The chef of one of your dishes is closed now. Open the dish and pick another chef.",
+    "quoteFailed": "Failed to calculate the order. Check your cart and try again."
   },
   "payment": {
     "preparing": "Preparing payment...",
@@ -414,7 +500,8 @@
     "errorCreatingIntent": "Failed to create payment intent",
     "errorProcessing": "Failed to process payment",
     "orderPlaced": "Your order has been placed!",
-    "stubNotice": "Demo mode: Payment will always succeed"
+    "stubNotice": "Demo mode: Payment will always succeed",
+    "title": "Payment"
   },
   "cart": {
     "title": "Cart",
@@ -427,7 +514,9 @@
     "errorEmptyCart": "Add dishes to cart",
     "orderPlaced": "Order placed!",
     "chefWillBeNotified": "Chef will be notified about your order",
-    "errorPlaceOrder": "Failed to place order"
+    "errorPlaceOrder": "Failed to place order",
+    "delivery": "Delivery fee",
+    "subtotal": "Subtotal"
   },
   "feed": {
     "discover": "Discover",
@@ -443,12 +532,158 @@
     "changeQuantityInCart": "Change quantity in cart",
     "addedToCart": "{{dishName}} added to cart!",
     "profileUnavailable": "Profile unavailable",
-    "notAChef": "This user is not a chef"
+    "notAChef": "This user is not a chef",
+    "following": "Following",
+    "forYou": "For you"
   },
   "support": {
     "noTickets": "How can we help?",
     "subjectPlaceholder": "Subject",
     "messagePlaceholder": "Describe your issue...",
     "startChat": "Start Chat"
+  },
+  "wallet": {
+    "title": "Wallet",
+    "balance": "Balance",
+    "coins": "coins",
+    "history": "History",
+    "noTransactions": "No transactions yet",
+    "cashbackRate": "{{percent}}% cashback on every delivered order",
+    "progressToNext": "{{amount}} ₸ left to reach {{tier}}",
+    "maxTier": "You reached the top tier",
+    "txTypes": {
+      "cashback": "Order cashback",
+      "referral_bonus": "Friend bonus",
+      "taster_reward": "Taster reward",
+      "order_payment": "Order paid with coins",
+      "order_refund": "Coins refund",
+      "battle_prize": "Recipe battle prize",
+      "admin_adjust": "Adjustment"
+    }
+  },
+  "tiers": {
+    "bronze": "Bronze",
+    "silver": "Silver",
+    "gold": "Gold",
+    "platinum": "Platinum"
+  },
+  "referral": {
+    "title": "Invite a friend",
+    "hint": "Share your code with a friend without an account — get {{bonus}} coins after their first order",
+    "tapToCopy": "Tap to copy",
+    "copied": "Code copied",
+    "share": "Share",
+    "shareMessage": "Order homemade food in Chef! My code {{code}} gives you a bonus: {{link}}",
+    "totalEarned": "Earned: {{amount}} coins",
+    "invitedFriends": "Invited friends",
+    "noInvited": "No one invited yet",
+    "friend": "Friend",
+    "statusPending": "Waiting for order",
+    "statusCompleted": "Bonus received"
+  },
+  "badges": {
+    "pioneer": "Pioneer",
+    "taster": "Taster",
+    "early_user": "Early user",
+    "pioneerProgress": "Pioneer: {{current}}/{{required}} new chefs"
+  },
+  "battle": {
+    "title": "Recipe Battle",
+    "tab_current": "Current",
+    "tab_history": "Winners",
+    "category": "Category",
+    "entriesCount": "{{count}} entries",
+    "leaderboard": "Leaderboard",
+    "submitEntry": "Enter battle",
+    "alreadyEntered": "You're in",
+    "noEligibleDishes": "No dishes in category",
+    "pickDish": "Pick a dish",
+    "entrySubmitted": "Entry submitted!",
+    "entryFailed": "Failed to submit entry",
+    "noEntries": "No entries yet",
+    "noActive": "No active battles right now",
+    "noHistory": "No past battles yet",
+    "noWinner": "No winner determined"
+  },
+  "certification": {
+    "title": "Certification",
+    "certified": "Certified ✓",
+    "hint": "Upload 2–5 photos of your kitchen and dishes. AI will assess cleanliness and plating — score 7/10 or higher earns the certified chef badge.",
+    "pickPhotos": "Pick photos (2–5)",
+    "minPhotos": "At least 2 photos required",
+    "submit": "Submit for analysis",
+    "analyzing": "AI is analyzing photos...",
+    "approved": "Certification passed!",
+    "rejected": "Not passed yet",
+    "score": "Score",
+    "cleanliness": "Cleanliness",
+    "plating": "Plating",
+    "failed": "Analysis failed, try again later",
+    "disclaimer": "Assessment is done by AI and may be revised. One attempt per day."
+  },
+  "schedule": {
+    "title": "Working hours",
+    "openNow": "Open now",
+    "closedNow": "Closed now",
+    "dayOff": "Day off",
+    "openTime": "Opening time",
+    "closeTime": "Closing time",
+    "save": "Save schedule",
+    "saved": "Schedule saved",
+    "saveFailed": "Failed to save schedule",
+    "days": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    }
+  },
+  "delivery": {
+    "status": "Delivery",
+    "statuses": {
+      "created": "Claim created",
+      "courier_assigned": "Courier assigned",
+      "in_progress": "On the way",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "reactions": {
+    "title": "Video reactions",
+    "short": "React",
+    "empty": "No reactions yet — be the first!",
+    "record": "Record a reaction",
+    "uploading": "Uploading...",
+    "published": "Reaction published!",
+    "failed": "Failed to upload reaction",
+    "locked": "Video reactions unlock at Silver tier"
+  },
+  "order": {
+    "trackingComingSoon": "Tracking coming soon",
+    "trackingDescription": "A map with the courier and order status will appear here",
+    "trackingTitle": "Order tracking"
+  },
+  "report": {
+    "reasonPlaceholder": "Describe the reason...",
+    "reasonTitle": "Report reason"
+  },
+  "apiErrors": {
+    "generic": "Something went wrong. Please try again",
+    "phoneExists": "A user with this phone number already exists",
+    "emailExists": "A user with this email already exists",
+    "phoneOrEmailExists": "This phone number or email is already taken",
+    "invalidCredentials": "Invalid email or password",
+    "phoneNotRegistered": "This phone number is not registered",
+    "invalidOrExpiredCode": "Invalid or expired code",
+    "userNotFound": "User not found",
+    "chefNotFound": "Chef not found",
+    "dishNotFound": "Dish not found",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "wrongCurrentPassword": "Current password is incorrect",
+    "usernameTaken": "This username is already taken",
+    "usernameInvalid": "Username: 3–32 chars, only a-z, 0-9 and _"
   }
 }

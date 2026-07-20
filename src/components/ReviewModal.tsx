@@ -12,14 +12,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useColors } from "../lib/theme";
 
 interface ReviewModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (rating: number, comment: string) => void;
+  onSubmit: (rating: number, comment: string, photoUrl?: string) => void;
   isLoading?: boolean;
   chefName?: string;
+  /** Текст ошибки; показывается баннером внутри модалки (тосты рисуются под Modal) */
+  errorText?: string | null;
 }
 
 export default function ReviewModal({
@@ -28,20 +32,39 @@ export default function ReviewModal({
   onSubmit,
   isLoading = false,
   chefName,
+  errorText,
 }: ReviewModalProps) {
   const c = useColors();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
+
+  const handlePickPhoto = async () => {
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.6,
+      base64: true,
+    });
+    if (!result.canceled && result.assets[0]?.base64) {
+      const asset = result.assets[0];
+      const mime = asset.mimeType ?? "image/jpeg";
+      setPhoto(`data:${mime};base64,${asset.base64}`);
+    }
+  };
 
   const handleSubmit = () => {
     if (rating > 0 && comment.trim()) {
-      onSubmit(rating, comment.trim());
+      onSubmit(rating, comment.trim(), photo ?? undefined);
     }
   };
 
   const handleClose = () => {
     setRating(5);
     setComment("");
+    setPhoto(null);
     onClose();
   };
 
@@ -74,6 +97,13 @@ export default function ReviewModal({
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {!!errorText && (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle" size={20} color="#DC2626" />
+                <Text style={styles.errorBannerText}>{errorText}</Text>
+              </View>
+            )}
+
             {chefName && (
               <Text style={[styles.subtitle, { color: c.textSecondary }]}>
                 Отзыв для: {chefName}
@@ -119,6 +149,30 @@ export default function ReviewModal({
               textAlignVertical="top"
               editable={!isLoading}
             />
+
+            {/* Photo attach — нужен для награды дегустатора */}
+            <Text style={[styles.label, { color: c.text }]}>Фото блюда</Text>
+            <TouchableOpacity
+              style={[
+                styles.photoButton,
+                { backgroundColor: c.surface, borderColor: c.border },
+              ]}
+              onPress={handlePickPhoto}
+              disabled={isLoading}
+              activeOpacity={0.7}
+            >
+              {photo ? (
+                <Image source={{ uri: photo }} style={styles.photoPreview} />
+              ) : (
+                <View style={styles.photoPlaceholder}>
+                  <Ionicons name="camera-outline" size={28} color={c.textMuted} />
+                  <Text style={[styles.photoHint, { color: c.textSecondary }]}>
+                    Добавьте фото — отзыв с фото и подробным описанием
+                    приносит 500 коинов
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
 
             {/* Submit Button */}
             <TouchableOpacity
@@ -185,6 +239,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 20,
   },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorBannerText: {
+    flex: 1,
+    color: "#B91C1C",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 19,
+  },
   label: {
     fontSize: 16,
     fontWeight: "600",
@@ -208,6 +280,25 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     minHeight: 120,
     marginBottom: 20,
+  },
+  photoButton: {
+    borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  photoPreview: {
+    width: "100%",
+    height: 160,
+  },
+  photoPlaceholder: {
+    alignItems: "center",
+    padding: 20,
+    gap: 8,
+  },
+  photoHint: {
+    fontSize: 13,
+    textAlign: "center",
   },
   submitButton: {
     borderRadius: 12,

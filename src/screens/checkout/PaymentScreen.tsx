@@ -27,7 +27,7 @@ export default function PaymentScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { addressId, totalAmount } = route.params;
+  const { addressId, totalAmount, coinsToSpend = 0 } = route.params;
 
   const { data: profile } = useProfile();
   const { items, clearCart } = useCart();
@@ -87,11 +87,13 @@ export default function PaymentScreen() {
         delivery_address_id: addressId,
         payment_method: selectedMethod,
         payment_intent_id: intentId,
+        coins_to_spend: coinsToSpend,
         items: items.map((item) => ({
           dishId: item.dish.dish_id,
           quantity: item.quantity,
           preferences: item.preferences,
-          price: Number(item.dish.price),
+          price: item.offerPrice ?? Number(item.dish.price),
+          ...(item.chefId ? { chefId: item.chefId } : {}),
         })),
       };
 
@@ -108,10 +110,10 @@ export default function PaymentScreen() {
         duration: 3000,
       });
 
-      // 5. Navigate to profile (where orders history is accessible)
+      // 5. Navigate to orders tab (where the new order can be tracked)
       navigation.reset({
         index: 0,
-        routes: [{ name: "Main", params: { screen: "Profile" } }],
+        routes: [{ name: "MainTabs", params: { screen: "Orders" } }],
       });
     } catch (error: any) {
       showMessage({

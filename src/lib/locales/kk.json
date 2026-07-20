@@ -27,7 +27,18 @@
     "unfollowError": "Жазылымды болдырмау мүмкін болмады",
     "month": "Ай",
     "customer": "Клиент",
-    "more": "Тағы"
+    "more": "Тағы",
+    "backToHome": "Басты бетке",
+    "block": "Бұғаттау",
+    "blockConfirmMessage": "Бұл пайдаланушының контентін енді көрмейсіз",
+    "blockConfirmTitle": "Пайдаланушыны бұғаттау керек пе?",
+    "chef": "Шеф",
+    "options": "Әрекеттер",
+    "report": "Шағымдану",
+    "unblock": "Бұғаттан шығару",
+    "warning": "Назар аударыңыз",
+    "address": "Жеткізу мекенжайы",
+    "typeMessage": "Хабарлама жазыңыз..."
   },
   "auth": {
     "welcome": "Қош келдіңіз",
@@ -93,7 +104,16 @@
     "loginWithEmail": "Email арқылы кіру",
     "errorAllFieldsRequired": "Барлық өрістерді толтырыңыз",
     "errorLoginFailed": "Кіру қатесі",
-    "verifyButton": "Растау"
+    "verifyButton": "Растау",
+    "referralLabel": "Рефералдық код (міндетті емес)",
+    "referralPlaceholder": "Достың коды",
+    "errorNameRequired": "Атыңызды енгізіңіз",
+    "errorPasswordRequired": "Құпиясөзді енгізіңіз",
+    "emailLabel": "Email",
+    "emailCodeLabel": "Хаттағы код",
+    "emailCodeSent": "Код поштаға жіберілді",
+    "emailCodeSentTo": "Код {{email}} поштасына жіберілді",
+    "enterEmailCode": "Хаттағы кодты енгізіңіз"
   },
   "roleSelection": {
     "title": "Рөлді таңдаңыз",
@@ -135,7 +155,8 @@
     "noDishes": "Тағамдар жоқ",
     "noChefs": "Аспазшылар жоқ",
     "onMap": "картада",
-    "tapMarker": "Аспазшы белгісін басыңыз"
+    "tapMarker": "Аспазшы белгісін басыңыз",
+    "searchPlaceholder": "Тағамдар мен аспаздарды іздеу"
   },
   "profile": {
     "title": "Профиль",
@@ -223,7 +244,8 @@
     },
     "confirmed": "Расталды",
     "delivered": "Жеткізілді",
-    "cancelled": "Болдырылмады"
+    "cancelled": "Болдырылмады",
+    "details": "Тапсырыс мәліметтері"
   },
   "chef": {
     "rating": "Рейтинг",
@@ -255,14 +277,35 @@
     "subscribers": "Жазылушылар",
     "following": "Жазылымдар (Following)",
     "addDishDesc": "Мәзірге жаңа тағам қосу",
-    "addVideoDesc": "Дайындау бейнесімен бөлісу"
+    "addVideoDesc": "Дайындау бейнесімен бөлісу",
+    "commission": "Комиссия",
+    "netRevenue": "Таза табыс",
+    "monthlyRank": "Ай рейтингі",
+    "rank_top3": "Топ-3",
+    "rank_top10": "Топ-10",
+    "detailsTitle": "Шеф туралы"
   },
   "dish": {
     "addToCart": "Себетке",
     "price": "Бағасы",
     "ingredients": "Ингредиенттер",
     "description": "Сипаттама",
-    "type": "Тағам түрі"
+    "type": "Тағам түрі",
+    "cantOrderOwn": "Өз тағамыңызға тапсырыс бере алмайсыз",
+    "unavailable": "Тағам қолжетімді емес",
+    "whoCooks": "Кім дайындайды",
+    "author": "Автор",
+    "you": "сіз",
+    "openNow": "Ашық",
+    "closedNow": "Жабық",
+    "iAlsoCook": "Мен де осы тағамды дайындаймын",
+    "changeMyPrice": "Бағамды өзгерту",
+    "stopCooking": "Дайындауды тоқтату",
+    "yourPriceTitle": "Тағамға сіздің бағаңыз, ₸",
+    "offerSaved": "Ұсынысыңыз сақталды — тағам мәзіріңізге қосылды",
+    "offerRemoved": "Сіз бұл тағамды енді дайындамайсыз",
+    "addedToFavorites": "Таңдаулыларға қосылды",
+    "removedFromFavorites": "Таңдаулылардан жойылды"
   },
   "addDish": {
     "title": "Тағам қосу",
@@ -292,7 +335,13 @@
     "errorCreatingDish": "Тағам жасау кезінде қате",
     "noPermission": "Рұқсат жоқ",
     "permissionRequired": "Галереяға қол жеткізу үшін рұқсат қажет",
-    "errorSelectingImage": "Суретті таңдау мүмкін болмады"
+    "errorSelectingImage": "Суретті таңдау мүмкін болмады",
+    "addPhotoText": "Фото қосу",
+    "category": "Санат",
+    "isSpicy": "Ащы тағам",
+    "photoLabel": "Тағам фотосы",
+    "submitBtn": "Тағамды мәзірге қосу",
+    "time": "Уақыты (мин)"
   },
   "addVideo": {
     "title": "Бейне қосу",
@@ -307,7 +356,12 @@
     "fillRequired": "Бейнені таңдап, атауын көрсетіңіз",
     "success": "Бейне қосылды!",
     "info": "Ұсынылатын формат: тік (9:16), 60 секундтан аспайды",
-    "pickVideo": "Бейне таңдау функциясы қосылады"
+    "pickVideo": "Бейне таңдау функциясы қосылады",
+    "tagChefs": "Аспаздарды белгілеу (5-ке дейін)",
+    "permissionRequired": "Галереяға рұқсат қажет",
+    "selectError": "Бейнені таңдау мүмкін болмады",
+    "searchChefs": "Аспаздың аты немесе @юзернеймі",
+    "noChefsFound": "Ешкім табылмады"
   },
   "addressManagement": {
     "title": "Мекенжайларды басқару",
@@ -353,10 +407,35 @@
     "selectTheme": "Тақырыпты таңдаңыз",
     "selectLanguage": "Тілді таңдаңыз",
     "system": "Жүйелік",
-    "changePasswordSuccess": "Құпия сөз сәтті өзгертілді",
+    "changePasswordSuccess": "Құпиясөз сәтті өзгертілді",
     "notificationsSaved": "Хабарландыру параметрлері сақталды",
     "termsText": "Пайдалану шарттары...",
-    "privacyText": "Құпиялылық саясаты..."
+    "privacyText": "Құпиялылық саясаты...",
+    "rewards": "Бонустар",
+    "support": "Қолдау қызметі",
+    "deleteAccount": "Аккаунтты жою",
+    "deletingAccount": "Аккаунт жойылуда...",
+    "deleteAccountWarning": "Аккаунтыңыз және барлық деректеріңіз (бейнелер, пікірлер, коиндар, мекенжайлар) біржола жойылады. Қалпына келтіру мүмкін емес.",
+    "deleteAccountContinue": "Жалғастыру",
+    "deleteAccountConfirmTitle": "Аккаунт шынымен жойылсын ба?",
+    "deleteAccountConfirmText": "Бұл соңғы ескерту. Әрекетті кері қайтару мүмкін емес.",
+    "deleteAccountFinal": "Біржола жою",
+    "deleteAccountActiveOrders": "Алдымен белсенді тапсырыстарды аяқтаңыз немесе бас тартыңыз.",
+    "username": "Юзернейм",
+    "usernameHint": "Ол арқылы сізді коллабтарда белгілей алады. 3–32 таңба: a-z, 0-9 және _",
+    "usernameSaved": "Юзернейм жаңартылды",
+    "usernameInvalid": "Юзернейм: 3–32 таңба, тек a-z, 0-9 және _",
+    "personalData": "Жеке деректер",
+    "nameRequired": "Атыңызды енгізіңіз",
+    "emailInvalid": "Пошта қате",
+    "profileSaved": "Деректер жаңартылды",
+    "passwordTooShort": "Құпиясөз кемінде 6 таңба болуы керек",
+    "passwordsDontMatch": "Құпиясөздер сәйкес емес",
+    "passwordCodeHint": "{{phone}} нөміріне SMS-код жіберілді. Оны және жаңа құпиясөзді енгізіңіз.",
+    "newPassword": "Жаңа құпиясөз",
+    "repeatPassword": "Құпиясөзді қайталаңыз",
+    "emailCodeLabel": "Жаңа поштадағы код",
+    "emailCodeSentTo": "Код {{email}} поштасына жіберілді"
   },
   "addressManagementNew": {
     "title": "Менің мекенжайларым",
@@ -379,7 +458,20 @@
     "addAddress": "Мекенжай қосу",
     "proceedToPayment": "Төлемге өту",
     "selectAddress": "Мекенжай таңдаңыз",
-    "selectAddressDescription": "Жеткізу мекенжайын таңдаңыз"
+    "selectAddressDescription": "Жеткізу мекенжайын таңдаңыз",
+    "useCoins": "Коинмен төлеу ({{count}})",
+    "coinsDiscount": "Коин жеңілдігі",
+    "pioneerDiscount": "Ашушы −{{percent}}%",
+    "deliveryFee": "Жеткізу",
+    "addItemsFirst": "Алдымен себетке тағам қосыңыз",
+    "emptyCart": "Себет бос",
+    "ownDishesRemoved": "Өз тағамдарыңызға тапсырыс беру мүмкін емес — олар себеттен алынды",
+    "successMessage": "Тапсырысыңыз қабылданып, шефке жіберілді",
+    "successTitle": "Тапсырыс рәсімделді!",
+    "title": "Тапсырысты рәсімдеу",
+    "trackOrder": "Тапсырысты қадағалау",
+    "chefClosed": "Тағамдардың бірінің аспазы қазір жабық. Тағамды ашып, басқа аспазды таңдаңыз.",
+    "quoteFailed": "Тапсырысты есептеу мүмкін болмады. Себетті тексеріп, қайталап көріңіз."
   },
   "payment": {
     "preparing": "Төлем дайындалуда...",
@@ -395,7 +487,8 @@
     "errorCreatingIntent": "Төлем сессиясын жасау сәтсіз",
     "errorProcessing": "Төлемді өңдеу сәтсіз",
     "orderPlaced": "Сіздің тапсырысыңыз рәсімделді!",
-    "stubNotice": "Демо режим: Төлем әрқашан сәтті"
+    "stubNotice": "Демо режим: Төлем әрқашан сәтті",
+    "title": "Төлем"
   },
   "cart": {
     "title": "Себет",
@@ -408,7 +501,9 @@
     "errorEmptyCart": "Себетке тағамдар қосыңыз",
     "orderPlaced": "Тапсырыс рәсімделді!",
     "chefWillBeNotified": "Аспазшы сіздің тапсырысыңыз туралы хабарландыру алады",
-    "errorPlaceOrder": "Тапсырысты рәсімдеу мүмкін болмады"
+    "errorPlaceOrder": "Тапсырысты рәсімдеу мүмкін болмады",
+    "delivery": "Жеткізу құны",
+    "subtotal": "Аралық жиынтық"
   },
   "feed": {
     "discover": "Табыңыз",
@@ -424,6 +519,158 @@
     "changeQuantityInCart": "Себеттегі санын өзгертіңіз",
     "addedToCart": "{{dishName}} себетке қосылды!",
     "profileUnavailable": "Профиль қол жетімді емес",
-    "notAChef": "Бұл пайдаланушы аспазшы емес"
+    "notAChef": "Бұл пайдаланушы аспазшы емес",
+    "following": "Жазылымдар",
+    "forYou": "Сізге арналған"
+  },
+  "wallet": {
+    "title": "Әмиян",
+    "balance": "Баланс",
+    "coins": "коин",
+    "history": "Тарих",
+    "noTransactions": "Әзірге операциялар жоқ",
+    "cashbackRate": "Әр жеткізілген тапсырыстан {{percent}}% кешбэк",
+    "progressToNext": "{{tier}} мәртебесіне дейін тағы {{amount}} ₸",
+    "maxTier": "Ең жоғары мәртебеге жеттіңіз",
+    "txTypes": {
+      "cashback": "Тапсырыс кешбэгі",
+      "referral_bonus": "Дос үшін бонус",
+      "taster_reward": "Дегустатор сыйақысы",
+      "order_payment": "Коинмен төленген тапсырыс",
+      "order_refund": "Коиндарды қайтару",
+      "battle_prize": "Рецепттер шайқасының жүлдесі",
+      "admin_adjust": "Түзету"
+    }
+  },
+  "tiers": {
+    "bronze": "Қола",
+    "silver": "Күміс",
+    "gold": "Алтын",
+    "platinum": "Платина"
+  },
+  "referral": {
+    "title": "Досыңды шақыр",
+    "hint": "Кодыңды аккаунты жоқ доспен бөліс — оның алғашқы тапсырысынан кейін {{bonus}} коин ал",
+    "tapToCopy": "Көшіру үшін бас",
+    "copied": "Код көшірілді",
+    "share": "Бөлісу",
+    "shareMessage": "Chef-те үй тағамына тапсырыс бер! Менің кодым {{code}} саған бонус береді: {{link}}",
+    "totalEarned": "Табылды: {{amount}} коин",
+    "invitedFriends": "Шақырылған достар",
+    "noInvited": "Әзірге ешкім шақырылмаған",
+    "friend": "Дос",
+    "statusPending": "Тапсырыс күтілуде",
+    "statusCompleted": "Бонус алынды"
+  },
+  "badges": {
+    "pioneer": "Ашушы",
+    "taster": "Дегустатор",
+    "early_user": "Ерте қолданушы",
+    "pioneerProgress": "Ашушы: {{current}}/{{required}} жаңа аспаз"
+  },
+  "battle": {
+    "title": "Рецепттер шайқасы",
+    "tab_current": "Ағымдағы",
+    "tab_history": "Жеңімпаздар",
+    "category": "Санат",
+    "entriesCount": "{{count}} өтінім",
+    "leaderboard": "Көшбасшылар",
+    "submitEntry": "Қатысу",
+    "alreadyEntered": "Сіз қатысудасыз",
+    "noEligibleDishes": "Санатта тағам жоқ",
+    "pickDish": "Тағамды таңдаңыз",
+    "entrySubmitted": "Өтінім берілді!",
+    "entryFailed": "Өтінім берілмеді",
+    "noEntries": "Әзірге өтінімдер жоқ",
+    "noActive": "Қазір белсенді шайқастар жоқ",
+    "noHistory": "Өткен шайқастар әлі жоқ",
+    "noWinner": "Жеңімпаз анықталмады"
+  },
+  "certification": {
+    "title": "Сертификаттау",
+    "certified": "Сертификатталған ✓",
+    "hint": "Асүйіңіз бен тағамдарыңыздың 2–5 фотосын жүктеңіз. ЖИ тазалық пен ұсынуды бағалайды — 7/10 және жоғары болса, сертификатталған аспаз белгісін аласыз.",
+    "pickPhotos": "Фото таңдау (2–5)",
+    "minPhotos": "Кемінде 2 фото қажет",
+    "submit": "Талдауға жіберу",
+    "analyzing": "ЖИ фотоларды талдап жатыр...",
+    "approved": "Сертификаттау өтті!",
+    "rejected": "Әзірге өтпеді",
+    "score": "Қорытынды",
+    "cleanliness": "Тазалық",
+    "plating": "Ұсыну",
+    "failed": "Талдау сәтсіз, кейінірек көріңіз",
+    "disclaimer": "Бағалауды ЖИ жасайды және қайта қаралуы мүмкін. Күніне бір рет."
+  },
+  "schedule": {
+    "title": "Жұмыс кестесі",
+    "openNow": "Қазір ашық",
+    "closedNow": "Қазір жабық",
+    "dayOff": "Демалыс",
+    "openTime": "Ашылу уақыты",
+    "closeTime": "Жабылу уақыты",
+    "save": "Кестені сақтау",
+    "saved": "Кесте сақталды",
+    "saveFailed": "Кестені сақтау сәтсіз",
+    "days": {
+      "0": "Жс",
+      "1": "Дс",
+      "2": "Сс",
+      "3": "Ср",
+      "4": "Бс",
+      "5": "Жм",
+      "6": "Сб"
+    }
+  },
+  "delivery": {
+    "status": "Жеткізу",
+    "statuses": {
+      "created": "Өтінім жасалды",
+      "courier_assigned": "Курьер тағайындалды",
+      "in_progress": "Жолда",
+      "delivered": "Жеткізілді",
+      "cancelled": "Бас тартылды"
+    }
+  },
+  "reactions": {
+    "title": "Видеореакциялар",
+    "short": "Реакция",
+    "empty": "Әзірге реакциялар жоқ — бірінші бол!",
+    "record": "Реакция жазу",
+    "uploading": "Жүктелуде...",
+    "published": "Реакция жарияланды!",
+    "failed": "Реакцияны жүктеу сәтсіз",
+    "locked": "Видеореакциялар Silver мәртебесінен ашылады"
+  },
+  "order": {
+    "trackingComingSoon": "Қадағалау жақында пайда болады",
+    "trackingDescription": "Мұнда курьер мен тапсырыс мәртебесі бар карта болады",
+    "trackingTitle": "Тапсырысты қадағалау"
+  },
+  "report": {
+    "reasonPlaceholder": "Себебін сипаттаңыз...",
+    "reasonTitle": "Шағым себебі"
+  },
+  "support": {
+    "messagePlaceholder": "Мәселеңізді сипаттаңыз...",
+    "noTickets": "Немен көмектесе аламыз?",
+    "startChat": "Чатты бастау",
+    "subjectPlaceholder": "Өтініш тақырыбы"
+  },
+  "apiErrors": {
+    "generic": "Бірдеңе дұрыс болмады. Қайталап көріңіз",
+    "phoneExists": "Бұл телефон нөмірімен пайдаланушы тіркелген",
+    "emailExists": "Бұл поштамен пайдаланушы тіркелген",
+    "phoneOrEmailExists": "Бұл телефон нөмірі немесе пошта бос емес",
+    "invalidCredentials": "Пошта немесе құпиясөз қате",
+    "phoneNotRegistered": "Бұл телефон нөмірі тіркелмеген",
+    "invalidOrExpiredCode": "Код қате немесе мерзімі өткен",
+    "userNotFound": "Пайдаланушы табылмады",
+    "chefNotFound": "Аспаз табылмады",
+    "dishNotFound": "Тағам табылмады",
+    "passwordTooShort": "Құпиясөз кемінде 6 таңба болуы керек",
+    "wrongCurrentPassword": "Ағымдағы құпиясөз қате",
+    "usernameTaken": "Бұл юзернейм бос емес",
+    "usernameInvalid": "Юзернейм: 3–32 таңба, тек a-z, 0-9 және _"
   }
 }

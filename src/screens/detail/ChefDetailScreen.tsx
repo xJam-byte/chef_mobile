@@ -32,7 +32,9 @@ import {
 } from "../../lib/hooks/useFollows";
 import { useChefReviews, useCreateReview } from "../../lib/hooks/useReviews";
 import ReviewModal from "../../components/ReviewModal";
+import { useChefSchedule } from "../../lib/hooks/useSchedule";
 import { showMessage } from "react-native-flash-message";
+import { translateApiError } from "../../lib/utils/apiErrors";
 import { API_BASE_URL } from "../../lib/constants";
 import type { RootStackScreenProps } from "../../navigation/types";
 import { useColors } from "../../lib/theme";
@@ -50,10 +52,12 @@ const ChefDetailScreen = ({
   const { chefId } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>("dishes");
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
   const { data: profile } = useProfile();
   const { data: chef, isLoading: isLoadingChef } = useChef(chefId);
+  const { data: chefSchedule } = useChefSchedule(chefId);
   const { data: dishesData, isLoading: isLoadingDishes } =
     useChefDishes(chefId);
 
@@ -86,15 +90,21 @@ const ChefDetailScreen = ({
   // Review mutation
   const createReviewMutation = useCreateReview();
 
-  const handleSubmitReview = async (rating: number, comment: string) => {
+  const handleSubmitReview = async (
+    rating: number,
+    comment: string,
+    photoUrl?: string,
+  ) => {
     if (!profile?.user_id) return;
 
     try {
+      setReviewError(null);
       await createReviewMutation.mutateAsync({
         userId: profile.user_id,
         chefId,
         rating,
         comment,
+        photoUrl,
       });
       setReviewModalVisible(false);
       showMessage({
@@ -103,13 +113,10 @@ const ChefDetailScreen = ({
         type: "success",
         icon: "success",
       });
-    } catch (error) {
-      showMessage({
-        message: t("common.error"),
-        description: t("profile.reviewError"),
-        type: "danger",
-        icon: "danger",
-      });
+    } catch (error: any) {
+      // Тост рисуется под нативной модалкой, поэтому ошибку показываем
+      // баннером внутри самой модалки.
+      setReviewError(translateApiError(error));
     }
   };
 
@@ -229,10 +236,17 @@ const ChefDetailScreen = ({
             <View
               style={[
                 styles.chefBadge,
-                { backgroundColor: c.primary, borderColor: c.surface },
+                {
+                  backgroundColor: chef.is_certified ? "#10B981" : c.primary,
+                  borderColor: c.surface,
+                },
               ]}
             >
-              <Ionicons name="star" size={12} color="#fff" />
+              <Ionicons
+                name={chef.is_certified ? "shield-checkmark" : "star"}
+                size={12}
+                color="#fff"
+              />
             </View>
           </View>
 
@@ -256,9 +270,45 @@ const ChefDetailScreen = ({
               </Text>
               <Text
                 style={[styles.ordersText, { color: "rgba(255,255,255,0.7)" }]}
+                numberOfLines={1}
               >
                 {dishes.length * 12} {t("chef.stats.totalOrders")}
               </Text>
+              {chefSchedule && (
+                <>
+                  <Text
+                    style={[styles.dotSep, { color: "rgba(255,255,255,0.5)" }]}
+                  >
+                    •
+                  </Text>
+                  <Text
+                    style={{
+                      color: chefSchedule.is_open_now ? "#4ADE80" : "#F87171",
+                      fontSize: 12,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {chefSchedule.is_open_now
+                      ? t("schedule.openNow")
+                      : t("schedule.closedNow")}
+                  </Text>
+                </>
+              )}
+              {!!(chef as any)?.rank_tier && (
+                <>
+                  <Text
+                    style={[styles.dotSep, { color: "rgba(255,255,255,0.5)" }]}
+                  >
+                    •
+                  </Text>
+                  <View style={styles.topChefPill}>
+                    <Ionicons name="trophy" size={12} color="#FFD700" />
+                    <Text style={styles.topChefText}>
+                      {t(`chef.rank_${(chef as any).rank_tier}`)}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -474,6 +524,7 @@ const ChefDetailScreen = ({
             </View>
           ) : (
             <View style={styles.emptyState}>
+              <Ionicons name="restaurant-outline" size={40} color={c.textMuted} />
               <Text style={[styles.emptyText, { color: c.textSecondary }]}>
                 {t("chef.noDishes")}
               </Text>
@@ -517,6 +568,7 @@ const ChefDetailScreen = ({
               ))
             ) : (
               <View style={styles.emptyState}>
+                <Ionicons name="videocam-off-outline" size={40} color={c.textMuted} />
                 <Text style={[styles.emptyText, { color: c.textSecondary }]}>
                   {t("chef.noVideos")}
                 </Text>
@@ -574,10 +626,14 @@ const ChefDetailScreen = ({
       {/* Review Modal */}
       <ReviewModal
         visible={reviewModalVisible}
-        onClose={() => setReviewModalVisible(false)}
+        onClose={() => {
+          setReviewModalVisible(false);
+          setReviewError(null);
+        }}
         onSubmit={handleSubmitReview}
         isLoading={createReviewMutation.isPending}
         chefName={chef?.users?.name}
+        errorText={reviewError}
       />
 
       {/* Report Modal */}
@@ -625,7 +681,23 @@ const styles = StyleSheet.create({
   profileTexts: { flex: 1 },
   name: { fontSize: 20, fontWeight: "700", marginBottom: 4 },
   handle: { fontSize: 14, marginBottom: 8 },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 4,
+    rowGap: 2,
+  },
+  topChefPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(255,215,0,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  topChefText: { color: "#FFD700", fontSize: 12, fontWeight: "700" },
   ratingText: { fontWeight: "700", fontSize: 14 },
   dotSep: { marginHorizontal: 4 },
   ordersText: { fontSize: 14 },
@@ -726,7 +798,14 @@ const styles = StyleSheet.create({
   },
   videoStatText: { color: "#fff", fontSize: 11, fontWeight: "600" },
 
-  emptyState: { alignItems: "center", paddingVertical: 64 },
+  // width 100%: внутри flexWrap-грида пустое состояние иначе прижимается влево
+  emptyState: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 64,
+    gap: 12,
+  },
   emptyText: { fontSize: 16, marginTop: 16 },
 
   reviewCard: {
