@@ -20,6 +20,11 @@ type UseDishesParams = {
   limit?: number;
   chefId?: number;
   search?: string;
+  type?: string;
+  is_spicy?: boolean;
+  is_healthy?: boolean;
+  meal_time?: string;
+  sort?: string;
 };
 
 /* =========================

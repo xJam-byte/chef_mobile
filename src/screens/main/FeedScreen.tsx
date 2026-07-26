@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   },
   trophyButton: {
     position: "absolute",
-    right: 16,
+    left: 16,
     top: 2,
   },
 

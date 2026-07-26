@@ -326,6 +326,11 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  type?: string;
+  is_spicy?: boolean;
+  is_healthy?: boolean;
+  meal_time?: string;
+  sort?: string;
 }
 
 // ==================== Follows ====================

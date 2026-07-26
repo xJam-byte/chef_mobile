@@ -44,7 +44,20 @@ export default function SearchScreen({ navigation }: any) {
     
     // Filter Modal state
     const [filterModalVisible, setFilterModalVisible] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<string | null>(null);
+    
+    // Filters State
+    const [activeSort, setActiveSort] = useState<string | null>(null);
+    const [filterType, setFilterType] = useState<string | null>(null);
+    const [filterMealTime, setFilterMealTime] = useState<string | null>(null);
+    const [filterSpicy, setFilterSpicy] = useState<boolean | null>(null);
+    const [filterHealthy, setFilterHealthy] = useState<boolean | null>(null);
+
+    // Temp state for modal
+    const [tempSort, setTempSort] = useState<string | null>(null);
+    const [tempType, setTempType] = useState<string | null>(null);
+    const [tempMealTime, setTempMealTime] = useState<string | null>(null);
+    const [tempSpicy, setTempSpicy] = useState<boolean | null>(null);
+    const [tempHealthy, setTempHealthy] = useState<boolean | null>(null);
 
     // Debounce search query to avoid spamming the backend
     useEffect(() => {
@@ -55,7 +68,17 @@ export default function SearchScreen({ navigation }: any) {
     }, [searchQuery]);
 
     // Fetch data with debounced search
-    const { data: dishesData, isLoading: isDishesLoading } = useDishes({ page: 1, limit: 50, search: debouncedSearch });
+    // Fetch data with debounced search and active filters
+    const { data: dishesData, isLoading: isDishesLoading } = useDishes({ 
+        page: 1, 
+        limit: 50, 
+        search: debouncedSearch,
+        type: filterType ?? undefined,
+        meal_time: filterMealTime ?? undefined,
+        is_spicy: filterSpicy ?? undefined,
+        is_healthy: filterHealthy ?? undefined,
+        sort: activeSort ?? undefined,
+    });
     const { data: chefsData, isLoading: isChefsLoading } = useChefs({ page: 1, limit: 50, search: debouncedSearch });
     
     const dishes = dishesData?.data ?? [];
@@ -138,7 +161,14 @@ export default function SearchScreen({ navigation }: any) {
                     
                     <TouchableOpacity 
                         style={[styles.filterButton, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}
-                        onPress={() => setFilterModalVisible(true)}
+                        onPress={() => {
+                            setTempSort(activeSort);
+                            setTempType(filterType);
+                            setTempMealTime(filterMealTime);
+                            setTempSpicy(filterSpicy);
+                            setTempHealthy(filterHealthy);
+                            setFilterModalVisible(true);
+                        }}
                     >
                         <Ionicons name="options-outline" size={20} color="#fff" />
                     </TouchableOpacity>
@@ -303,41 +333,140 @@ export default function SearchScreen({ navigation }: any) {
                         </View>
                         
                         <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                            {/* Example Filters - you can expand this based on your API */}
-                            <Text style={[styles.filterSectionTitle, { color: c.text }]}>{t('search.sortBy', 'Sort By')}</Text>
+                            {/* Сортировка */}
+                            <Text style={[styles.filterSectionTitle, { color: c.text }]}>{t('search.sortBy', 'Сортировка')}</Text>
                             <View style={styles.filterOptions}>
                                 {['rating', 'price_asc', 'price_desc', 'newest'].map((option) => (
                                     <TouchableOpacity
                                         key={option}
                                         style={[
                                             styles.filterOptionButton,
-                                            { backgroundColor: activeFilter === option ? c.primary : c.background, borderColor: activeFilter === option ? c.primary : c.border }
+                                            { backgroundColor: tempSort === option ? c.primary : c.background, borderColor: tempSort === option ? c.primary : c.border }
                                         ]}
-                                        onPress={() => setActiveFilter(option)}
+                                        onPress={() => setTempSort(option)}
                                     >
                                         <Text style={[
                                             styles.filterOptionText,
-                                            { color: activeFilter === option ? '#fff' : c.text }
+                                            { color: tempSort === option ? '#fff' : c.text }
                                         ]}>
                                             {t(`search.sort_${option}`, option)}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
+
+                            {/* Тип блюда */}
+                            <Text style={[styles.filterSectionTitle, { color: c.text, marginTop: 20 }]}>{t('search.dishType', 'Тип блюда')}</Text>
+                            <View style={styles.filterOptions}>
+                                {['main', 'soup', 'snack', 'dessert', 'drink', 'any'].map((option) => {
+                                    const isSelected = tempType === option || (option === 'any' && !tempType);
+                                    return (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.filterOptionButton,
+                                            { backgroundColor: isSelected ? c.primary : c.background, borderColor: isSelected ? c.primary : c.border }
+                                        ]}
+                                        onPress={() => setTempType(option === 'any' ? null : option)}
+                                    >
+                                        <Text style={[
+                                            styles.filterOptionText,
+                                            { color: isSelected ? '#fff' : c.text }
+                                        ]}>
+                                            {t(`search.type_${option}`, option === 'any' ? 'Любой' : option)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )})}
+                            </View>
                             
-                            {/* You could add price ranges, dish types, etc here */}
+                            {/* Время приема пищи */}
+                            <Text style={[styles.filterSectionTitle, { color: c.text, marginTop: 20 }]}>{t('search.mealTime', 'Время приема')}</Text>
+                            <View style={styles.filterOptions}>
+                                {['any', 'breakfast', 'lunch', 'dinner'].map((option) => {
+                                    const isSelected = tempMealTime === option || (option === 'any' && !tempMealTime);
+                                    return (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.filterOptionButton,
+                                            { backgroundColor: isSelected ? c.primary : c.background, borderColor: isSelected ? c.primary : c.border }
+                                        ]}
+                                        onPress={() => setTempMealTime(option === 'any' ? null : option)}
+                                    >
+                                        <Text style={[
+                                            styles.filterOptionText,
+                                            { color: isSelected ? '#fff' : c.text }
+                                        ]}>
+                                            {t(`search.meal_${option}`, option === 'any' ? 'Любое' : option)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )})}
+                            </View>
+
+                            {/* Особенности */}
+                            <Text style={[styles.filterSectionTitle, { color: c.text, marginTop: 20 }]}>{t('search.features', 'Особенности')}</Text>
+                            <View style={styles.filterOptions}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterOptionButton,
+                                        { backgroundColor: tempSpicy ? c.primary : c.background, borderColor: tempSpicy ? c.primary : c.border }
+                                    ]}
+                                    onPress={() => setTempSpicy(!tempSpicy)}
+                                >
+                                    <Text style={[
+                                        styles.filterOptionText,
+                                        { color: tempSpicy ? '#fff' : c.text }
+                                    ]}>
+                                        {t('search.feature_spicy', '🌶️ Острое')}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterOptionButton,
+                                        { backgroundColor: tempHealthy ? c.primary : c.background, borderColor: tempHealthy ? c.primary : c.border }
+                                    ]}
+                                    onPress={() => setTempHealthy(!tempHealthy)}
+                                >
+                                    <Text style={[
+                                        styles.filterOptionText,
+                                        { color: tempHealthy ? '#fff' : c.text }
+                                    ]}>
+                                        {t('search.feature_healthy', '🥗 ПП (Здоровое)')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
                         </ScrollView>
                         
                         <View style={[styles.modalFooter, { borderTopColor: c.border }]}>
                             <Button 
                                 title={t('search.resetFilters', 'Reset')} 
                                 variant="outline" 
-                                onPress={() => { setActiveFilter(null); setFilterModalVisible(false); }} 
+                                onPress={() => { 
+                                    setTempSort(null);
+                                    setTempType(null);
+                                    setTempMealTime(null);
+                                    setTempSpicy(null);
+                                    setTempHealthy(null);
+                                    setActiveSort(null);
+                                    setFilterType(null);
+                                    setFilterMealTime(null);
+                                    setFilterSpicy(null);
+                                    setFilterHealthy(null);
+                                    setFilterModalVisible(false);
+                                }} 
                                 style={{ flex: 1, marginRight: 8 }} 
                             />
                             <Button 
                                 title={t('search.applyFilters', 'Apply')} 
-                                onPress={() => setFilterModalVisible(false)} 
+                                onPress={() => {
+                                    setActiveSort(tempSort);
+                                    setFilterType(tempType);
+                                    setFilterMealTime(tempMealTime);
+                                    setFilterSpicy(tempSpicy);
+                                    setFilterHealthy(tempHealthy);
+                                    setFilterModalVisible(false);
+                                }} 
                                 style={{ flex: 1 }} 
                             />
                         </View>

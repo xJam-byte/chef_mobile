@@ -17,11 +17,22 @@ import type {
 export const getAllDishes = async (
   params: PaginationParams = {}
 ): Promise<DishesResponse> => {
-  const { page = 1, limit = 10, search } = params;
-  let url = `/dishes?page=${page}&limit=${limit}`;
-  if (search) {
-    url += `&search=${encodeURIComponent(search)}`;
-  }
+  const { page = 1, limit = 10, search, type, is_spicy, is_healthy, meal_time, sort } = params;
+  
+  // Use URLSearchParams for safe query string generation
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('limit', limit.toString());
+  
+  if (search) queryParams.append('search', search);
+  if (type) queryParams.append('type', type);
+  if (is_spicy !== undefined) queryParams.append('is_spicy', is_spicy.toString());
+  if (is_healthy !== undefined) queryParams.append('is_healthy', is_healthy.toString());
+  if (meal_time) queryParams.append('meal_time', meal_time);
+  if (sort) queryParams.append('sort', sort);
+
+  const url = `/dishes?${queryParams.toString()}`;
+  
   const response = await apiClient.get<DishesResponse>(url);
   return response.data;
 };

@@ -139,8 +139,8 @@ export default function OrdersScreen({ navigation }: any) {
                                  {order.order_details?.[0]?.dishes?.name || t('orders.dish')}
                             </Text>
                             <Text style={{ color: c.textSecondary, fontSize: 13, marginTop: 4 }}>
-                                {order.order_details?.length || 1} items
-                                {(order.order_details?.length || 0) > 1 && ` • +${(order.order_details?.length || 0) - 1} more`}
+                                {order.order_details?.length || 1} {t('orders.items', 'items')}
+                                {(order.order_details?.length || 0) > 1 && ` • +${(order.order_details?.length || 0) - 1} ${t('orders.more', 'more')}`}
                             </Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>

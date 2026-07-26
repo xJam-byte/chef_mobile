@@ -124,7 +124,7 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
             style={styles.chefBtnGradient}
           >
             <Ionicons name={nextAction.icon as any} size={24} color="#FFF" />
-            <Text style={styles.chefBtnText}>{nextAction.label}</Text>
+            <Text style={styles.chefBtnText}>{t(`orders.actions.${nextAction.next}`, nextAction.label)}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -137,7 +137,7 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
     <View style={[styles.container, { backgroundColor: c.background }]}>
       <PremiumHeader
         title={t("orders.tracking.title")}
-        subtitle={`Order #${orderId}`}
+        subtitle={t('orders.orderNumber', { id: orderId, defaultValue: `Order #${orderId}` })}
         backButton
       />
 

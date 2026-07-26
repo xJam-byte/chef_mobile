@@ -607,7 +607,7 @@ export default function ProfileScreen({ navigation }: any) {
                       <Text
                         style={[styles.customerItemTitle, { color: c.text }]}
                       >
-                        Order #{order.order_id}
+                        {t('orders.orderNumber', { id: order.order_id, defaultValue: `Order #${order.order_id}` })}
                       </Text>
                       <Text
                         style={[styles.customerPrice, { color: c.primary }]}
@@ -621,7 +621,7 @@ export default function ProfileScreen({ navigation }: any) {
                         { color: c.textSecondary },
                       ]}
                     >
-                      {order.order_details?.length} items •{" "}
+                      {order.order_details?.length} {t('orders.items', 'items')} •{" "}
                       {new Date(order.createdAt).toLocaleDateString()}
                     </Text>
                     <View style={{ flexDirection: "row", marginTop: 4 }}>
@@ -632,7 +632,7 @@ export default function ProfileScreen({ navigation }: any) {
                         ]}
                       >
                         <Text style={[styles.statusText, { color: c.success }]}>
-                          {order.status}
+                          {t(`order.status.${order.status?.toLowerCase()}`, { defaultValue: order.status }) as string}
                         </Text>
                       </View>
                     </View>
