@@ -39,6 +39,9 @@ export const COLORS = LIGHT_COLORS;
 export const ORDER_STATUS = {
   pending: "В ожидании",
   confirmed: "Подтверждён",
+  preparing: "Готовится",
+  ready: "Готов",
+  delivering: "Доставляется",
   delivered: "Доставлен",
   cancelled: "Отменён",
 } as const;
@@ -49,6 +52,11 @@ export const DISH_TYPES = {
   dinner: "Ужин",
   dessert: "Десерт",
   drink: "Напиток",
+  snack: "Закуска",
+  soup: "Суп",
+  salad: "Салат",
+  bakery: "Выпечка",
+  other: "Другое",
 } as const;
 
 export const QUERY_KEYS = {
@@ -59,6 +67,7 @@ export const QUERY_KEYS = {
   USER: (id?: number) => ["user", id] as const,
 
   REVIEWS: (chefId?: number) => ["reviews", chefId] as const,
+  DISH_REVIEWS: (dishId?: number) => ["dish-reviews", dishId] as const,
   // AUTH
 
   // DISHES

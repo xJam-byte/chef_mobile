@@ -274,7 +274,8 @@ export interface CreateOrderDto {
 export interface Review {
   review_id: number;
   userId: number;
-  chefId: number;
+  chefId?: number;
+  dishId?: number;
   rating: number;
   comment?: string;
   review_date: string;
@@ -285,7 +286,8 @@ export interface Review {
 
 export interface CreateReviewDto {
   userId: number;
-  chefId: number;
+  chefId?: number;
+  dishId?: number;
   rating: number;
   comment?: string;
   photoUrl?: string;
@@ -323,6 +325,7 @@ export interface CartItem {
 export interface PaginationParams {
   page?: number;
   limit?: number;
+  search?: string;
 }
 
 // ==================== Follows ====================

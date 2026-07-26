@@ -18,6 +18,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
+import { Video, ResizeMode } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { showMessage } from "react-native-flash-message";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,15 +27,14 @@ import { useTranslation } from "react-i18next";
 
 import { Button, Badge, Spinner, Avatar } from "../../components/ui";
 import { useDish, useProfile, useCart } from "../../lib/hooks";
-import {
-  useIsFavorite,
-  useToggleFavorite,
-} from "../../lib/hooks/useFavorites";
+import { useIsFavorite, useToggleFavorite } from "../../lib/hooks/useFavorites";
 import {
   useDishChefs,
   useUpsertDishOffer,
   useDeleteDishOffer,
 } from "../../lib/hooks/useDishes";
+import { useDishReviews, useCreateReview } from "../../lib/hooks/useReviews";
+import ReviewModal from "../../components/ReviewModal";
 import { useRequestNutrition } from "../../lib/hooks/useAiFeatures";
 import { DISH_TYPES } from "../../lib/constants";
 import type { RootStackScreenProps } from "../../navigation/types";
@@ -65,6 +65,35 @@ const DishDetailScreen = ({
   const [selectedChefId, setSelectedChefId] = useState<number | null>(null);
   const [offerModalVisible, setOfferModalVisible] = useState(false);
   const [offerPriceInput, setOfferPriceInput] = useState("");
+
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
+  const { data: reviews = [] } = useDishReviews(dishId);
+  const createReviewMutation = useCreateReview();
+
+  const handleSubmitReview = async (rating: number, comment: string, photoUrl?: string) => {
+    if (!profile?.user_id) return;
+    try {
+      setReviewError(null);
+      await createReviewMutation.mutateAsync({
+        userId: profile.user_id,
+        dishId,
+        rating,
+        comment,
+        photoUrl,
+      });
+      setReviewModalVisible(false);
+      showMessage({
+        message: t("common.success"),
+        description: t("profile.reviewSent"),
+        type: "success",
+        icon: "success",
+      });
+    } catch (error: any) {
+      setReviewError(error.response?.data?.message || error.message);
+    }
+  };
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -364,21 +393,25 @@ const DishDetailScreen = ({
               </View>
             )}
 
-            {/* Rating Placeholder - could be real if dish has rating */}
-            <View
-              style={[
-                styles.infoBadge,
-                { backgroundColor: c.surface, borderColor: c.border },
-              ]}
-            >
-              <Ionicons
-                name="star"
-                size={16}
-                color="#FFD700"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={{ color: c.text, fontWeight: "600" }}>4.8</Text>
-            </View>
+            {/* Rating */}
+            {(dish as any).reviews_count > 0 && (
+              <View
+                style={[
+                  styles.infoBadge,
+                  { backgroundColor: c.surface, borderColor: c.border },
+                ]}
+              >
+                <Ionicons
+                  name="star"
+                  size={16}
+                  color="#FFD700"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={{ color: c.text, fontWeight: "600" }}>
+                  {Number((dish as any).rating).toFixed(1)} ({(dish as any).reviews_count})
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={[styles.divider, { backgroundColor: c.border }]} />
@@ -407,6 +440,24 @@ const DishDetailScreen = ({
             </View>
           </View>
 
+          {/* Видео блюда */}
+          {(dish as any).videoUrl && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>
+                Видео рецепт / презентация
+              </Text>
+              <View style={styles.videoContainer}>
+                <Video
+                  source={{ uri: (dish as any).videoUrl }}
+                  style={styles.dishVideo}
+                  useNativeControls
+                  resizeMode={ResizeMode.COVER}
+                  isLooping={false}
+                />
+              </View>
+            </View>
+          )}
+
           {/* Кто готовит: повара с их ценами */}
           {offerList.length > 0 && (
             <View style={styles.section}>
@@ -423,9 +474,7 @@ const DishDetailScreen = ({
                     style={[
                       styles.offerRow,
                       {
-                        backgroundColor: isSelected
-                          ? c.primary + "12"
-                          : c.card,
+                        backgroundColor: isSelected ? c.primary + "12" : c.card,
                         borderColor: isSelected ? c.primary : c.border,
                         opacity: disabled ? 0.55 : 1,
                       },
@@ -469,10 +518,7 @@ const DishDetailScreen = ({
                       <View style={styles.offerMetaRow}>
                         <Ionicons name="star" size={12} color="#f5a623" />
                         <Text
-                          style={[
-                            styles.offerMeta,
-                            { color: c.textSecondary },
-                          ]}
+                          style={[styles.offerMeta, { color: c.textSecondary }]}
                         >
                           {o.rating.toFixed(1)}
                         </Text>
@@ -502,9 +548,7 @@ const DishDetailScreen = ({
                       {o.price.toLocaleString()} ₸
                     </Text>
                     <Ionicons
-                      name={
-                        isSelected ? "radio-button-on" : "radio-button-off"
-                      }
+                      name={isSelected ? "radio-button-on" : "radio-button-off"}
                       size={20}
                       color={isSelected ? c.primary : c.textMuted}
                     />
@@ -569,7 +613,10 @@ const DishDetailScreen = ({
                   КБЖУ на порцию
                 </Text>
                 <View
-                  style={[styles.aiBadge, { backgroundColor: c.primary + "15" }]}
+                  style={[
+                    styles.aiBadge,
+                    { backgroundColor: c.primary + "15" },
+                  ]}
                 >
                   <Ionicons name="sparkles" size={12} color={c.primary} />
                   <Text style={[styles.aiBadgeText, { color: c.primary }]}>
@@ -586,22 +633,30 @@ const DishDetailScreen = ({
                 ].map((n) => (
                   <View
                     key={n.label}
-                    style={[styles.nutritionChip, { backgroundColor: c.pillBg }]}
+                    style={[
+                      styles.nutritionChip,
+                      { backgroundColor: c.pillBg },
+                    ]}
                   >
                     <Text style={[styles.nutritionValue, { color: c.text }]}>
                       {n.value}
                     </Text>
                     <Text
-                      style={[styles.nutritionLabel, { color: c.textSecondary }]}
+                      style={[
+                        styles.nutritionLabel,
+                        { color: c.textSecondary },
+                      ]}
                     >
                       {n.label}
                     </Text>
                   </View>
                 ))}
               </View>
-              <Text style={[styles.nutritionDisclaimer, { color: c.textMuted }]}>
-                ≈ Примерная оценка ИИ по названию и ингредиентам блюда.
-                Точная граммовка не указывается, значения могут отличаться от
+              <Text
+                style={[styles.nutritionDisclaimer, { color: c.textMuted }]}
+              >
+                ≈ Примерная оценка ИИ по названию и ингредиентам блюда. Точная
+                граммовка не указывается, значения могут отличаться от
                 фактических.
               </Text>
             </View>
@@ -622,6 +677,46 @@ const DishDetailScreen = ({
               />
             </View>
           ) : null}
+
+          {/* Отзывы на блюдо */}
+          <View style={[styles.section, { marginTop: 16 }]}>
+            <View style={[styles.headerRow, { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }]}>
+              <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>
+                {t("profile.reviews")} ({reviews.length})
+              </Text>
+              {!isOwner && (
+                <TouchableOpacity onPress={() => setReviewModalVisible(true)}>
+                  <Text style={{ color: c.primary, fontWeight: "600" }}>{t("profile.leaveReview")}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {reviews.length === 0 ? (
+              <Text style={{ color: c.textMuted }}>{t("chef.noReviewsYet", "Пока нет отзывов")}</Text>
+            ) : (
+              reviews.map((r: any) => (
+                <View key={r.review_id} style={[styles.reviewCard, { borderColor: c.border, backgroundColor: c.card }]}>
+                  <View style={styles.reviewHeader}>
+                    <Avatar uri={r.users.profile_pic} name={r.users.name} size="sm" />
+                    <View style={styles.reviewUserMeta}>
+                      <Text style={[styles.reviewUserName, { color: c.text }]}>{r.users.name}</Text>
+                      <Text style={[styles.reviewDate, { color: c.textSecondary }]}>
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <View style={styles.reviewRatingBadge}>
+                      <Ionicons name="star" size={12} color="#F97316" />
+                      <Text style={styles.reviewRatingText}>{r.rating}</Text>
+                    </View>
+                  </View>
+                  {!!r.comment && <Text style={[styles.reviewText, { color: c.text }]}>{r.comment}</Text>}
+                  {!!r.photoUrl && (
+                    <Image source={{ uri: r.photoUrl }} style={styles.reviewPhoto} resizeMode="cover" />
+                  )}
+                </View>
+              ))
+            )}
+          </View>
         </View>
       </Animated.ScrollView>
 
@@ -631,7 +726,7 @@ const DishDetailScreen = ({
           c.background === "#000000" ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)",
           c.background,
         ]}
-        style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}
+        style={[styles.footer, { paddingBottom: insets.bottom }]}
       >
         <Button
           title={
@@ -671,7 +766,11 @@ const DishDetailScreen = ({
             <TextInput
               style={[
                 styles.modalInput,
-                { color: c.text, borderColor: c.border, backgroundColor: c.background },
+                {
+                  color: c.text,
+                  borderColor: c.border,
+                  backgroundColor: c.background,
+                },
               ]}
               keyboardType="number-pad"
               value={offerPriceInput}
@@ -718,6 +817,15 @@ const DishDetailScreen = ({
           </View>
         </View>
       </Modal>
+
+      {/* Модалка для отзыва на блюдо */}
+      <ReviewModal
+        visible={reviewModalVisible}
+        onClose={() => setReviewModalVisible(false)}
+        onSubmit={handleSubmitReview}
+        isLoading={createReviewMutation.isPending}
+        errorText={reviewError}
+      />
     </View>
   );
 };
@@ -935,6 +1043,66 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  reviewCard: {
+    marginBottom: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  reviewUserMeta: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  reviewUserName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  reviewDate: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  reviewRatingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9731615",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  reviewRatingText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#F97316",
+    marginLeft: 4,
+  },
+  reviewText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  reviewPhoto: {
+    width: "100%",
+    height: 180,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  videoContainer: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 8,
+    backgroundColor: "#000",
+  },
+  dishVideo: {
+    width: "100%",
+    height: "100%",
   },
   errorContainer: {
     flex: 1,

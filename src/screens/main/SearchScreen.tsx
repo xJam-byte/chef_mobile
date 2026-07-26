@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
@@ -7,18 +7,21 @@ import {
     TouchableOpacity,
     FlatList,
     Platform,
+    ActivityIndicator,
+    Modal,
+    ScrollView,
 } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColors } from "../../lib/theme";
-import { useChefs } from "../../lib/hooks";
-import { ChefCard } from "../../components/features"; 
-import { PremiumHeader } from "../../components/ui";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useChefs, useDishes } from "../../lib/hooks";
+import { useCart } from "../../lib/hooks/useCart";
+import { ChefCard, DishCard } from "../../components/features"; 
+import { PremiumHeader, Button } from "../../components/ui";
 
-type TabType = "map" | "chefs";
+type TabType = "dishes" | "chefs" | "map";
 
 // Default location - Almaty, Kazakhstan
 const DEFAULT_REGION = {
@@ -31,17 +34,35 @@ const DEFAULT_REGION = {
 export default function SearchScreen({ navigation }: any) {
     const c = useColors();
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<TabType>("chefs");
+    const { addItem } = useCart();
+    
+    const [activeTab, setActiveTab] = useState<TabType>("dishes");
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [userLocation, setUserLocation] = useState<Region | null>(null);
     const [locationPermission, setLocationPermission] = useState(false);
+    
+    // Filter Modal state
+    const [filterModalVisible, setFilterModalVisible] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-    // Fetch chefs
-    const { data: chefsData, isLoading } = useChefs({ page: 1, limit: 50 });
+    // Debounce search query to avoid spamming the backend
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 400);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    // Fetch data with debounced search
+    const { data: dishesData, isLoading: isDishesLoading } = useDishes({ page: 1, limit: 50, search: debouncedSearch });
+    const { data: chefsData, isLoading: isChefsLoading } = useChefs({ page: 1, limit: 50, search: debouncedSearch });
+    
+    const dishes = dishesData?.data ?? [];
     const chefs = chefsData?.data ?? [];
 
     // Request location permission and get user location
-    React.useEffect(() => {
+    useEffect(() => {
         (async () => {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") {
@@ -64,17 +85,6 @@ export default function SearchScreen({ navigation }: any) {
             }
         })();
     }, []);
-
-    // Filter chefs based on search query
-    const filteredChefs = chefs.filter((chef: any) => {
-        if (!searchQuery.trim()) return true;
-
-        const query = searchQuery.toLowerCase();
-        const name = chef.users?.name?.toLowerCase() || "";
-        const bio = chef.bio?.toLowerCase() || "";
-        
-        return name.includes(query) || bio.includes(query);
-    });
 
     // Generate chef markers
     const baseLocation = userLocation || DEFAULT_REGION;
@@ -99,6 +109,10 @@ export default function SearchScreen({ navigation }: any) {
         };
     });
 
+    const handleAddToCart = (dish: any) => {
+      addItem(dish, 1);
+    };
+
     return (
         <View style={[styles.root, { backgroundColor: c.background }]}>
             <PremiumHeader compact>
@@ -107,7 +121,7 @@ export default function SearchScreen({ navigation }: any) {
                         <Ionicons name="search" size={20} color="#fff" style={styles.searchIcon} />
                         <TextInput
                             style={[styles.searchInput, { color: '#fff' }]}
-                            placeholder={t('search.searchPlaceholder')}
+                            placeholder={t('search.searchPlaceholder', 'Search...')}
                             placeholderTextColor="rgba(255,255,255,0.75)"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -122,100 +136,214 @@ export default function SearchScreen({ navigation }: any) {
                         )}
                     </View>
                     
-                    <TouchableOpacity style={[styles.filterButton, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
-                            <Ionicons name="options-outline" size={20} color="#fff" />
+                    <TouchableOpacity 
+                        style={[styles.filterButton, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}
+                        onPress={() => setFilterModalVisible(true)}
+                    >
+                        <Ionicons name="options-outline" size={20} color="#fff" />
                     </TouchableOpacity>
                 </View>
             </PremiumHeader>
 
-                {/* Tab Switcher (Floating or Integrated?) -> Integrated for now */}
-                <View style={[styles.tabSwitcher, { borderBottomColor: c.border }]}>
-                    <TouchableOpacity
+            {/* Tab Switcher */}
+            <View style={[styles.tabSwitcher, { borderBottomColor: c.border }]}>
+                <TouchableOpacity
+                    style={[
+                        styles.tab,
+                        activeTab === "dishes" && { borderBottomColor: c.primary },
+                    ]}
+                    onPress={() => setActiveTab("dishes")}
+                >
+                    <Text
                         style={[
-                            styles.tab,
-                            activeTab === "chefs" && { borderBottomColor: c.primary },
+                            styles.tabText,
+                            { color: activeTab === "dishes" ? c.primary : c.textMuted },
                         ]}
-                        onPress={() => setActiveTab("chefs")}
                     >
-                        <Text
-                            style={[
-                                styles.tabText,
-                                { color: activeTab === "chefs" ? c.primary : c.textMuted },
-                            ]}
-                        >
-                            {t('search.chefs')}
-                        </Text>
-                    </TouchableOpacity>
+                        {t('search.dishes', 'Dishes')}
+                    </Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity
+                <TouchableOpacity
+                    style={[
+                        styles.tab,
+                        activeTab === "chefs" && { borderBottomColor: c.primary },
+                    ]}
+                    onPress={() => setActiveTab("chefs")}
+                >
+                    <Text
                         style={[
-                            styles.tab,
-                            activeTab === "map" && { borderBottomColor: c.primary },
+                            styles.tabText,
+                            { color: activeTab === "chefs" ? c.primary : c.textMuted },
                         ]}
-                        onPress={() => setActiveTab("map")}
                     >
-                        <Text
-                            style={[
-                                styles.tabText,
-                                { color: activeTab === "map" ? c.primary : c.textMuted },
-                            ]}
-                        >
-                            {t('search.map')}
-                        </Text>
-                    </TouchableOpacity>
+                        {t('search.chefs', 'Chefs')}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.tab,
+                        activeTab === "map" && { borderBottomColor: c.primary },
+                    ]}
+                    onPress={() => setActiveTab("map")}
+                >
+                    <Text
+                        style={[
+                            styles.tabText,
+                            { color: activeTab === "map" ? c.primary : c.textMuted },
+                        ]}
+                    >
+                        {t('search.map', 'Map')}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Content Area */}
+            {activeTab === "map" ? (
+                <View style={styles.mapContainer}>
+                    <MapView
+                        style={styles.map}
+                        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+                        initialRegion={userLocation || DEFAULT_REGION}
+                        showsUserLocation={locationPermission}
+                        showsMyLocationButton={locationPermission}
+                        customMapStyle={c.name === 'dark' ? DARK_MAP_STYLE : []}
+                    >
+                        {chefMarkers.map((marker) => (
+                            <Marker
+                                key={marker.chef.chef_id}
+                                coordinate={marker.coordinate}
+                                onPress={() => {
+                                    navigation.navigate("ChefDetail", { chefId: marker.chef.chef_id });
+                                }}
+                            >
+                                <View style={[
+                                    styles.markerContainer, 
+                                    { backgroundColor: c.primary, borderColor: "#fff" }
+                                ]}>
+                                    <Ionicons name="restaurant" size={16} color="#fff" />
+                                </View>
+                            </Marker>
+                        ))}
+                    </MapView>
                 </View>
+            ) : activeTab === "dishes" ? (
+                <FlatList
+                    data={dishes}
+                    renderItem={({ item }) => (
+                        <View style={styles.cardWrapper}>
+                            <DishCard 
+                                dish={item} 
+                                onPress={() => navigation.navigate("DishDetail", { dishId: item.dish_id })} 
+                                onAddToCart={() => handleAddToCart(item)}
+                            />
+                        </View>
+                    )}
+                    keyExtractor={(item) => item.dish_id.toString()}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            {isDishesLoading ? (
+                                <ActivityIndicator size="large" color={c.primary} />
+                            ) : (
+                                <>
+                                    <Ionicons name="restaurant-outline" size={48} color={c.textMuted} />
+                                    <Text style={[styles.emptyText, { color: c.textMuted }]}>
+                                        {debouncedSearch ? t('search.noDishesFound', 'No dishes found') : t('search.noDishes', 'No dishes available')}
+                                    </Text>
+                                </>
+                            )}
+                        </View>
+                    }
+                />
+            ) : (
+                <FlatList
+                    data={chefs}
+                    renderItem={({ item }) => (
+                        <View style={styles.cardWrapper}>
+                            <ChefCard chef={item} onPress={() => navigation.navigate("ChefDetail", { chefId: item.chef_id })} />
+                        </View>
+                    )}
+                    keyExtractor={(item) => item.chef_id.toString()}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            {isChefsLoading ? (
+                                <ActivityIndicator size="large" color={c.primary} />
+                            ) : (
+                                <>
+                                    <Ionicons name="search-outline" size={48} color={c.textMuted} />
+                                    <Text style={[styles.emptyText, { color: c.textMuted }]}>
+                                        {debouncedSearch ? t('search.noResults', 'No chefs found for this query') : t('search.noChefs', 'No chefs available')}
+                                    </Text>
+                                </>
+                            )}
+                        </View>
+                    }
+                />
+            )}
 
-                {/* Content Area */}
-                {activeTab === "map" ? (
-                    <View style={styles.mapContainer}>
-                        <MapView
-                            style={styles.map}
-                            provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-                            initialRegion={userLocation || DEFAULT_REGION}
-                            showsUserLocation={locationPermission}
-                            showsMyLocationButton={locationPermission}
-                            customMapStyle={c.name === 'dark' ? DARK_MAP_STYLE : []}
-                        >
-                            {chefMarkers.map((marker) => (
-                                <Marker
-                                    key={marker.chef.chef_id}
-                                    coordinate={marker.coordinate}
-                                    onPress={() => {
-                                        navigation.navigate("ChefDetail", { chefId: marker.chef.chef_id });
-                                    }}
-                                >
-                                    <View style={[
-                                        styles.markerContainer, 
-                                        { backgroundColor: c.primary, borderColor: "#fff" }
-                                    ]}>
-                                        <Ionicons name="restaurant" size={16} color="#fff" />
-                                    </View>
-                                </Marker>
-                            ))}
-                        </MapView>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={filteredChefs}
-                        renderItem={({ item }) => (
-                             <View style={styles.cardWrapper}>
-                                <ChefCard chef={item} onPress={() => navigation.navigate("ChefDetail", { chefId: item.chef_id })} />
-                             </View>
-                        )}
-                        keyExtractor={(item) => item.chef_id.toString()}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                        ListEmptyComponent={
-                            <View style={styles.emptyState}>
-                                <Ionicons name="search-outline" size={48} color={c.textMuted} />
-                                <Text style={[styles.emptyText, { color: c.textMuted }]}>
-                                    {searchQuery ? t('search.noResults') : t('search.noChefs')}
-                                </Text>
+            {/* Filter Modal */}
+            <Modal
+                visible={filterModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setFilterModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: c.card }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: c.text }]}>{t('search.filters', 'Filters')}</Text>
+                            <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                            {/* Example Filters - you can expand this based on your API */}
+                            <Text style={[styles.filterSectionTitle, { color: c.text }]}>{t('search.sortBy', 'Sort By')}</Text>
+                            <View style={styles.filterOptions}>
+                                {['rating', 'price_asc', 'price_desc', 'newest'].map((option) => (
+                                    <TouchableOpacity
+                                        key={option}
+                                        style={[
+                                            styles.filterOptionButton,
+                                            { backgroundColor: activeFilter === option ? c.primary : c.background, borderColor: activeFilter === option ? c.primary : c.border }
+                                        ]}
+                                        onPress={() => setActiveFilter(option)}
+                                    >
+                                        <Text style={[
+                                            styles.filterOptionText,
+                                            { color: activeFilter === option ? '#fff' : c.text }
+                                        ]}>
+                                            {t(`search.sort_${option}`, option)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-                        }
-                    />
-                )}
-            {/* </SafeAreaView> */}
+                            
+                            {/* You could add price ranges, dish types, etc here */}
+                        </ScrollView>
+                        
+                        <View style={[styles.modalFooter, { borderTopColor: c.border }]}>
+                            <Button 
+                                title={t('search.resetFilters', 'Reset')} 
+                                variant="outline" 
+                                onPress={() => { setActiveFilter(null); setFilterModalVisible(false); }} 
+                                style={{ flex: 1, marginRight: 8 }} 
+                            />
+                            <Button 
+                                title={t('search.applyFilters', 'Apply')} 
+                                onPress={() => setFilterModalVisible(false)} 
+                                style={{ flex: 1 }} 
+                            />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -403,5 +531,54 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 16,
         marginTop: 16,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "flex-end",
+    },
+    modalContent: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        maxHeight: "80%",
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "700",
+    },
+    modalBody: {
+        marginBottom: 20,
+    },
+    filterSectionTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 12,
+    },
+    filterOptions: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+    },
+    filterOptionButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    filterOptionText: {
+        fontSize: 14,
+        fontWeight: "600",
+    },
+    modalFooter: {
+        flexDirection: "row",
+        paddingTop: 16,
+        borderTopWidth: 1,
     },
 });

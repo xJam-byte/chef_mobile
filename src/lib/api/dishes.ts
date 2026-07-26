@@ -17,10 +17,12 @@ import type {
 export const getAllDishes = async (
   params: PaginationParams = {}
 ): Promise<DishesResponse> => {
-  const { page = 1, limit = 10 } = params;
-  const response = await apiClient.get<DishesResponse>(
-    `/dishes?page=${page}&limit=${limit}`
-  );
+  const { page = 1, limit = 10, search } = params;
+  let url = `/dishes?page=${page}&limit=${limit}`;
+  if (search) {
+    url += `&search=${encodeURIComponent(search)}`;
+  }
+  const response = await apiClient.get<DishesResponse>(url);
   return response.data;
 };
 

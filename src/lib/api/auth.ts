@@ -70,3 +70,9 @@ export const me = async (): Promise<User> => {
   const res = await apiClient.get<User>("/auth/me");
   return res.data;
 };
+
+/** Refresh the access token using the current (still valid) token */
+export const refreshToken = async (): Promise<AuthResponse> => {
+  const res = await apiClient.post<AuthResponse>("/auth/refresh");
+  return res.data;
+};

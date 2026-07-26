@@ -19,7 +19,7 @@ const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 const ChefsScreen = () => {
   const c = useColors();
   const navigation =
-    useNavigation<RootStackScreenProps<"Main">["navigation"]>();
+    useNavigation<RootStackScreenProps<"MainTabs">["navigation"]>();
 
   const { data, isLoading, isRefetching, refetch } = useChefs({
     page: 1,

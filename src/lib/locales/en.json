@@ -38,7 +38,8 @@
     "options": "Options",
     "report": "Report",
     "unblock": "Unblock",
-    "warning": "Warning"
+    "warning": "Warning",
+    "phone": "Phone"
   },
   "auth": {
     "welcome": "Welcome",
@@ -141,11 +142,17 @@
   "search": {
     "searchPlaceholder": "Search dishes & chefs",
     "map": "Map",
-    "chefs": "Chefs",
+    "menu": "Menu",
     "profile": "Profile",
+    "dishes": "Dishes",
+    "chefs": "Chefs",
     "mapInfo": "Tap on chef marker ({{count}} on map)",
     "noResults": "No chefs found",
-    "noChefs": "No chefs available"
+    "noDishesFound": "No dishes found for your query",
+    "noDishes": "No dishes available",
+    "noChefs": "No chefs available",
+    "onMap": "on map",
+    "tapMarker": "Tap on chef marker"
   },
   "tabs": {
     "feed": "Feed",
@@ -204,6 +211,7 @@
     "loadingOrders": "Loading orders...",
     "orderNumber": "Order #{{number}}",
     "dish": "Dish",
+    "totalPrice": "Total Order Price",
     "more": "+{{count}} more",
     "details": "Details",
     "total": "Total",
@@ -290,6 +298,18 @@
     "ingredients": "Ingredients",
     "description": "Description",
     "type": "Dish Type",
+    "types": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "dessert": "Dessert",
+      "drink": "Drink",
+      "snack": "Snack",
+      "soup": "Soup",
+      "salad": "Salad",
+      "bakery": "Bakery",
+      "other": "Other"
+    },
     "notFound": "Dish not found or an error occurred",
     "backButton": "Go Back",
     "unavailable": "Unavailable",

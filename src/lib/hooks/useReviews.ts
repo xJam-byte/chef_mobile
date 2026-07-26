@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createReview, getChefReviews } from "../api";
+import { createReview, getChefReviews, getDishReviews } from "../api";
 import { QUERY_KEYS } from "../constants";
 import type { CreateReviewDto } from "../types";
 
@@ -27,13 +27,33 @@ export const useCreateReview = () => {
     return useMutation({
         mutationFn: (data: CreateReviewDto) => createReview(data),
         onSuccess: (review) => {
-            queryClient.invalidateQueries({
-                queryKey: QUERY_KEYS.REVIEWS(review.chefId),
-            });
-            // Also invalidate chef data to refresh rating
-            queryClient.invalidateQueries({
-                queryKey: QUERY_KEYS.CHEF(review.chefId),
-            });
+            if (review.chefId) {
+                queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.REVIEWS(review.chefId),
+                });
+                queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.CHEF(review.chefId),
+                });
+            }
+            if (review.dishId) {
+                queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.DISH_REVIEWS(review.dishId),
+                });
+                queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.DISH(review.dishId),
+                });
+            }
         },
+    });
+};
+
+/**
+ * Get reviews for a dish
+ */
+export const useDishReviews = (dishId: number) => {
+    return useQuery({
+        queryKey: QUERY_KEYS.DISH_REVIEWS(dishId),
+        queryFn: () => getDishReviews(dishId),
+        enabled: !!dishId,
     });
 };

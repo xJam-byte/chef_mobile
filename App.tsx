@@ -35,8 +35,8 @@ function AiAssistantOverlay() {
 
   return (
     <>
-      <DraggableAiButton onPress={() => setChatOpen(true)} />
-      <AiChatModal visible={isChatOpen} onClose={() => setChatOpen(false)} />
+      {/* <DraggableAiButton onPress={() => setChatOpen(true)} />
+      <AiChatModal visible={isChatOpen} onClose={() => setChatOpen(false)} /> */}
     </>
   );
 }
@@ -49,7 +49,7 @@ function CartProviderWithAuth({ children }: { children: React.ReactNode }) {
   return (
     <CartProvider userId={userId}>
       {children}
-      {/* {userId && <AiAssistantOverlay />} */}
+      {userId && <AiAssistantOverlay />}
     </CartProvider>
   );
 }

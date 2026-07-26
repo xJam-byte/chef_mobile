@@ -33,6 +33,9 @@ import {
   SelectionOption,
 } from "../../components/ui";
 import { showMessage } from "react-native-flash-message";
+import { UsernameModal } from "../settings/sections/UsernameModal";
+import { PasswordModal } from "../settings/sections/PasswordModal";
+import { ProfileModal } from "../settings/sections/ProfileModal";
 
 export default function SettingsScreen({ navigation }: any) {
   const c = useColors();
@@ -640,306 +643,67 @@ export default function SettingsScreen({ navigation }: any) {
       />
 
       {/* Модалка «Личные данные»: имя + почта */}
-      <Modal
+      <ProfileModal
         visible={profileModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setProfileModalVisible(false)}
-      >
-        <View style={styles.usernameBackdrop}>
-          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
-            <Text style={[styles.usernameTitle, { color: c.text }]}>
-              {t("settings.personalData", "Личные данные")}
-            </Text>
-
-            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-              {t("auth.nameLabel", "Имя")}
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={nameInput}
-                onChangeText={setNameInput}
-                placeholder={t("auth.namePlaceholder", "Ваше имя")}
-                placeholderTextColor={c.textMuted}
-              />
-            </View>
-
-            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-              Email
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={emailInput}
-                onChangeText={(v) => {
-                  setEmailInput(v);
-                  // Почту поменяли — прошлый код больше не актуален
-                  setEmailCodeSent(false);
-                  setEmailCode("");
-                }}
-                placeholder="you@example.com"
-                placeholderTextColor={c.textMuted}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-
-            {emailCodeSent && (
-              <>
-                <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-                  {t("settings.emailCodeLabel", "Код с новой почты")}
-                </Text>
-                <View
-                  style={[
-                    styles.usernameInputWrapper,
-                    { backgroundColor: c.input, borderColor: c.primary },
-                  ]}
-                >
-                  <TextInput
-                    style={[styles.usernameInput, { color: c.text }]}
-                    value={emailCode}
-                    onChangeText={setEmailCode}
-                    placeholder="000000"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    autoFocus
-                  />
-                </View>
-              </>
-            )}
-
-            <View style={styles.usernameActions}>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.input }]}
-                onPress={() => setProfileModalVisible(false)}
-              >
-                <Text style={{ color: c.text, fontWeight: "600" }}>
-                  {t("common.cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
-                onPress={handleSaveProfile}
-                disabled={profileSaving}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>
-                  {profileSaving
-                    ? t("common.loading")
-                    : emailInput.trim().toLowerCase() !==
-                          (profile?.email ?? "") &&
-                        emailInput.trim() &&
-                        !emailCodeSent
-                      ? t("auth.getCode", "Получить код")
-                      : t("common.save", "Сохранить")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setProfileModalVisible(false)}
+        nameInput={nameInput}
+        setNameInput={setNameInput}
+        emailInput={emailInput}
+        setEmailInput={(v: string) => {
+          setEmailInput(v);
+          setEmailCodeSent(false);
+          setEmailCode("");
+        }}
+        emailCodeSent={emailCodeSent}
+        emailCode={emailCode}
+        setEmailCode={setEmailCode}
+        onSave={handleSaveProfile}
+        isSaving={profileSaving}
+        originalEmail={profile?.email ?? ""}
+      />
 
       {/* Модалка смены пароля: SMS-код → новый пароль */}
-      <Modal
+      <PasswordModal
         visible={passwordModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPasswordModalVisible(false)}
-      >
-        <View style={styles.usernameBackdrop}>
-          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
-            <Text style={[styles.usernameTitle, { color: c.text }]}>
-              {t("settings.changePassword")}
-            </Text>
-            <Text style={[styles.usernameHint, { color: c.textSecondary }]}>
-              {t(
-                "settings.passwordCodeHint",
-                "Мы отправили SMS-код на ваш номер {{phone}}. Введите его и новый пароль.",
-                { phone: profile?.phone_number ?? "" },
-              )}
-            </Text>
-
-            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-              {t("auth.smsCodeLabel", "Код из SMS")}
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={passwordCode}
-                onChangeText={setPasswordCode}
-                placeholder="000000"
-                placeholderTextColor={c.textMuted}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-            </View>
-
-            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-              {t("settings.newPassword", "Новый пароль")}
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                placeholder="••••••"
-                placeholderTextColor={c.textMuted}
-              />
-            </View>
-
-            <Text style={[styles.fieldLabel, { color: c.textSecondary }]}>
-              {t("settings.repeatPassword", "Повторите пароль")}
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={newPassword2}
-                onChangeText={setNewPassword2}
-                secureTextEntry
-                placeholder="••••••"
-                placeholderTextColor={c.textMuted}
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={() =>
-                sendPasswordCodeMutation.mutate(undefined, {
-                  onSuccess: () =>
-                    showMessage({
-                      message: t("auth.successSmsSent", "Код отправлен"),
-                      type: "success",
-                      icon: "success",
-                    }),
-                  onError: (e) =>
-                    showMessage({
-                      message: t("common.error"),
-                      description: translateApiError(e),
-                      type: "danger",
-                      icon: "danger",
-                    }),
-                })
-              }
-              disabled={sendPasswordCodeMutation.isPending}
-              style={{ marginBottom: 16 }}
-            >
-              <Text style={{ color: c.primary, fontWeight: "600", fontSize: 13 }}>
-                {t("auth.resendCode", "Отправить код повторно")}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.usernameActions}>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.input }]}
-                onPress={() => setPasswordModalVisible(false)}
-              >
-                <Text style={{ color: c.text, fontWeight: "600" }}>
-                  {t("common.cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
-                onPress={handleSubmitPassword}
-                disabled={changePasswordMutation.isPending}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>
-                  {changePasswordMutation.isPending
-                    ? t("common.loading")
-                    : t("common.save", "Сохранить")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setPasswordModalVisible(false)}
+        phone={profile?.phone_number ?? ""}
+        passwordCode={passwordCode}
+        setPasswordCode={setPasswordCode}
+        newPassword={newPassword}
+        setNewPassword={setNewPassword}
+        newPassword2={newPassword2}
+        setNewPassword2={setNewPassword2}
+        onSubmit={handleSubmitPassword}
+        isPendingSubmit={changePasswordMutation.isPending}
+        onResendCode={() =>
+          sendPasswordCodeMutation.mutate(undefined, {
+            onSuccess: () =>
+              showMessage({
+                message: t("auth.successSmsSent", "Код отправлен"),
+                type: "success",
+                icon: "success",
+              }),
+            onError: (e) =>
+              showMessage({
+                message: t("common.error"),
+                description: translateApiError(e),
+                type: "danger",
+                icon: "danger",
+              }),
+          })
+        }
+        isPendingResend={sendPasswordCodeMutation.isPending}
+      />
 
       {/* Модалка смены @username */}
-      <Modal
+      <UsernameModal
         visible={usernameModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setUsernameModalVisible(false)}
-      >
-        <View style={styles.usernameBackdrop}>
-          <View style={[styles.usernameCard, { backgroundColor: c.card }]}>
-            <Text style={[styles.usernameTitle, { color: c.text }]}>
-              {t("settings.username", "Юзернейм")}
-            </Text>
-            <Text style={[styles.usernameHint, { color: c.textSecondary }]}>
-              {t(
-                "settings.usernameHint",
-                "По нему вас смогут отмечать в коллабах. 3–32 символа: a-z, 0-9 и _",
-              )}
-            </Text>
-            <View
-              style={[
-                styles.usernameInputWrapper,
-                { backgroundColor: c.input, borderColor: c.border },
-              ]}
-            >
-              <Text style={{ color: c.textMuted, fontSize: 16 }}>@</Text>
-              <TextInput
-                style={[styles.usernameInput, { color: c.text }]}
-                value={usernameInput}
-                onChangeText={setUsernameInput}
-                placeholder="username"
-                placeholderTextColor={c.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={32}
-                autoFocus
-              />
-            </View>
-            <View style={styles.usernameActions}>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.input }]}
-                onPress={() => setUsernameModalVisible(false)}
-              >
-                <Text style={{ color: c.text, fontWeight: "600" }}>
-                  {t("common.cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.usernameBtn, { backgroundColor: c.primary }]}
-                onPress={handleSaveUsername}
-                disabled={updateContactsMutation.isPending}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>
-                  {updateContactsMutation.isPending
-                    ? t("common.loading")
-                    : t("common.save", "Сохранить")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setUsernameModalVisible(false)}
+        usernameInput={usernameInput}
+        setUsernameInput={setUsernameInput}
+        onSave={handleSaveUsername}
+        isPending={updateContactsMutation.isPending}
+      />
     </View>
   );
 }

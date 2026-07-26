@@ -16,10 +16,12 @@ import type {
 export const getAllChefs = async (
   params: PaginationParams = {}
 ): Promise<ChefsResponse> => {
-  const { page = 1, limit = 10 } = params;
-  const response = await apiClient.get<ChefsResponse>(
-    `/chef/getAll?page=${page}&limit=${limit}`
-  );
+  const { page = 1, limit = 10, search } = params;
+  let url = `/chef/getAll?page=${page}&limit=${limit}`;
+  if (search) {
+    url += `&search=${encodeURIComponent(search)}`;
+  }
+  const response = await apiClient.get<ChefsResponse>(url);
   return response.data;
 };
 

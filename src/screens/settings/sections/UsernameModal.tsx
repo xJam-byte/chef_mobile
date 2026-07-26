@@ -1,0 +1,136 @@
+import React from "react";
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { useColors } from "../../../lib/theme";
+
+interface UsernameModalProps {
+  visible: boolean;
+  onClose: () => void;
+  usernameInput: string;
+  setUsernameInput: (val: string) => void;
+  onSave: () => void;
+  isPending: boolean;
+}
+
+export const UsernameModal: React.FC<UsernameModalProps> = ({
+  visible,
+  onClose,
+  usernameInput,
+  setUsernameInput,
+  onSave,
+  isPending,
+}) => {
+  const c = useColors();
+  const { t } = useTranslation();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdrop}>
+        <View style={[styles.card, { backgroundColor: c.card }]}>
+          <Text style={[styles.title, { color: c.text }]}>
+            {t("settings.username", "Юзернейм")}
+          </Text>
+          <Text style={[styles.hint, { color: c.textSecondary }]}>
+            {t(
+              "settings.usernameHint",
+              "По нему вас смогут отмечать в коллабах. 3–32 символа: a-z, 0-9 и _"
+            )}
+          </Text>
+          <View
+            style={[
+              styles.inputWrapper,
+              { backgroundColor: c.input, borderColor: c.border },
+            ]}
+          >
+            <Text style={{ color: c.textMuted, fontSize: 16 }}>@</Text>
+            <TextInput
+              style={[styles.input, { color: c.text }]}
+              value={usernameInput}
+              onChangeText={setUsernameInput}
+              placeholder="username"
+              placeholderTextColor={c.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={32}
+              autoFocus
+            />
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.input }]}
+              onPress={onClose}
+            >
+              <Text style={{ color: c.text, fontWeight: "600" }}>
+                {t("common.cancel")}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: c.primary }]}
+              onPress={onSave}
+              disabled={isPending}
+            >
+              <Text style={{ color: "#fff", fontWeight: "700" }}>
+                {isPending ? t("common.loading") : t("common.save", "Сохранить")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  card: {
+    borderRadius: 20,
+    padding: 20,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  hint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 50,
+    marginBottom: 16,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    height: "100%",
+    paddingVertical: 0,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  btn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

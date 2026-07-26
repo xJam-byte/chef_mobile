@@ -4,6 +4,7 @@
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Card, Avatar, StarRating } from "../ui";
 import { API_BASE_URL } from "../../lib/constants";
 import type { Chef } from "../../lib/types";
@@ -16,11 +17,13 @@ interface ChefCardProps {
 
 export const ChefCard: React.FC<ChefCardProps> = ({ chef, onPress }) => {
   const c = useColors();
+  const { t } = useTranslation();
 
-  const avatarUri = chef.user?.profile_pic
-    ? chef.user.profile_pic.startsWith("http")
-      ? chef.user.profile_pic
-      : `${API_BASE_URL}${chef.user.profile_pic}`
+  const user = chef.users ?? chef.user;
+  const avatarUri = user?.profile_pic
+    ? user.profile_pic.startsWith("http")
+      ? user.profile_pic
+      : `${API_BASE_URL}${user.profile_pic}`
     : null;
 
   return (
@@ -31,10 +34,10 @@ export const ChefCard: React.FC<ChefCardProps> = ({ chef, onPress }) => {
     >
       <Card style={styles.card}>
         <View style={styles.header}>
-          <Avatar uri={avatarUri} name={chef.user?.name} size="lg" />
+          <Avatar uri={avatarUri} name={user?.name} size="lg" />
           <View style={styles.info}>
             <Text style={[styles.name, { color: c.text }]}>
-              {chef.user?.name || "Шеф-повар"}
+              {user?.name || t("common.chef")}
             </Text>
             <StarRating rating={chef.rating} size={16} />
           </View>
@@ -49,13 +52,13 @@ export const ChefCard: React.FC<ChefCardProps> = ({ chef, onPress }) => {
           </Text>
         ) : null}
 
-        {chef.user?.phone_number ? (
+        {user?.phone_number ? (
           <View style={[styles.contact, { borderTopColor: c.divider }]}>
             <Text style={[styles.contactLabel, { color: c.textMuted }]}>
-              Телефон:
+              {t("common.phone", "Phone")}:
             </Text>
             <Text style={[styles.contactValue, { color: c.text }]}>
-              {chef.user.phone_number}
+              {user.phone_number}
             </Text>
           </View>
         ) : null}

@@ -20,3 +20,11 @@ export const getChefReviews = async (chefId: number): Promise<Review[]> => {
     const response = await apiClient.get<Review[]>(`/reviews/chef/${chefId}`);
     return response.data;
 };
+
+/**
+ * Get reviews for a dish
+ */
+export const getDishReviews = async (dishId: number): Promise<Review[]> => {
+    const response = await apiClient.get<Review[]>(`/reviews/dish/${dishId}`);
+    return response.data;
+};

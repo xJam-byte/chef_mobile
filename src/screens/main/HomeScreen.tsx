@@ -18,7 +18,7 @@ const HomeScreen = () => {
   const c = useColors();
   const { t } = useTranslation();
   const navigation =
-    useNavigation<RootStackScreenProps<"Main">["navigation"]>();
+    useNavigation<RootStackScreenProps<"MainTabs">["navigation"]>();
 
   const [page, setPage] = useState(1);
 
